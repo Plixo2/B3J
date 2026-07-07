@@ -1,23 +1,23 @@
 package io.github.plixo2.box3d;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 
-import io.github.plixo2.box3d.internal.U32;
+import io.github.plixo2.box3d.internal.PrimitveMemOps;
+import io.github.plixo2.box3d.threads.AllocatedPool;
+import io.github.plixo2.box3d.threads.TaskPool;
 import lombok.Getter;
 import lombok.Setter;
 import org.box2d.box3d.b3WorldDef;
 import org.jetbrains.annotations.Nullable;
-
-import static io.github.plixo2.box3d.internal.Internal.assertU32;
+import org.joml.Vector3f;
 
 // https://github.com/erincatto/box3d/blob/29bf523ce7bc4590aba9f17c9db791cdc5c4397e/src/types.c#L11
 @Getter
 @Setter
 public class WorldDef {
 
-    Vec3 gravity;
+    Vector3f gravity;
     float hitEventThreshold;
     float restitutionThreshold;
     float contactSpeed;
@@ -28,18 +28,18 @@ public class WorldDef {
     @Nullable Object restitutionCallback;
     boolean enableSleep;
     boolean enableContinuous;
-    @Nullable TaskPool taskPool;
+    @Nullable TaskPool<?> taskPool;
     @Nullable Object userData;
-    @Nullable Object createDebugShape;
-    @Nullable Object destroyDebugShape;
+    @Nullable DebugShapeCollection<?> debugShapeCollection;
     @Nullable Object userDebugShapeContext;
     Capacity capacity = new Capacity();
 
 
+    /// @api b3DefaultWorldDef
     public WorldDef() {
-        float lengthUnits = B3.get().getLengthUnitsPerMeter();
+        float lengthUnits = B3.lengthUnitsPerMeter();
 
-        this.gravity = new Vec3();
+        this.gravity = new Vector3f();
         this.gravity.x = 0.0f;
         this.gravity.y = -10.0f;
         this.hitEventThreshold = 1.0f * lengthUnits;
@@ -60,19 +60,28 @@ public class WorldDef {
     CreationResult create(SegmentAllocator arena) {
         var segment = b3WorldDef.allocate(arena);
 
-        TaskPool.Allocated taskPool = null;
+        AllocatedPool taskPool = null;
         var workerCount = 0;
         var enqueueTask = MemorySegment.NULL;
         var finishTask = MemorySegment.NULL;
         if (this.taskPool != null) {
-            taskPool = TaskPool.allocate(this.taskPool);
+            taskPool = AllocatedPool.of(this.taskPool);
             workerCount = this.taskPool.workerCount();
             enqueueTask = taskPool.enqueueTaskCallback();
             finishTask = taskPool.finishTaskCallback();
         }
 
+        DebugShapeCollection.Allocated shapes = null;
+        MemorySegment createDebugShape = MemorySegment.NULL;
+        MemorySegment destroyDebugShape = MemorySegment.NULL;
+        if (this.debugShapeCollection != null) {
+            shapes = new DebugShapeCollection.Allocated(this.debugShapeCollection);
+            createDebugShape = shapes.creation;
+            destroyDebugShape = shapes.deletion;
+        }
 
-        this.gravity.put(b3WorldDef.gravity(segment));
+
+        PrimitveMemOps.putVec3(b3WorldDef.gravity(segment), this.gravity);
         b3WorldDef.restitutionThreshold(segment, this.restitutionThreshold);
         b3WorldDef.hitEventThreshold(segment, this.hitEventThreshold);
         b3WorldDef.contactHertz(segment, this.contactHertz);
@@ -88,15 +97,19 @@ public class WorldDef {
         b3WorldDef.finishTask(segment, finishTask);
         b3WorldDef.userTaskContext(segment, MemorySegment.NULL);
         b3WorldDef.userData(segment, nls(this.userData));
-        b3WorldDef.createDebugShape(segment, nls(this.createDebugShape));
-        b3WorldDef.destroyDebugShape(segment, nls(this.destroyDebugShape));
+        b3WorldDef.createDebugShape(segment, createDebugShape);
+        b3WorldDef.destroyDebugShape(segment, destroyDebugShape);
         b3WorldDef.userDebugShapeContext(segment, nls(this.userDebugShapeContext));
         this.capacity.put(b3WorldDef.capacity(segment));
         b3WorldDef.internalValue(segment, B3.SECRET_COOKIE);
 
-        return new CreationResult(taskPool, segment);
+        return new CreationResult(shapes, taskPool, segment);
     }
-    record CreationResult(@Nullable TaskPool.Allocated taskPool, MemorySegment segment) {}
+    record CreationResult(
+            @Nullable DebugShapeCollection.Allocated shapes,
+            @Nullable AllocatedPool taskPool,
+            MemorySegment segment
+    ) {}
 
 
     private MemorySegment nls(Object object) {

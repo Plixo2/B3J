@@ -17,10 +17,10 @@ public class ShapeDef {
 
     @Nullable Object userData;
     SurfaceMaterial[] materials = new SurfaceMaterial[0];
-    SurfaceMaterial baseMaterial = new SurfaceMaterial();
+    SurfaceMaterial baseMaterial;
     float density;
     float explosionScale;
-    Filter filter = new Filter();
+    Filter filter;
     boolean enableCustomFiltering;
     boolean isSensor;
     boolean enableSensorEvents;
@@ -30,12 +30,15 @@ public class ShapeDef {
     boolean invokeContactCreation;
     boolean updateBodyMass;
 
+    /// @api b3DefaultShapeDef
     public ShapeDef() {
-        float lengthUnits = B3.get().getLengthUnitsPerMeter();
+        float lengthUnits = B3.lengthUnitsPerMeter();
 
+        this.baseMaterial = new SurfaceMaterial();
         // density of water
         this.density = 1000.0f / ( lengthUnits * lengthUnits * lengthUnits );
         this.explosionScale = 1.0f;
+        this.filter = new Filter();
         this.updateBodyMass = true;
         this.invokeContactCreation = true;
     }
@@ -45,14 +48,20 @@ public class ShapeDef {
         var segment = b3ShapeDef.allocate(arena);
         b3ShapeDef.userData(segment, nls(this.userData));
 
-        var materialArray = b3SurfaceMaterial.allocateArray(this.materials.length, arena);
-        for (var i = 0; i < this.materials.length; i++) {
-            var material = this.materials[i];
-            material.put(b3SurfaceMaterial.asSlice(materialArray, i));
+        var materialCount = this.materials.length;
+        MemorySegment materialArray;
+        if (materialCount > 0) {
+            materialArray = b3SurfaceMaterial.allocateArray(materialCount, arena);
+            for (var i = 0; i < materialCount; i++) {
+                var material = this.materials[i];
+                material.put(b3SurfaceMaterial.asSlice(materialArray, i));
+            }
+        } else {
+            materialArray = MemorySegment.NULL;
         }
 
         b3ShapeDef.materials(segment, materialArray);
-        b3ShapeDef.materialCount(segment, this.materials.length);
+        b3ShapeDef.materialCount(segment, materialCount);
         this.baseMaterial.put(b3ShapeDef.baseMaterial(segment));
         b3ShapeDef.density(segment, this.density);
         b3ShapeDef.explosionScale(segment, this.explosionScale);

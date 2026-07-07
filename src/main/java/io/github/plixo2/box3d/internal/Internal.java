@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
+import java.util.function.Supplier;
 
 public final class Internal {
     public static final long U64_MAX = -1L;
@@ -49,14 +50,27 @@ public final class Internal {
     }
 
 
+    /// @throws IllegalArgumentException if the value is out of range for the enum
+    public static <T extends Enum<T>> T enumValue(Class<T> enumClass, int ordinal) {
+        var values = enumClass.getEnumConstants();
+        if (ordinal < 0 || ordinal >= values.length) {
+            throw new IllegalArgumentException(
+                    "Invalid ordinal for enum " + enumClass.getSimpleName() + ": " + ordinal
+            );
+        }
+        return values[ordinal];
+    }
+
+    /// @return the enum value corresponding to the ordinal, or the default value if the ordinal is out of range
     @Contract("_, _, !null -> !null")
-    public static <T extends Enum<T>> T enumFromCode(Class<T> enumClass, int ordinal, @Nullable T defaultValue) {
+    public static <T extends Enum<T>> T enumValueOrElse(Class<T> enumClass, int ordinal, @Nullable T defaultValue) {
         var values = enumClass.getEnumConstants();
         if (ordinal < 0 || ordinal >= values.length) {
             return defaultValue;
         }
         return values[ordinal];
     }
+
 
     public static MemorySegment allocNullString(SegmentAllocator arena, @Nullable String str) {
         if (str == null) {
@@ -98,6 +112,8 @@ public final class Internal {
         }
         throw new IllegalArgumentException(exceptionMessage);
     }
+
+
 
 
 }

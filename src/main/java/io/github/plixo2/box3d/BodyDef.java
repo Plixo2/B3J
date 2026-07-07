@@ -1,12 +1,14 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.Internal;
+import io.github.plixo2.box3d.internal.PrimitveMemOps;
 import lombok.Getter;
 import lombok.Setter;
 import org.box2d.box3d.*;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 
@@ -15,10 +17,10 @@ import java.lang.foreign.SegmentAllocator;
 public class BodyDef {
 
     BodyType type;
-    Vec3 position = new Vec3();
-    Quat rotation = new Quat();
-    Vec3 linearVelocity = new Vec3();
-    Vec3 angularVelocity = new Vec3();
+    Vector3f position = new Vector3f();
+    Quaternionf rotation = new Quaternionf();
+    Vector3f linearVelocity = new Vector3f();
+    Vector3f angularVelocity = new Vector3f();
     float linearDamping;
     float angularDamping;
     float gravityScale;
@@ -33,10 +35,11 @@ public class BodyDef {
     boolean allowFastRotation;
     boolean enableContactRecycling;
 
+    /// @api b3DefaultBodyDef
     public BodyDef() {
         this.type = BodyType.STATIC;
 
-        this.sleepThreshold = 0.05f * B3.get().getLengthUnitsPerMeter();
+        this.sleepThreshold = 0.05f * B3.lengthUnitsPerMeter();
         this.gravityScale = 1.0f;
         this.enableSleep = true;
         this.isAwake = true;
@@ -47,10 +50,10 @@ public class BodyDef {
     MemorySegment create(SegmentAllocator arena) {
         var segment = b3BodyDef.allocate(arena);
         b3BodyDef.type(segment, this.type.code());
-        this.position.put(b3BodyDef.position(segment));
-        this.rotation.put(b3BodyDef.rotation(segment));
-        this.linearVelocity.put(b3BodyDef.linearVelocity(segment));
-        this.angularVelocity.put(b3BodyDef.angularVelocity(segment));
+        PrimitveMemOps.putVec3(b3BodyDef.position(segment), this.position);
+        PrimitveMemOps.putQuat(b3BodyDef.rotation(segment), this.rotation);
+        PrimitveMemOps.putVec3(b3BodyDef.linearVelocity(segment), this.linearVelocity);
+        PrimitveMemOps.putVec3(b3BodyDef.angularVelocity(segment), this.angularVelocity);
         b3BodyDef.linearDamping(segment, this.linearDamping);
         b3BodyDef.angularDamping(segment, this.angularDamping);
         b3BodyDef.gravityScale(segment, this.gravityScale);

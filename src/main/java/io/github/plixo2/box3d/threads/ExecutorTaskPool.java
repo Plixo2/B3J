@@ -1,0 +1,41 @@
+package io.github.plixo2.box3d.threads;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+public class ExecutorTaskPool extends TaskPool<Future<?>> {
+    private final ExecutorService executor;
+
+    public ExecutorTaskPool() {
+        var cores = Math.max(Runtime.getRuntime().availableProcessors() - 1, 1);
+        this(cores, Executors.newFixedThreadPool(cores));
+    }
+
+
+    public ExecutorTaskPool(int workerCount, ExecutorService executor) {
+        super(workerCount);
+        this.executor = executor;
+    }
+
+    @Override
+    public Future<?> enqueue(Runnable runnable) {
+        return this.executor.submit(runnable);
+    }
+
+    @Override
+    public void finish(Future<?> task) {
+        try {
+            task.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace(System.err);
+        }
+    }
+
+    @Override
+    public void close() {
+        this.executor.shutdown();
+    }
+
+}

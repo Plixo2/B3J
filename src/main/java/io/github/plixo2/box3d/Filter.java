@@ -7,27 +7,17 @@ import org.box2d.box3d.b3Filter;
 
 import java.lang.foreign.MemorySegment;
 
-@Getter
-@Setter
 public class Filter {
 
-    @U64 long categoryBits;
-    @U64 long maskBits;
-    int groupIndex;
+    public @U64 long categoryBits;
+    public @U64 long maskBits;
+    public int groupIndex;
 
-
+    /// @api b3DefaultFilter
     public Filter() {
         this.categoryBits = B3.DEFAULT_CATEGORY_BITS;
         this.maskBits = B3.DEFAULT_MASK_BITS;
         this.groupIndex = 0;
-    }
-
-    public @U64 long maskBits() {
-        return this.maskBits;
-    }
-
-    public @U64 long categoryBits() {
-        return this.categoryBits;
     }
 
     void put(MemorySegment segment) {

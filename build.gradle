@@ -8,7 +8,10 @@ version = '1.0-SNAPSHOT'
 project.ext.jomlVersion = "1.10.8"
 
 def os = org.gradle.internal.os.OperatingSystem.current()
-def box3dPlatform = os.isWindows() ? "windows" : "linux"
+
+if (!os.isWindows()) {
+    throw new GradleException("Box3D Java wrapper currently only supports Windows.")
+}
 
 repositories {
     mavenCentral()
@@ -16,7 +19,7 @@ repositories {
 
 dependencies {
 
-    implementation files("libs/${box3dPlatform}/Box3D-0.1.0.jar")
+    implementation files("libs/windows/Box3D-0.1.0.jar")
 
     compileOnly 'org.jetbrains:annotations:23.0.0'
     compileOnly 'org.projectlombok:lombok:1.18.42'

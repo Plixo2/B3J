@@ -1,0 +1,69 @@
+plugins {
+    id 'java'
+}
+
+group = 'io.github.plixo2'
+version = '0.0.1'
+
+project.ext.jomlVersion = "1.10.8"
+project.ext.jomlPrimitivesVersion = "1.10.0"
+
+project.ext.lwjglVersion = "3.4.1"
+project.ext.lwjglNatives = "natives-windows"
+
+
+repositories {
+    mavenCentral()
+}
+
+
+dependencies {
+    implementation project(':')
+
+    implementation 'commons-io:commons-io:2.14.0'
+
+
+    //annotations
+    compileOnly 'org.jetbrains:annotations:23.0.0'
+
+    //lombok
+    compileOnly 'org.projectlombok:lombok:1.18.42'
+    annotationProcessor 'org.projectlombok:lombok:1.18.42'
+
+    // sodalite
+
+
+    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-assimp"
+    implementation "org.lwjgl:lwjgl-glfw"
+    implementation "org.lwjgl:lwjgl-opengl"
+    implementation "org.lwjgl:lwjgl-par"
+    implementation "org.lwjgl:lwjgl-stb"
+    runtimeOnly "org.lwjgl:lwjgl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-assimp::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-par::$lwjglNatives"
+    runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
+
+
+    implementation "org.joml:joml:${jomlVersion}"
+    implementation "org.joml:joml-primitives:${jomlPrimitivesVersion}"
+
+
+}
+
+tasks.withType(JavaExec).configureEach {
+    jvmArgs += [
+            "--enable-native-access=ALL-UNNAMED",
+            "-XX:+UseZGC"
+    ]
+}
+
+tasks.withType(Test).configureEach {
+    jvmArgs += [
+            "--enable-native-access=ALL-UNNAMED",
+            "-XX:+UseZGC"
+    ]
+}
