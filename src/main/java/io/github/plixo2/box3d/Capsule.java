@@ -1,8 +1,7 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.PrimitveMemOps;
+import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import org.box2d.box3d.b3Capsule;
-import org.box2d.box3d.b3Sphere;
 import org.joml.Vector3f;
 
 import java.lang.foreign.MemorySegment;
@@ -47,8 +46,8 @@ public non-sealed class Capsule implements ShapeType.Shape {
 
     public MemorySegment create(SegmentAllocator arena) {
         var segment = b3Capsule.allocate(arena);
-        PrimitveMemOps.putVec3(b3Capsule.center1(segment), this.x1, this.y1, this.z1);
-        PrimitveMemOps.putVec3(b3Capsule.center2(segment), this.x2, this.y2, this.z2);
+        PrimitiveMemOps.putVec3(b3Capsule.center1(segment), this.x1, this.y1, this.z1);
+        PrimitiveMemOps.putVec3(b3Capsule.center2(segment), this.x2, this.y2, this.z2);
         b3Capsule.radius(segment, this.radius);
         return segment;
     }

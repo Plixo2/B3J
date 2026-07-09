@@ -9,9 +9,10 @@ import java.util.function.Consumer;
 
 final class AutoRegion implements Region {
     private static final Cleaner CLEANER = Cleaner.create();
+
     private final FreeList freeList;
 
-    public AutoRegion(FreeList freeList) {
+    AutoRegion(FreeList freeList) {
         this.freeList = freeList;
     }
 

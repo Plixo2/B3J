@@ -1,9 +1,9 @@
-#version 330 core
+#version 460 core
 
 in vec3 v_normal;
 in vec3 v_worldPos;
+in vec4 v_color;
 
-uniform vec4 u_color;
 uniform vec3 u_cameraPos;
 
 out vec4 fragColor;
@@ -30,7 +30,7 @@ void main()
     vec3 normal = normalize(v_normal);
     vec3 viewDir = normalize(u_cameraPos - v_worldPos);
     vec3 halfDir = normalize(lightDir + viewDir);
-    vec3 baseColor = u_color.rgb;
+    vec3 baseColor = v_color.rgb;
 
     float lambert = max(dot(normal, lightDir), 0.0);
     float diffuseLight = lambert * diffuse;
@@ -38,7 +38,7 @@ void main()
     float glossySpec = pow(max(dot(normal, halfDir), 0.0), glossyShininess) * glossyStrength;
     float metallicSpec = pow(max(dot(normal, halfDir), 0.0), metallicShininess) * metallicStrength;
 
-    int mode = int(round(u_color.a * 255));
+    int mode = int(round(v_color.a * 255));
     if (mode == MATTE) {
         fragColor = vec4(baseColor * (ambient + diffuseLight), 1.0);
 //        fragColor = vec4(0.0, 0.0, 1.0, 1.0f);
@@ -65,5 +65,5 @@ void main()
 
 
 
-    //fragColor = u_color; // vec4(v_normal, 1.0);
+    //fragColor = v_color; // vec4(v_normal, 1.0);
 }

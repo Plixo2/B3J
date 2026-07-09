@@ -1,9 +1,8 @@
 package io.github.plixo2.samples;
 
 import io.github.plixo2.Example;
-import io.github.plixo2.MeshFactory;
+import io.github.plixo2.framework.MeshFactory;
 import io.github.plixo2.box3d.*;
-import io.github.plixo2.box3d.region.Region;
 import io.github.plixo2.box3d.threads.ExecutorTaskPool;
 import lombok.Getter;
 import org.joml.Vector3f;
@@ -55,59 +54,26 @@ public class HelloFloor extends Example {
         }
 
 
-
-
-
-        spawnSphere(10, new Vector3f(0, 11, 22));
-
+        var sphere = spawnSphere(10, new Vector3f(0, 11, 22));
+        this.b3.setBodyName(sphere, "Sphere");
     }
 
-    private void spawnBox(Vector3f position) {
-        var b3 = this.b3;
 
-        var dynBodyDef = new BodyDef();
-        dynBodyDef.type(BodyType.DYNAMIC);
-        dynBodyDef.position().set(position);
-        BodyID bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
-
-        var dynamicBox = b3.makeCubeHull(1.0f);
-
-        ShapeDef dynamicShapeDef = new ShapeDef();
-        dynamicShapeDef.density(1.0f);
-        dynamicShapeDef.baseMaterial().friction(0.3f);
-        var _ = b3.createHullShape(bodyId, dynamicShapeDef, dynamicBox.base());
-    }
-
-    private void spawnSphere(float radius, Vector3f position) {
-        var b3 = this.b3;
-
-        var dynBodyDef = new BodyDef();
-        dynBodyDef.type(BodyType.DYNAMIC);
-        dynBodyDef.position().set(position);
-        BodyID bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
-
-        var sphere = new Sphere(radius);
-        ShapeDef dynamicShapeDef = new ShapeDef();
-        dynamicShapeDef.density(1.0f);
-        dynamicShapeDef.baseMaterial().friction(0.1f);
-
-        var _ = b3.createSphereShape(bodyId, dynamicShapeDef, sphere);
-
-    }
 
     @Override
     public void onClick(Vector3f dir, Vector3f origin) {
         var b3 = this.b3;
 
-
-        var result = b3.worldCastRayClosest(
+        var result = new RayResult();
+        var hit = b3.worldCastRayClosest(
+                result,
                 this.worldID,
                 origin,
                 new Vector3f(dir).mul(100),
                 new QueryFilter()
         );
 
-        if (result != null) {
+        if (hit) {
             var shape = result.shapeID();
             var body = b3.shapeGetBody(shape);
             var impuls = new Vector3f(dir);
@@ -122,13 +88,5 @@ public class HelloFloor extends Example {
 
     }
 
-    @Override
-    public void update(float dt) {
-        float timeStep = Math.min(dt, 1.0f / 60.0f);
-        int subStepCount = 4;
 
-        this.b3.worldStep(this.worldID, timeStep, subStepCount);
-
-
-    }
 }

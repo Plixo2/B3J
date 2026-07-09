@@ -2,29 +2,18 @@ package io.github.plixo2.box3d;
 
 
 import org.box2d.box3d.*;
+import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiFunction;
 
 public abstract class DebugShapeCollection<T> {
 
-    private final Map<Long, T> objects = new HashMap<>();
+    private final LongObjectHashMap<T> objects = new LongObjectHashMap<>();
     private long counter = 1;
 
-
-    private final b3CreateDebugShapeCallback.Function create = this::apply;
-    private final b3DestroyDebugShapeCallback.Function delete = this::delete;
-
-
-    public DebugShapeCollection(
-
-    ) {
-
-    }
+    public DebugShapeCollection() {}
 
 
     protected abstract T create(ShapeID shapeID, ShapeType.Shape shape);
@@ -41,7 +30,7 @@ public abstract class DebugShapeCollection<T> {
         }
     }
 
-    private MemorySegment apply(MemorySegment debugShape, MemorySegment userContext) {
+    private MemorySegment create(MemorySegment debugShape, MemorySegment userContext) {
         var shapeID = ShapeID.of(b3DebugShape.shapeId(debugShape));
         var type = ShapeType.fromCode(b3DebugShape.type(debugShape));
 
@@ -104,7 +93,7 @@ public abstract class DebugShapeCollection<T> {
 
 
     static final class Allocated {
-        private DebugShapeCollection<?> collection;
+        private DebugShapeCollection<?> collection; // keep reference
         private Arena arena;
 
         MemorySegment creation;
@@ -113,8 +102,8 @@ public abstract class DebugShapeCollection<T> {
         Allocated(DebugShapeCollection<?> collection) {
             this.collection = collection;
             this.arena = Arena.ofConfined();
-            this.creation = b3CreateDebugShapeCallback.allocate(collection.create, this.arena);
-            this.deletion = b3DestroyDebugShapeCallback.allocate(collection.delete, this.arena);
+            this.creation = b3CreateDebugShapeCallback.allocate(collection::create, this.arena);
+            this.deletion = b3DestroyDebugShapeCallback.allocate(collection::delete, this.arena);
         }
 
         void close() {

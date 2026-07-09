@@ -27,7 +27,7 @@ public class Mesh extends GPUResource  {
 
 
     private final MeshHandleData handleData;
-    public final int elementCount;
+    public int elementCount;
 
     public final Shader.Attribute[] layout;
     public final int type;
@@ -60,6 +60,9 @@ public class Mesh extends GPUResource  {
         this(layout, vertexArrayObject, vertexBufferObject, NO_BUFFER, elementCount, type, USE_ARRAYS);
     }
 
+    public void overwriteElementCount(int newCount) {
+        this.elementCount = newCount;
+    }
 
 
     /// Creates a quad mesh with no information
@@ -259,7 +262,6 @@ public class Mesh extends GPUResource  {
             Shader.Attribute[] layout,
             int elementType
     ) {
-
         val vao = glGenVertexArrays();
         val vbo = glGenBuffers();
         val ebo = glGenBuffers();
@@ -277,7 +279,7 @@ public class Mesh extends GPUResource  {
         var elementCount = Math.toIntExact(indices.byteSize() / bytesPerElement);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        nglBufferData(GL_ARRAY_BUFFER, vertices.byteSize(), vertices.address() , GL_STATIC_DRAW);
+        nglBufferData(GL_ARRAY_BUFFER, vertices.byteSize(), vertices.address(), GL_STATIC_DRAW);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
         nglBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.byteSize(), vertices.address(), GL_STATIC_DRAW);
@@ -288,6 +290,32 @@ public class Mesh extends GPUResource  {
         bindVAO(0);
 
         return new Mesh(layout, vao, vbo, ebo, elementCount, elementType, indicesType);
+    }
+
+    public static Mesh fromSized(
+            int vertices,
+            int indices,
+            int indicesType,
+            Shader.Attribute[] layout,
+            int elementType
+    ) {
+        val vao = glGenVertexArrays();
+        val vbo = glGenBuffers();
+        val ebo = glGenBuffers();
+        bindVAO(vao);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertices, GL_DYNAMIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices, GL_DYNAMIC_DRAW);
+
+        setLayout(layout);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        bindVAO(0);
+
+        return new Mesh(layout, vao, vbo, ebo, 0, elementType, indicesType);
     }
 
     private static void setLayout(Shader.Attribute[] layout) {

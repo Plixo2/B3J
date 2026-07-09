@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.box2d.box3d.b3EnqueueTaskCallback;
 import org.box2d.box3d.b3FinishTaskCallback;
 import org.box2d.box3d.b3TaskCallback;
+import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap;
 
 import java.lang.foreign.MemorySegment;
 import java.util.HashMap;
@@ -19,7 +20,7 @@ public abstract class TaskPool<T> implements b3EnqueueTaskCallback.Function, b3F
         this.workerCount = workerCount;
     }
 
-    private final Map<Long, T> pending = new HashMap<>();
+    private final LongObjectHashMap<T> pending = new LongObjectHashMap<>();
     private long counter = 1;
 
     public abstract T enqueue(Runnable runnable);

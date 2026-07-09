@@ -3,6 +3,7 @@ package io.github.plixo2.box3d;
 import io.github.plixo2.box3d.internal.Internal;
 import lombok.Getter;
 import lombok.Setter;
+import org.box2d.box3d.b3HeightFieldDef;
 import org.box2d.box3d.b3MeshDef;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,23 +46,15 @@ public class MeshDef {
 
     public MeshDef(
             MemorySegment vertices,
-            MemorySegment indices
+            int vertexCount,
+            MemorySegment indices,
+            int triangleCount
     ) {
         this.vertices = vertices;
         this.indices = indices;
 
-        var vertexByteLength = vertices.byteSize();
-        var indexByteLength = indices.byteSize();
-
-        this.vertexCount = Math.toIntExact((vertexByteLength / (3 * Float.BYTES)));
-        this.triangleCount = Math.toIntExact((indexByteLength / (3 * Integer.BYTES)));
-
-        if (vertexByteLength % (3 * Float.BYTES) != 0) {
-            throw new IllegalArgumentException("vertices length must be a multiple of 3 Floats");
-        }
-        if (indexByteLength % (3 * Integer.BYTES) != 0) {
-            throw new IllegalArgumentException("indices length must be a multiple of 3 Ints");
-        }
+        this.vertexCount = vertexCount;
+        this.triangleCount = triangleCount;
 
         if (this.vertexCount < 3) {
             throw new IllegalArgumentException("vertexCount must be at least 3");
@@ -76,9 +69,12 @@ public class MeshDef {
             float[] vertices,
             int[] indices
     ) {
+        ensureCount(vertices.length, indices.length);
         this(
                 MemorySegment.ofArray(vertices),
-                MemorySegment.ofArray(indices)
+                vertices.length / 3,
+                MemorySegment.ofArray(indices),
+                indices.length / 3
         );
     }
 
@@ -86,9 +82,12 @@ public class MeshDef {
             FloatBuffer vertices,
             IntBuffer indices
     ) {
+        ensureCount(vertices.remaining(), indices.remaining());
         this(
                 MemorySegment.ofBuffer(vertices),
-                MemorySegment.ofBuffer(indices)
+                vertices.remaining() / 3,
+                MemorySegment.ofBuffer(indices),
+                indices.remaining() / 3
         );
     }
 
@@ -119,13 +118,23 @@ public class MeshDef {
     }
 
 
+    private static void ensureCount(int vertexCount, int indexCount) {
+        if (vertexCount % 3 != 0) {
+            throw new IllegalArgumentException("vertices length must be a multiple of 3");
+        }
+        if (indexCount % 3 != 0) {
+            throw new IllegalArgumentException("indices length must be a multiple of 3");
+        }
+    }
 
 
     MemorySegment create(SegmentAllocator arena) {
 
         var segment = b3MeshDef.allocate(arena);
-        b3MeshDef.vertices(segment, this.vertices);
-        b3MeshDef.indices(segment, this.indices);
+
+        b3MeshDef.vertices(segment, Internal.ensureOffHeap(arena, this.vertices));
+        b3MeshDef.indices(segment, Internal.ensureOffHeap(arena, this.indices));
+
         b3MeshDef.materialIndices(segment, this.materialIndices);
         b3MeshDef.weldTolerance(segment, this.weldTolerance);
         b3MeshDef.vertexCount(segment, this.vertexCount);

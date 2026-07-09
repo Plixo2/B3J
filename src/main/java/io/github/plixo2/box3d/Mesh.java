@@ -1,6 +1,6 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.PrimitveMemOps;
+import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import org.box2d.box3d.b3Mesh;
 import org.joml.Vector3f;
 
@@ -30,7 +30,7 @@ public non-sealed class Mesh implements ShapeType.Shape {
     MemorySegment create(SegmentAllocator arena) {
         var segment = b3Mesh.allocate(arena);
         b3Mesh.data(segment, this.data.segment());
-        PrimitveMemOps.putVec3(b3Mesh.scale(segment), this.scaleX, this.scaleY, this.scaleZ);
+        PrimitiveMemOps.putVec3(b3Mesh.scale(segment), this.scaleX, this.scaleY, this.scaleZ);
         return segment;
     }
 

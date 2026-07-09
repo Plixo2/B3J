@@ -98,7 +98,6 @@ public class Main {
 
     static class Shapes extends DebugShapeCollection<Integer> implements DebugDrawCallbacks<Integer> {
 
-
         @Override
         protected Integer create(ShapeID shapeID, ShapeType.Shape shape) {
             System.out.println("Creating shape: " + shapeID.hashCode() + " for " + shape.getClass());

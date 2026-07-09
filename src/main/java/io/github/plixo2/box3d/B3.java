@@ -18,7 +18,7 @@ import java.nio.FloatBuffer;
 import static io.github.plixo2.box3d.internal.Internal.*;
 import static org.box2d.box3d.box3d_h.*;
 
-public class B3 {
+public final class B3 {
     private B3() {}
 
     // haha, took your cookie
@@ -34,23 +34,25 @@ public class B3 {
         return instances.get();
     }
 
-    private final Arena tlArena = Arena.ofAuto();
-    private final MemorySegment worldIDSegment = b3WorldId.allocate(this.tlArena);
-    private final MemorySegment bodyIDSegment = b3BodyId.allocate(this.tlArena);
-    private final MemorySegment contactIDSegment = b3ContactId.allocate(this.tlArena);
-    private final MemorySegment shapeIDSegment = b3ShapeId.allocate(this.tlArena);
-    private final MemorySegment jointIDSegment = b3JointId.allocate(this.tlArena);
+    private final Arena scratchArena = Arena.ofAuto();
+    private final MemorySegment worldIDSegment = b3WorldId.allocate(this.scratchArena);
+    private final MemorySegment bodyIDSegment = b3BodyId.allocate(this.scratchArena);
+    private final MemorySegment contactIDSegment = b3ContactId.allocate(this.scratchArena);
+    private final MemorySegment shapeIDSegment = b3ShapeId.allocate(this.scratchArena);
+    private final MemorySegment jointIDSegment = b3JointId.allocate(this.scratchArena);
 
-    private final MemorySegment vec3Segment = b3Vec3.allocate(this.tlArena);
-    private final MemorySegment quatSegment = b3Quat.allocate(this.tlArena);
-    private final MemorySegment vec3Segment2 = b3Vec3.allocate(this.tlArena);
-    private final MemorySegment transformSegment = b3Transform.allocate(this.tlArena);
-    private final Quaternionf tempQuat = new Quaternionf();
+    private final MemorySegment vec3Segment = b3Vec3.allocate(this.scratchArena);
+    private final MemorySegment quatSegment = b3Quat.allocate(this.scratchArena);
+    private final MemorySegment vec3Segment2 = b3Vec3.allocate(this.scratchArena);
+    private final MemorySegment transformSegment = b3Transform.allocate(this.scratchArena);
 
-    private final ConstArena returnArena = new ConstArena(this.tlArena, 1024);      // 1 KB
-    private final StackArena argArena = new StackArena(this.tlArena, 32 * 1024);    // 32 KB
+    private final Quaternionf sratchQuat = new Quaternionf();
 
-    private final AllocatedCastResultFcn castResultFcn = new AllocatedCastResultFcn(this.tlArena, ShapeID::of);
+    private final ConstArena returnArena = new ConstArena(this.scratchArena, 1024);      // 1 KB
+    private final StackArena argArena = new StackArena(this.scratchArena, 32 * 1024);    // 32 KB
+
+    // allocate the callback b3World_CastRay once and just update the internal function
+    private final ScratchCastResultFcn scratchCastFn = new ScratchCastResultFcn(this.scratchArena, ShapeID::of);
 
     private MemorySegment worldID(WorldID worldID) {
         worldID.ensureAccess();
@@ -62,13 +64,10 @@ public class B3 {
         return this.worldIDSegment;
     }
     private MemorySegment bodyID(BodyID bodyID) {
-        bodyID.ensureAccess();
-        return bodyID(bodyID.index1, bodyID.world0, bodyID.generation);
+        return bodyID(bodyID.packedID());
     }
-    private MemorySegment bodyID(int index1, int world0, int generation) {
-        b3BodyId.index1(this.bodyIDSegment, index1);
-        b3BodyId.world0(this.bodyIDSegment, assertU16(world0, "world0"));
-        b3BodyId.generation(this.bodyIDSegment, assertU16(generation, "generation"));
+    private MemorySegment bodyID(long packedID) {
+        PrimitiveMemOps.putBodyID(this.bodyIDSegment, packedID);
         return this.bodyIDSegment;
     }
     private MemorySegment contactID(ContactID contactID) {
@@ -78,31 +77,31 @@ public class B3 {
         return this.contactIDSegment;
     }
     private MemorySegment shapeID(ShapeID shapeID) {
-        b3ShapeId.index1(this.shapeIDSegment, shapeID.index1());
-        b3ShapeId.world0(this.shapeIDSegment, assertU16(shapeID.world0(), "world0"));
-        b3ShapeId.generation(this.shapeIDSegment, assertU16(shapeID.generation(), "generation"));
+        PrimitiveMemOps.putShapeID(this.shapeIDSegment, shapeID.packedID());
         return this.shapeIDSegment;
     }
     private MemorySegment jointID(JointID jointID) {
-        b3JointId.index1(this.jointIDSegment, jointID.index1());
-        b3JointId.world0(this.jointIDSegment, assertU16(jointID.world0(), "world0"));
-        b3JointId.generation(this.jointIDSegment, assertU16(jointID.generation(), "generation"));
+        return jointID(jointID.packedID());
+    }
+    private MemorySegment jointID(long packedID) {
+        PrimitiveMemOps.putJointID(this.jointIDSegment, packedID);
         return this.jointIDSegment;
     }
+
     private MemorySegment transform(Matrix4f transform) {
-        PrimitveMemOps.putTransform(this.transformSegment, this.tempQuat, transform);
+        PrimitiveMemOps.putTransform(this.transformSegment, this.sratchQuat, transform);
         return this.transformSegment;
     }
     private MemorySegment vec3(Vector3f vec) {
-        PrimitveMemOps.putVec3(this.vec3Segment, vec);
+        PrimitiveMemOps.putVec3(this.vec3Segment, vec);
         return this.vec3Segment;
     }
     private MemorySegment vec3_2(Vector3f vec) {
-        PrimitveMemOps.putVec3(this.vec3Segment2, vec);
+        PrimitiveMemOps.putVec3(this.vec3Segment2, vec);
         return this.vec3Segment2;
     }
     private MemorySegment quat(Quaternionf quat) {
-        PrimitveMemOps.putQuat(this.quatSegment, quat);
+        PrimitiveMemOps.putQuat(this.quatSegment, quat);
         return this.quatSegment;
     }
 
@@ -268,8 +267,8 @@ public class B3 {
             MeshDef meshDef,
             int @Nullable [] degenerateTriangleIndices
     ) {
-        try (this.argArena) {
-            var def = meshDef.create(this.argArena);
+        try (var arena = Arena.ofConfined()) {
+            var def = meshDef.create(arena);
 
             MemorySegment mesh;
 
@@ -327,8 +326,8 @@ public class B3 {
             Region region,
             HeightFieldDef def
     ) {
-        try (this.argArena) {
-            var segment = def.create(this.argArena);
+        try (var arena = Arena.ofConfined()) {
+            var segment = def.create(arena);
             var heightField = b3CreateHeightField(segment);
             return new HeightFieldData(this, region, heightField);
         }
@@ -363,9 +362,9 @@ public class B3 {
             QueryFilter filter,
             CastResult fcn
     ) {
-        var callback = this.castResultFcn.set(fcn);
+        var callback = this.scratchCastFn.set(fcn);
 
-        try (this.castResultFcn) {
+        try (this.scratchCastFn) {
             var stats = b3World_CastRay(
                     this.returnArena,
                     worldID(worldID),
@@ -384,8 +383,10 @@ public class B3 {
         }
     }
 
+    /// @return true if `hit`, false otherwise
     /// @api b3World_CastRayClosest
-    public @Nullable RayResult worldCastRayClosest(
+    public boolean worldCastRayClosest(
+            RayResult in,
             WorldID worldID,
             Vector3f origin,
             Vector3f translation,
@@ -399,29 +400,301 @@ public class B3 {
                 filter.segment
         );
         if (!RayResult.hit(result)) {
-            return null;
+            return false;
         }
+        in.set(result);
 
-        return new RayResult(result);
+        return true;
     }
+
+    /// @api b3RayCastSphere
+    public boolean rayCastSphere(
+            CastOutput in,
+            Sphere sphere,
+            RayCastInput input
+    ) {
+        try (this.argArena) {
+            var result = b3RayCastSphere(
+                    this.returnArena,
+                    sphere.create(this.argArena),
+                    input.create(this.argArena)
+            );
+            if (!CastOutput.hit(result)) {
+                return false;
+            }
+            in.set(result);
+
+            return true;
+        }
+    }
+
+    /// @api b3RayCastHollowSphere
+    public boolean rayCastHollowSphere(
+            CastOutput in,
+            Sphere sphere,
+            RayCastInput input
+    ) {
+        try (this.argArena) {
+            var result = b3RayCastHollowSphere(
+                    this.returnArena,
+                    sphere.create(this.argArena),
+                    input.create(this.argArena)
+            );
+            if (!CastOutput.hit(result)) {
+                return false;
+            }
+            in.set(result);
+
+            return true;
+        }
+    }
+
+    /// @api b3RayCastCapsule
+    public boolean rayCastCapsule(
+            CastOutput in,
+            Capsule capsule,
+            RayCastInput input
+    ) {
+        try (this.argArena) {
+            var result = b3RayCastCapsule(
+                    this.returnArena,
+                    capsule.create(this.argArena),
+                    input.create(this.argArena)
+            );
+            if (!CastOutput.hit(result)) {
+                return false;
+            }
+            in.set(result);
+
+            return true;
+        }
+    }
+
+
+    /// @api b3RayCastHull
+    public boolean rayCastHull(
+            CastOutput in,
+            HullData hull,
+            RayCastInput input
+    ) {
+        try (this.argArena) {
+            var result = b3RayCastHull(
+                    this.returnArena,
+                    hull.segment,
+                    input.create(this.argArena)
+            );
+            if (!CastOutput.hit(result)) {
+                return false;
+            }
+            in.set(result);
+
+            return true;
+        }
+    }
+
+
+    /// @api b3RayCastMesh
+    public boolean rayCastMesh(
+            CastOutput in,
+            Mesh mesh,
+            RayCastInput input
+    ) {
+        try (this.argArena) {
+            var result = b3RayCastMesh(
+                    this.returnArena,
+                    mesh.create(this.argArena),
+                    input.create(this.argArena)
+            );
+            if (!CastOutput.hit(result)) {
+                return false;
+            }
+            in.set(result);
+
+            return true;
+        }
+    }
+
+    /// @api b3RayCastHeightField
+    public boolean rayCastHeightField(
+            CastOutput in,
+            HeightFieldData heightField,
+            RayCastInput input
+    ) {
+        try (this.argArena) {
+            var result = b3RayCastHeightField(
+                    this.returnArena,
+                    heightField.segment(),
+                    input.create(this.argArena)
+            );
+            if (!CastOutput.hit(result)) {
+                return false;
+            }
+            in.set(result);
+
+            return true;
+        }
+    }
+
+
+    /// @api b3ShapeCastSphere
+    public boolean shapeCastSphere(
+            CastOutput in,
+            Sphere sphere,
+            ShapeCastInput input
+    ) {
+        try (this.argArena) {
+            var result = b3ShapeCastSphere(
+                    this.returnArena,
+                    sphere.create(this.argArena),
+                    input.create(this.argArena)
+            );
+            if (!CastOutput.hit(result)) {
+                return false;
+            }
+            in.set(result);
+
+            return true;
+        }
+    }
+
+    /// @api b3ShapeCastCapsule
+    public boolean shapeCastCapsule(
+            CastOutput in,
+            Capsule capsule,
+            ShapeCastInput input
+    ) {
+        try (this.argArena) {
+            var result = b3ShapeCastCapsule(
+                    this.returnArena,
+                    capsule.create(this.argArena),
+                    input.create(this.argArena)
+            );
+            if (!CastOutput.hit(result)) {
+                return false;
+            }
+            in.set(result);
+
+            return true;
+        }
+    }
+
+    /// @api b3ShapeCastHull
+    public boolean shapeCastHull(
+            CastOutput in,
+            HullData hull,
+            ShapeCastInput input
+    ) {
+        try (this.argArena) {
+            var result = b3ShapeCastHull(
+                    this.returnArena,
+                    hull.segment,
+                    input.create(this.argArena)
+            );
+            if (!CastOutput.hit(result)) {
+                return false;
+            }
+            in.set(result);
+
+            return true;
+        }
+    }
+
+    /// @api b3ShapeCastMesh
+    public boolean shapeCastMesh(
+            CastOutput in,
+            Mesh mesh,
+            ShapeCastInput input
+    ) {
+        try (this.argArena) {
+            var result = b3ShapeCastMesh(
+                    this.returnArena,
+                    mesh.create(this.argArena),
+                    input.create(this.argArena)
+            );
+            if (!CastOutput.hit(result)) {
+                return false;
+            }
+            in.set(result);
+
+            return true;
+        }
+    }
+
+    /// @api b3ShapeCastHeightField
+    public boolean shapeCastHeightField(
+            CastOutput in,
+            HeightFieldData heightField,
+            ShapeCastInput input
+    ) {
+        try (this.argArena) {
+            var result = b3ShapeCastHeightField(
+                    this.returnArena,
+                    heightField.segment(),
+                    input.create(this.argArena)
+            );
+            if (!CastOutput.hit(result)) {
+                return false;
+            }
+            in.set(result);
+
+            return true;
+        }
+    }
+
+
+    /// @api b3OverlapHull
+    public boolean overlapHull(HullData hullData, Matrix4f transform, ShapeProxy proxy) {
+        try (this.argArena) {
+            return b3OverlapHull(hullData.segment, transform(transform), proxy.create(this.argArena));
+        }
+    }
+
+    /// @api b3OverlapMesh
+    public boolean overlapMesh(Mesh mesh, Matrix4f transform, ShapeProxy proxy) {
+        try (this.argArena) {
+            return b3OverlapMesh(mesh.create(this.argArena), transform(transform), proxy.create(this.argArena));
+        }
+    }
+
+    /// @api b3OverlapHeightField
+    public boolean overlapHeightField(HeightFieldData heightFieldData, Matrix4f transform, ShapeProxy proxy) {
+        try (this.argArena) {
+            return b3OverlapHeightField(heightFieldData.segment(), transform(transform), proxy.create(this.argArena));
+        }
+    }
+
+    /// @api b3OverlapCapsule
+    public boolean overlapCapsule(Capsule capsule, Matrix4f transform, ShapeProxy proxy) {
+        try (this.argArena) {
+            return b3OverlapCapsule(capsule.create(this.argArena), transform(transform), proxy.create(this.argArena));
+        }
+    }
+
+    /// @api b3OverlapSphere
+    public boolean overlapSphere(Sphere sphere, Matrix4f transform, ShapeProxy proxy) {
+        try (this.argArena) {
+            return b3OverlapSphere(sphere.create(this.argArena), transform(transform), proxy.create(this.argArena));
+        }
+    }
+
 
 
     /// @api b3Body_GetPosition
     public Vector3f bodyGetPosition(Vector3f in, BodyID bodyId) {
         var vec = b3Body_GetPosition(this.returnArena, bodyID(bodyId));
-        return PrimitveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(in, vec);
     }
 
     /// @api b3Body_GetRotation
     public Quaternionf bodyGetRotation(Quaternionf in, BodyID bodyId) {
         var quat = b3Body_GetRotation(this.returnArena, bodyID(bodyId));
-        return PrimitveMemOps.setQuat(in, quat);
+        return PrimitiveMemOps.setQuat(in, quat);
     }
 
     /// @api b3Body_GetTransform
     public Matrix4f bodyGetTransform(Matrix4f in, BodyID bodyId) {
         var transform = b3Body_GetTransform(this.returnArena, bodyID(bodyId));
-        return PrimitveMemOps.setTransform(in, transform);
+        return PrimitiveMemOps.setTransform(in, transform);
     }
 
     /// @api b3Body_SetTransform
@@ -440,13 +713,13 @@ public class B3 {
     /// @api b3Body_GetLinearVelocity
     public Vector3f bodyGetLinearVelocity(Vector3f in, BodyID bodyId) {
         var vec = b3Body_GetLinearVelocity(this.returnArena, bodyID(bodyId));
-        return PrimitveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(in, vec);
     }
 
     /// @api b3Body_GetAngularVelocity
     public Vector3f bodyGetAngularVelocity(Vector3f in, BodyID bodyId) {
         var vec = b3Body_GetAngularVelocity(this.returnArena, bodyID(bodyId));
-        return PrimitveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(in, vec);
     }
 
     /// @api b3Body_SetTargetTransform
@@ -473,13 +746,13 @@ public class B3 {
     /// @api b3Body_GetWorldCenterOfMass
     public Vector3f bodyGetWorldCenterOfMass(Vector3f in, BodyID bodyId) {
         var vec = b3Body_GetWorldCenterOfMass(this.returnArena, bodyID(bodyId));
-        return PrimitveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(in, vec);
     }
 
     /// @api b3Body_GetLocalCenterOfMass
     public Vector3f bodyGetLocalCenterOfMass(Vector3f in, BodyID bodyId) {
         var vec = b3Body_GetLocalCenterOfMass(this.returnArena, bodyID(bodyId));
-        return PrimitveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(in, vec);
     }
 
     /// @api b3Body_ApplyForce
@@ -516,26 +789,26 @@ public class B3 {
     /// @api b3Body_GetWorldPoint
     public Vector3f bodyGetWorldPoint(Vector3f in, BodyID bodyId, Vector3f localPoint) {
         var vec = b3Body_GetWorldPoint(this.returnArena, bodyID(bodyId), vec3(localPoint));
-        return PrimitveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(in, vec);
     }
 
 
     /// @api b3Body_GetWorldVector
     public Vector3f bodyGetWorldVector(Vector3f in, BodyID bodyId, Vector3f localVector) {
         var vec = b3Body_GetWorldVector(this.returnArena, bodyID(bodyId), vec3(localVector));
-        return PrimitveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(in, vec);
     }
 
     /// @api b3Body_GetLocalPoint
     public Vector3f bodyGetLocalPoint(Vector3f in, BodyID bodyId, Vector3f worldPoint) {
         var vec = b3Body_GetLocalPoint(this.returnArena, bodyID(bodyId), vec3(worldPoint));
-        return PrimitveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(in, vec);
     }
 
     /// @api b3Body_GetLocalVector
     public Vector3f bodyGetLocalVector(Vector3f in, BodyID bodyId, Vector3f worldVector) {
         var vec = b3Body_GetLocalVector(this.returnArena, bodyID(bodyId), vec3(worldVector));
-        return PrimitveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(in, vec);
     }
 
     /// @api b3Body_GetType
@@ -555,22 +828,43 @@ public class B3 {
         return b3Body_GetMass(bodyID(bodyId));
     }
 
+    /// @api b3Body_GetName
+    public @Nullable String bodyGetName(BodyID bodyId) {
+        var name = b3Body_GetName(bodyID(bodyId));
+        return Internal.getNullString(name);
+    }
+
+    /// @api b3Body_SetName
+    public void setBodyName(BodyID bodyId, @Nullable String name) {
+        try (this.argArena) {
+            var segment = allocNullString(this.argArena, name);
+            b3Body_SetName(bodyID(bodyId), segment);
+        }
+    }
+
+    /// @api b3Shape_IsValid
+    public boolean shapeIsValid(ShapeID shapeId) {
+        return b3Shape_IsValid(shapeID(shapeId));
+    }
+
+    /// @api b3Body_IsValid
+    public boolean bodyIsValid(BodyID bodyId) {
+        return b3Body_IsValid(bodyID(bodyId));
+    }
+
+    /// @api b3Joint_IsValid
+    public boolean jointIsValid(JointID jointId) {
+        return b3Joint_IsValid(jointID(jointId));
+    }
+
     /// @api b3World_GetBodyEvents
-    public MemoryIterator<BodyMoveEvent> worldGetBodyEvents() {
+    public Iterable<BodyMoveEvent> worldGetBodyEvents() {
         var eventSegment = b3World_GetBodyEvents(this.returnArena, this.worldIDSegment);
 
-        var moveCount = b3BodyEvents.moveCount(eventSegment);
         var moveEvents = b3BodyEvents.moveEvents(eventSegment);
+        var moveCount = b3BodyEvents.moveCount(eventSegment);
 
-        var moveEventByteSize = b3BodyMoveEvent.layout().byteSize();
-        moveEvents = moveEvents.asSlice(moveEventByteSize * moveCount);
-
-        return new MemoryIterator<>(
-                new BodyMoveEvent(),
-                moveEvents,
-                moveEventByteSize,
-                BodyMoveEvent::set
-        );
+        return () -> new BodyMoveEvent.Iterator(moveEvents, moveCount);
     }
 
     /// @api b3World_Step
@@ -584,7 +878,8 @@ public class B3 {
             DebugDraw debugDraw,
             @U64 long maskBits
     ) {
-        b3World_Draw(worldID(worldID), debugDraw.segment(), maskBits);
+        b3jshimWorld_Draw(worldID(worldID), debugDraw.segment(), maskBits);
+        debugDraw.invoke();
     }
 
 
@@ -619,8 +914,47 @@ public class B3 {
     }
 
     /// @api b3DestroyBody
-    void destoryBody(int index1, int world0, int generation) {
-        b3DestroyBody(bodyID(index1, world0, generation));
+    public void destroyBody(BodyID bodyId) {
+        bodyId.state.once();
+        if (!bodyIsValid(bodyId)) {
+            throw new IllegalStateException("Body " + bodyId + " is not valid anymore");
+        }
+        b3DestroyBody(bodyID(bodyId));
+    }
+
+    /// @api b3DestroyBody
+    void destroyBody(long packedID) {
+        var segment = bodyID(packedID);
+        if (!b3Body_IsValid(segment)) {
+            throw new IllegalStateException("Body " + BodyID.toString(packedID) + " is not valid anymore");
+        }
+        b3DestroyBody(segment);
+    }
+
+    /// @api b3DestroyJoint
+    public void destroyJoint(JointID jointID, boolean wakeAttached) {
+        jointID.state.once();
+        if (!jointIsValid(jointID)) {
+            throw new IllegalStateException("Joint " + jointID + " is not valid anymore");
+        }
+        b3DestroyJoint(jointID(jointID), wakeAttached);
+    }
+
+    /// @api b3DestroyJoint
+    void destroyJoint(long packedID) {
+        var segment = jointID(packedID);
+        if (!b3Joint_IsValid(segment)) {
+            throw new IllegalStateException("Joint " + JointID.toString(packedID) + " is not valid anymore");
+        }
+        b3DestroyJoint(segment, false);
+    }
+
+    /// @api b3DestroyShape
+    public void destroyShape(ShapeID shapeID, boolean updateBodyMass) {
+        if (!shapeIsValid(shapeID)) {
+            throw new IllegalStateException("Shape " +  shapeID + " is not valid anymore");
+        }
+        b3DestroyShape(shapeID(shapeID), updateBodyMass);
     }
 
     /// @api b3GetLengthUnitsPerMeter

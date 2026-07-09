@@ -11,16 +11,17 @@ import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class AllocatedCastResultFcn implements b3CastResultFcn.Function, AutoCloseable {
+public class ScratchCastResultFcn implements b3CastResultFcn.Function, AutoCloseable {
 
     private @Nullable CastResult function = null;
 
     private final MemorySegment segment;
+
     private final Function<MemorySegment, ShapeID> shapeCreator;
     private final Vector3f v1 = new Vector3f();
     private final Vector3f v2 = new Vector3f();
 
-    public AllocatedCastResultFcn(Arena parent, Function<MemorySegment, ShapeID> shapeCreator) {
+    public ScratchCastResultFcn(Arena parent, Function<MemorySegment, ShapeID> shapeCreator) {
         this.segment = b3CastResultFcn.allocate(this, parent);
         this.shapeCreator = shapeCreator;
     }
@@ -47,9 +48,9 @@ public class AllocatedCastResultFcn implements b3CastResultFcn.Function, AutoClo
             int childIndex,
             MemorySegment context
     ) {
-        Objects.requireNonNull(this.function, "CastResult function is not set");
-        PrimitveMemOps.setVec3(this.v1, point);
-        PrimitveMemOps.setVec3(this.v2, normal);
+        Objects.requireNonNull(this.function, "function not set");
+        PrimitiveMemOps.setVec3(this.v1, point);
+        PrimitiveMemOps.setVec3(this.v2, normal);
         ShapeID shape = this.shapeCreator.apply(shapeId);
 
         return this.function.onHit(

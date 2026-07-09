@@ -1,6 +1,7 @@
 package io.github.plixo2.box3d.internal;
 
 
+import org.box2d.box3d.b3MeshDef;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
@@ -94,6 +95,17 @@ public final class Internal {
             return segment.getString(0);
         }
     }
+
+    public static MemorySegment ensureOffHeap(SegmentAllocator arena, MemorySegment segment) {
+        if (segment.isNative()) {
+            return segment;
+        }
+
+        var newSegment = arena.allocate(segment.byteSize());
+        newSegment.copyFrom(segment);
+        return newSegment;
+    }
+
 
     private static void checkUnsigned(String name, long value, long max, int bit) {
         if (value >= 0 && value <= max) {

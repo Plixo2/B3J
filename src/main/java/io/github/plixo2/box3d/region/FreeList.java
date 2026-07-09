@@ -6,9 +6,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class FreeList {
 
     private final Queue<Runnable> resources = new ConcurrentLinkedQueue<>();
+    final AutoRegion region;
 
     public FreeList() {
-
+        this.region = new AutoRegion(this);
     }
 
     void add(Runnable resource) {

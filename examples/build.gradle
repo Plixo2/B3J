@@ -30,7 +30,8 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.42'
     annotationProcessor 'org.projectlombok:lombok:1.18.42'
 
-    // sodalite
+    //obj loading
+    implementation "de.javagl:obj:0.3.0"
 
 
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
@@ -51,6 +52,8 @@ dependencies {
     implementation "org.joml:joml:${jomlVersion}"
     implementation "org.joml:joml-primitives:${jomlPrimitivesVersion}"
 
+    implementation 'org.eclipse.collections:eclipse-collections-api:13.0.0'
+    implementation 'org.eclipse.collections:eclipse-collections:13.0.0'
 
 }
 

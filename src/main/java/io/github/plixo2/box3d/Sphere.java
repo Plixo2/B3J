@@ -1,7 +1,6 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.PrimitveMemOps;
-import io.github.plixo2.box3d.internal.StackArena;
+import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import org.box2d.box3d.b3Sphere;
 import org.joml.Vector3f;
 
@@ -41,7 +40,7 @@ public non-sealed class Sphere implements ShapeType.Shape {
 
     public MemorySegment create(SegmentAllocator arena) {
         var segment = b3Sphere.allocate(arena);
-        PrimitveMemOps.putVec3(b3Sphere.center(segment), this.x, this.y, this.z);
+        PrimitiveMemOps.putVec3(b3Sphere.center(segment), this.x, this.y, this.z);
         b3Sphere.radius(segment, this.radius);
         return segment;
     }

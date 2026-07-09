@@ -1,13 +1,16 @@
-package io.github.plixo2;
+package io.github.plixo2.framework;
 
-import io.github.plixo2.abstraction.Mesh;
 import io.github.plixo2.box3d.*;
+import lombok.RequiredArgsConstructor;
 
-public class MeshFactory extends DebugShapeCollection<Mesh> {
+@RequiredArgsConstructor
+public class MeshFactory extends DebugShapeCollection<MultiMesh.MeshRecord> {
+    private final MeshRenderer buffers;
+
 
     @Override
-    protected Mesh create(ShapeID shapeID, ShapeType.Shape shape) {
-        System.out.println("Creating shape: " + shapeID + " of type " + shape.getClass().getSimpleName());
+    protected MultiMesh.MeshRecord create(ShapeID shapeID, ShapeType.Shape shape) {
+//        System.out.println("Creating shape: " + shapeID + " of type " + shape.getClass().getSimpleName());
 
         var args = switch (shape) {
             case Capsule capsule -> MeshCreator.createCapsule(capsule);
@@ -20,11 +23,12 @@ public class MeshFactory extends DebugShapeCollection<Mesh> {
             }
         };
 
-        return args.createMesh();
+        return this.buffers.place(args);
+       // return args.createMesh();
     }
 
     @Override
-    protected void delete(Mesh object) {
-        object.free();
+    protected void delete(MultiMesh.MeshRecord object) {
+       // object.free();
     }
 }

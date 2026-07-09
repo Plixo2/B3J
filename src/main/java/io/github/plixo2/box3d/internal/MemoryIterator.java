@@ -15,7 +15,7 @@ public class MemoryIterator<T> implements Iterable<T> {
     protected final T element;
     protected final long elementBytes;
     protected final MemorySegment segment;
-    protected final int length;
+    protected int length;
     protected final BiConsumer<T, MemorySegment> set;
 
     public MemoryIterator(
@@ -174,7 +174,7 @@ public class MemoryIterator<T> implements Iterable<T> {
 
         @Override
         protected Integer getAtIndex(int index) {
-            return this.segment.get(ValueLayout.JAVA_INT, index);
+            return this.segment.get(ValueLayout.JAVA_INT, index * 4L);
         }
 
         public int[] collect() {
@@ -190,7 +190,7 @@ public class MemoryIterator<T> implements Iterable<T> {
 
         @Override
         protected Long getAtIndex(int index) {
-            return this.segment.get(ValueLayout.JAVA_LONG, index);
+            return this.segment.get(ValueLayout.JAVA_LONG, index * 8L);
         }
 
         public long[] collect() {
@@ -207,7 +207,7 @@ public class MemoryIterator<T> implements Iterable<T> {
 
         @Override
         protected Long getAtIndex(int index) {
-            return Integer.toUnsignedLong(this.segment.get(ValueLayout.JAVA_INT, index));
+            return Integer.toUnsignedLong(this.segment.get(ValueLayout.JAVA_INT, index * 4L));
         }
 
         public long[] collect() {
@@ -232,7 +232,7 @@ public class MemoryIterator<T> implements Iterable<T> {
 
         @Override
         protected Integer getAtIndex(int index) {
-            return Short.toUnsignedInt(this.segment.get(ValueLayout.JAVA_SHORT, index));
+            return Short.toUnsignedInt(this.segment.get(ValueLayout.JAVA_SHORT, index * 2L));
         }
 
         public int[] collect() {

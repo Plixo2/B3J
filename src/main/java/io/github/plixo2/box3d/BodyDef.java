@@ -1,7 +1,7 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.Internal;
-import io.github.plixo2.box3d.internal.PrimitveMemOps;
+import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import lombok.Getter;
 import lombok.Setter;
 import org.box2d.box3d.*;
@@ -50,10 +50,10 @@ public class BodyDef {
     MemorySegment create(SegmentAllocator arena) {
         var segment = b3BodyDef.allocate(arena);
         b3BodyDef.type(segment, this.type.code());
-        PrimitveMemOps.putVec3(b3BodyDef.position(segment), this.position);
-        PrimitveMemOps.putQuat(b3BodyDef.rotation(segment), this.rotation);
-        PrimitveMemOps.putVec3(b3BodyDef.linearVelocity(segment), this.linearVelocity);
-        PrimitveMemOps.putVec3(b3BodyDef.angularVelocity(segment), this.angularVelocity);
+        PrimitiveMemOps.putVec3(b3BodyDef.position(segment), this.position);
+        PrimitiveMemOps.putQuat(b3BodyDef.rotation(segment), this.rotation);
+        PrimitiveMemOps.putVec3(b3BodyDef.linearVelocity(segment), this.linearVelocity);
+        PrimitiveMemOps.putVec3(b3BodyDef.angularVelocity(segment), this.angularVelocity);
         b3BodyDef.linearDamping(segment, this.linearDamping);
         b3BodyDef.angularDamping(segment, this.angularDamping);
         b3BodyDef.gravityScale(segment, this.gravityScale);

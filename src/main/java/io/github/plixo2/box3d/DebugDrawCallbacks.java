@@ -3,6 +3,8 @@ package io.github.plixo2.box3d;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import java.lang.foreign.MemorySegment;
+
 public interface DebugDrawCallbacks<T> {
 
     default boolean drawShape(T shape, Matrix4f transform, int color) {
@@ -13,6 +15,7 @@ public interface DebugDrawCallbacks<T> {
     }
 
     default void drawTransform(Matrix4f transform) {
+
     }
 
     default void drawPoint(Vector3f p, float size, int color) {
@@ -30,6 +33,6 @@ public interface DebugDrawCallbacks<T> {
     default void drawBox(Vector3f extend, Matrix4f transform, int color) {
     }
 
-    default void drawString(Vector3f p, String text, int color) {
+    default void drawString(Vector3f p, MemorySegment string, long byteOffset, int color) {
     }
 }

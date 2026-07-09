@@ -1,7 +1,7 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.Internal;
-import io.github.plixo2.box3d.internal.PrimitveMemOps;
+import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import lombok.Getter;
 import lombok.Setter;
 import org.box2d.box3d.b3HeightFieldDef;
@@ -65,7 +65,6 @@ public class HeightFieldDef {
     ) {
         this(countX, countZ, MemorySegment.ofArray(heights));
     }
-
     public HeightFieldDef(
             int countX,
             int countZ,
@@ -101,12 +100,14 @@ public class HeightFieldDef {
         materialIndices(bytes);
     }
 
-    MemorySegment create(SegmentAllocator allocator) {
+    MemorySegment create(SegmentAllocator arena) {
 
-        var segment = b3HeightFieldDef.allocate(allocator);
-        b3HeightFieldDef.heights(segment, this.heights);
+        var segment = b3HeightFieldDef.allocate(arena);
+
+        b3HeightFieldDef.heights(segment, Internal.ensureOffHeap(arena, this.heights));
+
         b3HeightFieldDef.materialIndices(segment, this.materialIndices);
-        PrimitveMemOps.putVec3(b3HeightFieldDef.scale(segment), this.scale);
+        PrimitiveMemOps.putVec3(b3HeightFieldDef.scale(segment), this.scale);
         b3HeightFieldDef.countX(segment, this.countX);
         b3HeightFieldDef.countZ(segment, this.countZ);
         b3HeightFieldDef.globalMinimumHeight(segment, this.globalMinimumHeight);

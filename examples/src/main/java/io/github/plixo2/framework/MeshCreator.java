@@ -1,15 +1,14 @@
-package io.github.plixo2;
+package io.github.plixo2.framework;
 
 import io.github.plixo2.abstraction.Mesh;
 import io.github.plixo2.abstraction.Shader;
 import io.github.plixo2.box3d.*;
 import org.joml.Vector3f;
 
-import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MeshCreator{
+public class MeshCreator {
 
     private static final int VERTEX_FLOATS = 6;
     private static final int SPHERE_LATITUDE_COUNT = 16;
@@ -17,7 +16,7 @@ public class MeshCreator{
     private static final int CAPSULE_RADIAL_COUNT = 24;
     private static final int CAPSULE_CAP_RING_COUNT = 8;
 
-    record MeshArgs(
+    public record MeshArgs(
             float[] verticies,
             int[] indices
     ) {
@@ -90,8 +89,8 @@ public class MeshCreator{
             int base1 = (ring + 1) * CAPSULE_RADIAL_COUNT;
             for (int segment = 0; segment < CAPSULE_RADIAL_COUNT; segment++) {
                 int next = (segment + 1) % CAPSULE_RADIAL_COUNT;
-                addTriangle(indices, base0 + segment, base1 + segment, base1 + next);
-                addTriangle(indices, base0 + segment, base1 + next, base0 + next);
+                addTriangle(indices, base0 + segment, base1 + next, base1 + segment);
+                addTriangle(indices, base0 + segment, base0 + next, base1 + next);
             }
         }
 
@@ -151,15 +150,15 @@ public class MeshCreator{
                 int i11 = (row + 1) * columns + column + 1;
 
                 if (clockwise) {
-                    addTriangle(indices, i00, i11, i10);
-                    addTriangle(indices, i00, i01, i11);
-                    accumulateTriangleNormal(positions, normals, i00, i11, i10);
-                    accumulateTriangleNormal(positions, normals, i00, i01, i11);
-                } else {
                     addTriangle(indices, i00, i10, i11);
                     addTriangle(indices, i00, i11, i01);
                     accumulateTriangleNormal(positions, normals, i00, i10, i11);
                     accumulateTriangleNormal(positions, normals, i00, i11, i01);
+                } else {
+                    addTriangle(indices, i00, i11, i10);
+                    addTriangle(indices, i00, i01, i11);
+                    accumulateTriangleNormal(positions, normals, i00, i11, i10);
+                    accumulateTriangleNormal(positions, normals, i00, i01, i11);
                 }
             }
         }

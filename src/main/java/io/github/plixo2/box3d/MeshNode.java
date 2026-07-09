@@ -1,6 +1,6 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.PrimitveMemOps;
+import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.internal.U32;
 import org.box2d.box3d.b3MeshNode;
 import org.joml.Vector3f;
@@ -43,13 +43,13 @@ public class MeshNode {
     }
 
     MeshNode set(MemorySegment segment) {
-        PrimitveMemOps.setVec3(this.lowerBound, b3MeshNode.lowerBound(segment));
+        PrimitiveMemOps.setVec3(this.lowerBound, b3MeshNode.lowerBound(segment));
         var data = b3MeshNode.data(segment).get(ValueLayout.JAVA_INT, 0);
         this.axis = data & 0x3;
         this.childOffset = data >>> 2;
         this.type = data & 0x3;
         this.triangleCount = data >>> 2;
-        PrimitveMemOps.setVec3(this.upperBound, b3MeshNode.upperBound(segment));
+        PrimitiveMemOps.setVec3(this.upperBound, b3MeshNode.upperBound(segment));
         this.triangleOffset = b3MeshNode.triangleOffset(segment);
         return this;
     }

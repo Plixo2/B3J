@@ -1,6 +1,6 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.PrimitveMemOps;
+import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import org.box2d.box3d.b3Plane;
 import org.box2d.box3d.b3Vec3;
 import org.joml.Vector3f;
@@ -45,7 +45,7 @@ public class Plane {
         return this;
     }
     void put(MemorySegment segment) {
-        PrimitveMemOps.putVec3(b3Plane.normal(segment), this.normalX, this.normalY, this.normalZ);
+        PrimitiveMemOps.putVec3(b3Plane.normal(segment), this.normalX, this.normalY, this.normalZ);
         b3Plane.offset(segment, this.offset);
     }
 

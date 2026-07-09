@@ -22,7 +22,7 @@ public sealed interface Region
     }
 
     static Region ofAuto(FreeList freeList) {
-        return new AutoRegion(freeList);
+        return freeList.region;
     }
 
     static Region ofConfined() {

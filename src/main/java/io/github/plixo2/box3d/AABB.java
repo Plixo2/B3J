@@ -1,6 +1,6 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.PrimitveMemOps;
+import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import org.box2d.box3d.b3AABB;
 import org.joml.Vector3f;
 
@@ -20,14 +20,19 @@ public class AABB {
     }
 
     AABB set(MemorySegment segment) {
-        PrimitveMemOps.setVec3(this.lowerBound, b3AABB.lowerBound(segment));
-        PrimitveMemOps.setVec3(this.upperBound, b3AABB.upperBound(segment));
+        return set(segment, 0);
+    }
+    AABB set(MemorySegment segment, long offset) {
+        var lowerOffset = offset + b3AABB.lowerBound$offset();
+        var upperOffset = offset + b3AABB.upperBound$offset();
+        PrimitiveMemOps.setVec3(this.lowerBound, segment, lowerOffset);
+        PrimitiveMemOps.setVec3(this.upperBound, segment, upperOffset);
         return this;
     }
 
     void put(MemorySegment segment) {
-        PrimitveMemOps.putVec3(b3AABB.lowerBound(segment), this.lowerBound);
-        PrimitveMemOps.putVec3(b3AABB.upperBound(segment), this.upperBound);
+        PrimitiveMemOps.putVec3(b3AABB.lowerBound(segment), this.lowerBound);
+        PrimitiveMemOps.putVec3(b3AABB.upperBound(segment), this.upperBound);
     }
 
 }

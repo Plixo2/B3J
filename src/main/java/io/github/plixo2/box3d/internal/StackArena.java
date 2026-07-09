@@ -17,10 +17,6 @@ public class StackArena implements SegmentAllocator, AutoCloseable {
         this.adress = this.segment.address();
     }
 
-    public void reset() {
-        this.offset = 0;
-    }
-
     @Override
     public MemorySegment allocate(long byteSize, long byteAlignment) {
         var address = this.adress + this.offset;
@@ -38,6 +34,6 @@ public class StackArena implements SegmentAllocator, AutoCloseable {
 
     @Override
     public void close() {
-        reset();
+        this.offset = 0;
     }
 }

@@ -3,7 +3,7 @@ package io.github.plixo2.box3d;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 
-import io.github.plixo2.box3d.internal.PrimitveMemOps;
+import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.threads.AllocatedPool;
 import io.github.plixo2.box3d.threads.TaskPool;
 import lombok.Getter;
@@ -80,8 +80,7 @@ public class WorldDef {
             destroyDebugShape = shapes.deletion;
         }
 
-
-        PrimitveMemOps.putVec3(b3WorldDef.gravity(segment), this.gravity);
+        PrimitiveMemOps.putVec3(b3WorldDef.gravity(segment), this.gravity);
         b3WorldDef.restitutionThreshold(segment, this.restitutionThreshold);
         b3WorldDef.hitEventThreshold(segment, this.hitEventThreshold);
         b3WorldDef.contactHertz(segment, this.contactHertz);

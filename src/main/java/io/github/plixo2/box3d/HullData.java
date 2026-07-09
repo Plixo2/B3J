@@ -1,6 +1,6 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.PrimitveMemOps;
+import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.internal.MemoryIterator;
 import io.github.plixo2.box3d.internal.U32;
 import io.github.plixo2.box3d.internal.U64;
@@ -10,65 +10,7 @@ import org.joml.Vector3f;
 
 import java.lang.foreign.MemorySegment;
 
-/*
-typedef struct b3HullData
-{
-	/// Version must be first and match B3_HULL_VERSION
-	uint64_t version;
 
-	/// The total number of bytes for this hull.
-	int byteCount;
-
-	/// Hash of this hull (this field is zero when the hash is computed).
-	uint32_t hash;
-
-	/// Axis-aligned box in local space.
-	b3AABB aabb;
-
-	/// Surface area, typically in squared meters.
-	float surfaceArea;
-
-	/// Volume, typically in m^3.
-	float volume;
-
-	/// The radius of the largest sphere at the center.
-	float innerRadius;
-
-	/// The local centroid
-	b3Vec3 center;
-
-	/// The inertia tensor about the centroid.
-	b3Matrix3 centralInertia;
-
-	/// The vertex count.
-	int vertexCount;
-
-	/// Offset of the vertex array in bytes from the struct address.
-	int vertexOffset;
-
-	/// Offset of the point array in bytes from the struct address.
-	int pointOffset;
-
-	/// This is the half-edge count (double the edge count)
-	int edgeCount;
-
-	/// Offset of the edge array in bytes from the struct address.
-	int edgeOffset;
-
-	/// The face count. Hulls faces are convex polygons.
-	int faceCount;
-
-	/// Offset of the face array in bytes from the struct address.
-	int faceOffset;
-
-	/// Offset of the face plane array in bytes from the struct address.
-	int planeOffset;
-
-	/// Explicit padding. Hull identity is a content hash and memcmp over raw bytes,
-	/// so there must be no unnamed padding for struct copies to scramble.
-	int padding;
-} b3HullData;
- */
 public non-sealed class HullData implements ShapeType.Shape {
 
     final MemorySegment segment;
@@ -109,11 +51,11 @@ public non-sealed class HullData implements ShapeType.Shape {
     }
 
     public Vector3f center(Vector3f in) {
-        return PrimitveMemOps.setVec3(in, b3HullData.center(this.segment));
+        return PrimitiveMemOps.setVec3(in, b3HullData.center(this.segment));
     }
 
     public Matrix3f centralInertia(Matrix3f in) {
-        return PrimitveMemOps.setMat3(in, b3HullData.centralInertia(this.segment));
+        return PrimitiveMemOps.setMat3(in, b3HullData.centralInertia(this.segment));
     }
 
     public int vertexCount() {
@@ -154,7 +96,7 @@ public non-sealed class HullData implements ShapeType.Shape {
         if (offset == 0) {
             return MemorySegment.NULL;
         }
-        var bytesPerVertex = b3HullVertex.layout().byteSize();
+        var bytesPerVertex = b3HullVertex.sizeof();
         return this.segment.asSlice(offset, (long) vertexCount() * bytesPerVertex);
     }
 
@@ -165,7 +107,7 @@ public non-sealed class HullData implements ShapeType.Shape {
             return MemorySegment.NULL;
         }
 
-        var bytesPerPoint = b3Vec3.layout().byteSize();
+        var bytesPerPoint = b3Vec3.sizeof();
         return this.segment.asSlice(offset, (long) vertexCount() * bytesPerPoint);
     }
 
@@ -176,7 +118,7 @@ public non-sealed class HullData implements ShapeType.Shape {
             return MemorySegment.NULL;
         }
 
-        var bytesPerEdge = b3HullHalfEdge.layout().byteSize();
+        var bytesPerEdge = b3HullHalfEdge.sizeof();
         return this.segment.asSlice(offset, (long) edgeCount() * bytesPerEdge);
     }
 
@@ -187,7 +129,7 @@ public non-sealed class HullData implements ShapeType.Shape {
             return MemorySegment.NULL;
         }
 
-        var bytesPerFace = b3HullFace.layout().byteSize();
+        var bytesPerFace = b3HullFace.sizeof();
         return this.segment.asSlice(offset, (long) faceCount() * bytesPerFace);
     }
 
@@ -198,7 +140,7 @@ public non-sealed class HullData implements ShapeType.Shape {
             return MemorySegment.NULL;
         }
 
-        var bytesPerPlane = b3Plane.layout().byteSize();
+        var bytesPerPlane = b3Plane.sizeof();
         return this.segment.asSlice(offset, (long) faceCount() * bytesPerPlane);
     }
 
@@ -207,7 +149,7 @@ public non-sealed class HullData implements ShapeType.Shape {
         return new MemoryIterator<>(
                 in,
                 segment,
-                b3HullVertex.layout().byteSize(),
+                b3HullVertex.sizeof(),
                 HullVertex::set
         );
     }
@@ -217,8 +159,8 @@ public non-sealed class HullData implements ShapeType.Shape {
         return new MemoryIterator<>(
                 in,
                 segment,
-                b3Vec3.layout().byteSize(),
-                PrimitveMemOps::setVec3
+                b3Vec3.sizeof(),
+                PrimitiveMemOps::setVec3
         );
     }
 
@@ -227,7 +169,7 @@ public non-sealed class HullData implements ShapeType.Shape {
         return new MemoryIterator<>(
                 in,
                 segment,
-                b3HullHalfEdge.layout().byteSize(),
+                b3HullHalfEdge.sizeof(),
                 HullHalfEdge::set
         );
     }
@@ -237,7 +179,7 @@ public non-sealed class HullData implements ShapeType.Shape {
         return new MemoryIterator<>(
                 in,
                 segment,
-                b3HullFace.layout().byteSize(),
+                b3HullFace.sizeof(),
                 HullFace::set
         );
     }
@@ -247,7 +189,7 @@ public non-sealed class HullData implements ShapeType.Shape {
         return new MemoryIterator<>(
                 in,
                 segment,
-                b3Plane.layout().byteSize(),
+                b3Plane.sizeof(),
                 Plane::set
         );
     }
