@@ -1,8 +1,11 @@
 # B3J 
 
-B3J is a handwritten Java wrapper for [Box3D](https://github.com/erincatto/box3d).
-It is designed to be efficient, but convenient, and as close to the original Box3D as possible.
+![Box3D Logo](https://box2d.org/images/logo.svg)
 
+B3J is a Java binding library for [Box3D](https://github.com/erincatto/box3d).
+
+It is designed to be efficient yet convenient, 
+staying as close as possible to the original Box3D API. 
 
 ### [Examples](examples/src/main/java/io/github/plixo2/samples)
 
