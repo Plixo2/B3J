@@ -7,7 +7,9 @@ B3J is a Java binding library for [Box3D](https://github.com/erincatto/box3d).
 It is designed to be efficient yet convenient, 
 staying as close as possible to the original Box3D API. 
 
-Still in development ...
+> [!WARNING]  
+> Still in development ... Usable, but far from feature complete.
+
 
 ### [Examples](examples/src/main/java/io/github/plixo2/samples)
 
