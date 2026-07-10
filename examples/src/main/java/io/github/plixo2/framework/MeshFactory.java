@@ -1,16 +1,18 @@
 package io.github.plixo2.framework;
 
+import io.github.plixo2.abstraction.Color;
 import io.github.plixo2.box3d.*;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Map;
 
 @RequiredArgsConstructor
 public class MeshFactory extends DebugShapeCollection<MultiMesh.MeshRecord> {
     private final MeshRenderer buffers;
-
+    private final Map<ShapeID, Color> customColors;
 
     @Override
     protected MultiMesh.MeshRecord create(ShapeID shapeID, ShapeType.Shape shape) {
-//        System.out.println("Creating shape: " + shapeID + " of type " + shape.getClass().getSimpleName());
 
         var args = switch (shape) {
             case Capsule capsule -> MeshCreator.createCapsule(capsule);
@@ -23,12 +25,11 @@ public class MeshFactory extends DebugShapeCollection<MultiMesh.MeshRecord> {
             }
         };
 
-        return this.buffers.place(args);
-       // return args.createMesh();
+        return this.buffers.place(args, this.customColors.get(shapeID));
     }
 
     @Override
     protected void delete(MultiMesh.MeshRecord object) {
-       // object.free();
+       // nothing ...
     }
 }

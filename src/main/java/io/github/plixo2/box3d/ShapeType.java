@@ -31,6 +31,16 @@ public enum ShapeType {
                 Mesh,
                 Sphere
     {
+        default ShapeType type() {
+            return switch (this) {
+                case Capsule capsule -> ShapeType.CAPSULE;
+                case CompoundData compoundData -> ShapeType.COMPOUND;
+                case HeightFieldData heightFieldData -> ShapeType.HEIGHT;
+                case HullData hullData -> ShapeType.HULL;
+                case Mesh mesh -> ShapeType.MESH;
+                case Sphere sphere -> ShapeType.SPHERE;
+            };
+        }
 
     }
 

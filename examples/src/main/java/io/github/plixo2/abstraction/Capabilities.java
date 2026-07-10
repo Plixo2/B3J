@@ -71,7 +71,13 @@ public class Capabilities {
     @Accessors(fluent = true)
     private final boolean amdMemInfo;
 
+    @Getter
+    @Accessors(fluent = true)
+    private final boolean glDrawID;
 
+    @Getter
+    @Accessors(fluent = true)
+    private final boolean shaderDrawParameters;
 
     public Capabilities(GLCapabilities capabilities) {
         this.bindlessTexture = capabilities.GL_ARB_bindless_texture;
@@ -91,13 +97,16 @@ public class Capabilities {
         this.clearTexture = capabilities.OpenGL44 || capabilities.GL_ARB_clear_texture;
         this.maxTextureSize = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
 
+        this.glDrawID = capabilities.OpenGL46;
+        this.shaderDrawParameters = capabilities.OpenGL43 && capabilities.GL_ARB_shader_draw_parameters;
+
         this.nvxMemInfo = capabilities.GL_NVX_gpu_memory_info;
         this.amdMemInfo = capabilities.GL_ATI_meminfo;
 
     }
 
     public void print() {
-        System.out.println("Capabilities:");
+        System.out.println("OpenGL Capabilities:");
         System.out.println("  Bindless Texture: " + this.bindlessTexture);
         System.out.println("  Max Fragment Texture Units: " + this.maxFragmentTextureUnits);
         System.out.println("  Max Total Texture Units: " + this.maxTotalTextureUnits);

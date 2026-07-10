@@ -38,8 +38,8 @@ public class TextAtlas {
         DisplayableTexture2D texture = new IOTexture2D(
                 ImageSource.resource("font/atlas.png"),
                 IOTexture2D.settings(IOTextureType.RGBA)
-                        .setFilter(Texture.Filter.LINEAR)
-                        .setWrap(Texture.Wrap.CLAMP_TO_EDGE)
+                    .setFilter(Texture.Filter.LINEAR)
+                    .setWrap(Texture.Wrap.CLAMP_TO_EDGE)
         );
 
         Thread.startVirtualThread(() -> {
@@ -89,9 +89,6 @@ public class TextAtlas {
             throw new RuntimeException(e);
         }
     }
-
-
-
 
     private static Metric[] atlas() {
         int size = 512;

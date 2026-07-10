@@ -45,14 +45,16 @@ public final class B3 {
     private final MemorySegment quatSegment = b3Quat.allocate(this.scratchArena);
     private final MemorySegment vec3Segment2 = b3Vec3.allocate(this.scratchArena);
     private final MemorySegment transformSegment = b3Transform.allocate(this.scratchArena);
+    private final MemorySegment aabbSegment = b3AABB.allocate(this.scratchArena);
 
-    private final Quaternionf sratchQuat = new Quaternionf();
+    private final Quaternionf scratchQuat = new Quaternionf();
 
     private final ConstArena returnArena = new ConstArena(this.scratchArena, 1024);      // 1 KB
     private final StackArena argArena = new StackArena(this.scratchArena, 32 * 1024);    // 32 KB
 
     // allocate the callback b3World_CastRay once and just update the internal function
-    private final ScratchCastResultFcn scratchCastFn = new ScratchCastResultFcn(this.scratchArena, ShapeID::of);
+    private final ScratchCastResultFcn scratchCastFn = new ScratchCastResultFcn(this.scratchArena);
+    private final ScratchOverlapAABB scratchOverlapAABB = new ScratchOverlapAABB(this.scratchArena);
 
     private MemorySegment worldID(WorldID worldID) {
         worldID.ensureAccess();
@@ -80,16 +82,15 @@ public final class B3 {
         PrimitiveMemOps.putShapeID(this.shapeIDSegment, shapeID.packedID());
         return this.shapeIDSegment;
     }
-    private MemorySegment jointID(JointID jointID) {
+    private MemorySegment jointID(JointID<?> jointID) {
         return jointID(jointID.packedID());
     }
     private MemorySegment jointID(long packedID) {
         PrimitiveMemOps.putJointID(this.jointIDSegment, packedID);
         return this.jointIDSegment;
     }
-
     private MemorySegment transform(Matrix4f transform) {
-        PrimitiveMemOps.putTransform(this.transformSegment, this.sratchQuat, transform);
+        PrimitiveMemOps.putTransform(this.transformSegment, this.scratchQuat, transform);
         return this.transformSegment;
     }
     private MemorySegment vec3(Vector3f vec) {
@@ -103,6 +104,10 @@ public final class B3 {
     private MemorySegment quat(Quaternionf quat) {
         PrimitiveMemOps.putQuat(this.quatSegment, quat);
         return this.quatSegment;
+    }
+    private MemorySegment aabb(AABB aabb) {
+        aabb.put(this.aabbSegment);
+        return this.aabbSegment;
     }
 
 
@@ -351,6 +356,31 @@ public final class B3 {
         }
     }
 
+    /// @api b3World_OverlapAABB
+    @Contract("null, _, _, _, _ -> null; !null, _, _, _, _ -> !null")
+    public @Nullable TreeStats worldOverlapAABB(
+            @Nullable TreeStats statsIn,
+            WorldID worldID,
+            AABB aabb,
+            QueryFilter filter,
+            OverlapResult fcn
+    ) {
+
+        var stats = this.scratchOverlapAABB.invoke(
+                this.returnArena,
+                worldID(worldID),
+                aabb(aabb),
+                filter.segment,
+                fcn
+        );
+        if (statsIn != null) {
+            statsIn.set(stats);
+            return statsIn;
+        } else {
+            return null;
+        }
+
+    }
 
     /// @api b3World_CastRay
     @Contract("null, _, _, _, _, _ -> null; !null, _, _, _, _, _ -> !null")
@@ -677,6 +707,145 @@ public final class B3 {
         }
     }
 
+    /// convenience method
+    ///
+    /// @api b3CreateDistanceJoint
+    /// @api b3CreateFilterJoint
+    /// @api b3CreateMotorJoint
+    /// @api b3CreateParallelJoint
+    /// @api b3CreatePrismaticJoint
+    /// @api b3CreateRevoluteJoint
+    /// @api b3CreateSphericalJoint
+    /// @api b3CreateWeldJoint
+    /// @api b3CreateWheelJoint
+    public <T extends JointType> JointID<T> createJoint(
+            Region region,
+            WorldID worldID,
+            AbstractJointDef<T> def
+    ) {
+        //noinspection unchecked
+        return (JointID<T>) switch (def) {
+            case DistanceJointDef distance -> createDistanceJoint(region, worldID, distance);
+            case FilterJointDef filter -> createFilterJoint(region, worldID, filter);
+            case MotorJointDef motor -> createMotorJoint(region, worldID, motor);
+            case ParallelJointDef parallel -> createParallelJoint(region, worldID, parallel);
+            case PrismaticJointDef prismatic -> createPrismaticJoint(region, worldID, prismatic);
+            case RevoluteJointDef revolute -> createRevoluteJoint(region, worldID, revolute);
+            case SphericalJointDef spherical -> createSphericalJoint(region, worldID, spherical);
+            case WeldJointDef weld -> createWeldJoint(region, worldID, weld);
+            case WheelJointDef wheel -> createWheelJoint(region, worldID, wheel);
+        };
+    }
+
+
+    /// @api b3CreateRevoluteJoint
+    public JointID<JointType.Revolute> createRevoluteJoint(
+            Region region,
+            WorldID worldID,
+            RevoluteJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateRevoluteJoint(this.returnArena, worldID(worldID), def.create(this.scratchQuat, this.argArena));
+            return JointID.of(this, region, jointID);
+        }
+    }
+
+    /// @api b3CreatePrismaticJoint
+    public JointID<JointType.Prismatic> createPrismaticJoint(
+            Region region,
+            WorldID worldID,
+            PrismaticJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreatePrismaticJoint(this.returnArena, worldID(worldID), def.create(this.scratchQuat, this.argArena));
+            return JointID.of(this, region, jointID);
+        }
+    }
+
+    /// @api b3CreateWeldJoint
+    public JointID<JointType.Weld> createWeldJoint(
+            Region region,
+            WorldID worldID,
+            WeldJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateWeldJoint(this.returnArena, worldID(worldID), def.create(this.scratchQuat, this.argArena));
+            return JointID.of(this, region, jointID);
+        }
+    }
+
+    /// @api b3CreateWheelJoint
+    public JointID<JointType.Wheel> createWheelJoint(
+            Region region,
+            WorldID worldID,
+            WheelJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateWheelJoint(this.returnArena, worldID(worldID), def.create(this.scratchQuat, this.argArena));
+            return JointID.of(this, region, jointID);
+        }
+    }
+
+    /// @api b3CreateSphericalJoint
+    public JointID<JointType.Spherical> createSphericalJoint(
+            Region region,
+            WorldID worldID,
+            SphericalJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateSphericalJoint(this.returnArena, worldID(worldID), def.create(this.scratchQuat, this.argArena));
+            return JointID.of(this, region, jointID);
+        }
+    }
+
+    /// @api b3CreateParallelJoint
+    public JointID<JointType.Parallel> createParallelJoint(
+            Region region,
+            WorldID worldID,
+            ParallelJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateParallelJoint(this.returnArena, worldID(worldID), def.create(this.scratchQuat, this.argArena));
+            return JointID.of(this, region, jointID);
+        }
+    }
+
+    /// @api b3CreateDistanceJoint
+    public JointID<JointType.Distance> createDistanceJoint(
+            Region region,
+            WorldID worldID,
+            DistanceJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateDistanceJoint(this.returnArena, worldID(worldID), def.create(this.scratchQuat, this.argArena));
+            return JointID.of(this, region, jointID);
+        }
+    }
+
+    /// @api b3CreateMotorJoint
+    public JointID<JointType.Motor> createMotorJoint(
+            Region region,
+            WorldID worldID,
+            MotorJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateMotorJoint(this.returnArena, worldID(worldID), def.create(this.scratchQuat, this.argArena));
+            return JointID.of(this, region, jointID);
+        }
+    }
+
+    /// @api b3CreateFilterJoint
+    public JointID<JointType.Filter> createFilterJoint(
+            Region region,
+            WorldID worldID,
+            FilterJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateFilterJoint(this.returnArena, worldID(worldID), def.create(this.scratchQuat, this.argArena));
+            return JointID.of(this, region, jointID);
+        }
+    }
+
 
 
     /// @api b3Body_GetPosition
@@ -835,11 +1004,16 @@ public final class B3 {
     }
 
     /// @api b3Body_SetName
-    public void setBodyName(BodyID bodyId, @Nullable String name) {
+    public void bodySetName(BodyID bodyId, @Nullable String name) {
         try (this.argArena) {
             var segment = allocNullString(this.argArena, name);
             b3Body_SetName(bodyID(bodyId), segment);
         }
+    }
+
+    /// @api b3Body_EnableSleep
+    public void bodyEnableSleep(BodyID bodyId, boolean enable) {
+        b3Body_EnableSleep(bodyID(bodyId), enable);
     }
 
     /// @api b3Shape_IsValid
@@ -853,7 +1027,7 @@ public final class B3 {
     }
 
     /// @api b3Joint_IsValid
-    public boolean jointIsValid(JointID jointId) {
+    public boolean jointIsValid(JointID<?> jointId) {
         return b3Joint_IsValid(jointID(jointId));
     }
 
@@ -932,7 +1106,7 @@ public final class B3 {
     }
 
     /// @api b3DestroyJoint
-    public void destroyJoint(JointID jointID, boolean wakeAttached) {
+    public void destroyJoint(JointID<?> jointID, boolean wakeAttached) {
         jointID.state.once();
         if (!jointIsValid(jointID)) {
             throw new IllegalStateException("Joint " + jointID + " is not valid anymore");
@@ -944,7 +1118,9 @@ public final class B3 {
     void destroyJoint(long packedID) {
         var segment = jointID(packedID);
         if (!b3Joint_IsValid(segment)) {
-            throw new IllegalStateException("Joint " + JointID.toString(packedID) + " is not valid anymore");
+            // joint may been destroyed by the destruction
+            // of one of the attached bodies,
+            return;
         }
         b3DestroyJoint(segment, false);
     }
@@ -961,4 +1137,6 @@ public final class B3 {
     static float lengthUnitsPerMeter() {
         return b3GetLengthUnitsPerMeter();
     }
+
+
 }

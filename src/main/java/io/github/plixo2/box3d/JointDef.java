@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.box2d.box3d.b3JointDef;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
@@ -40,6 +41,7 @@ public class JointDef {
         this.constraintDampingRatio = 2.0f;
         this.drawScale = B3.lengthUnitsPerMeter();
     }
+
 
     MemorySegment create(Quaternionf tempQuat, SegmentAllocator arena) {
         var segment = b3JointDef.allocate(arena);

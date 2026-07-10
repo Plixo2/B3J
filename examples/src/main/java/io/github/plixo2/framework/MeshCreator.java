@@ -19,25 +19,7 @@ public class MeshCreator {
     public record MeshArgs(
             float[] verticies,
             int[] indices
-    ) {
-        private static final Shader.Attribute[] layout = new Shader.Attribute[]{
-                Shader.Attribute.Float(3),
-                Shader.Attribute.Float(3)
-        };
-        Mesh createMesh() {
-            if (this.verticies.length == 0 || this.indices.length == 0) {
-                return Mesh.empty();
-            }
-            if (this.verticies.length % VERTEX_FLOATS != 0) {
-                throw new IllegalArgumentException("Vertex array length must be a multiple of " + VERTEX_FLOATS);
-            }
-            if (this.indices.length % 3 != 0) {
-                throw new IllegalArgumentException("Index array length must be a multiple of 3");
-            }
-
-            return Mesh.fromRaw(this.verticies, this.indices, layout);
-        }
-    }
+    ) {}
 
 
     static MeshArgs createCapsule(Capsule capsule) {

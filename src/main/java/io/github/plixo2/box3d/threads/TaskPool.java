@@ -1,6 +1,5 @@
 package io.github.plixo2.box3d.threads;
 
-import io.github.plixo2.box3d.internal.Internal;
 import lombok.Getter;
 import org.box2d.box3d.b3EnqueueTaskCallback;
 import org.box2d.box3d.b3FinishTaskCallback;
@@ -8,8 +7,6 @@ import org.box2d.box3d.b3TaskCallback;
 import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap;
 
 import java.lang.foreign.MemorySegment;
-import java.util.HashMap;
-import java.util.Map;
 
 public abstract class TaskPool<T> implements b3EnqueueTaskCallback.Function, b3FinishTaskCallback.Function, AutoCloseable {
 

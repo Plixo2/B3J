@@ -85,15 +85,20 @@ public interface Camera {
                 float delta
         ) {
 
-            var isDown = glfwGetMouseButton(window, 1) == GLFW_PRESS;
+            var mouseDown = glfwGetMouseButton(window, 1) == GLFW_PRESS;
             var w = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
             var a = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
             var s = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
             var d = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
             var space = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
             var shift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
+            var ctrl = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
 
-            if (isDown) {
+            if (ctrl) {
+                delta *= 4f;
+            }
+
+            if (mouseDown) {
                 this.yaw -= (float) (mx * 0.2);
                 this.pitch -= (float) (my * 0.2);
                 this.pitch = Math.clamp(this.pitch, -89.99999f, 89.9999f);

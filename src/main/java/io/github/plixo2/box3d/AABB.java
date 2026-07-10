@@ -19,9 +19,18 @@ public class AABB {
         this.upperBound.set(upperBound);
     }
 
+    public AABB(
+            float lowerX, float lowerY, float lowerZ,
+            float upperX, float upperY, float upperZ
+    ) {
+        this.lowerBound.set(lowerX, lowerY, lowerZ);
+        this.upperBound.set(upperX, upperY, upperZ);
+    }
+
     AABB set(MemorySegment segment) {
         return set(segment, 0);
     }
+
     AABB set(MemorySegment segment, long offset) {
         var lowerOffset = offset + b3AABB.lowerBound$offset();
         var upperOffset = offset + b3AABB.upperBound$offset();

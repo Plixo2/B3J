@@ -13,15 +13,14 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.system.NativeResource;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static io.github.plixo2.box3d.internal.Internal.U64_MAX;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -38,28 +37,14 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 public class Entry implements AutoCloseable {
 
+    private int width = 1280;
+    private int height = 720;
 
-    int width = 800;
-    int height = 600;
-    String title = "Box3D examples";
-    long window;
+    private int windowWidth = this.width;
+    private int windowHeight = this.height;
 
     private float mouseX, mouseY;
     private float deltaX, deltaY;
-
-    private final List<NativeResource> closeables = new ArrayList<>();
-
-    private final Camera.FreeCam camera;
-
-    private final SceneDrawing sceneRendering;
-
-    private final MeshRenderer meshRenderer;
-    private final TextRenderer textRenderer2D;
-    private final TextRenderer textRenderer3D;
-    private final LineRenderer lineRenderer;
-
-    private final Example example;
-    private DebugDraw debugDraw;
 
     private long lastFrameTime;
     private long lastFPSUpdate;
@@ -67,8 +52,21 @@ public class Entry implements AutoCloseable {
     private int fpsCounter = 0;
 
 
+    private final long window;
+    private final List<NativeResource> closeables = new ArrayList<>();
 
-    private final ConfigMap configMap = new ConfigMap();
+    private final Camera.FreeCam camera;
+
+    private final SceneDrawing sceneRendering;
+
+    private final MeshRenderer meshRenderer;
+    private final TextRenderer.UI textRenderer2D;
+    private final TextRenderer.World textRenderer3D;
+    private final LineRenderer lineRenderer;
+
+    private final Example example;
+    private DebugDraw debugDraw;
+
 
     public Entry(Example example) {
         System.setProperty("joml.format", "false");
@@ -80,35 +78,41 @@ public class Entry implements AutoCloseable {
 
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
 
-        if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+        var onMac = System.getProperty("os.name").toLowerCase().contains("mac");
+        var onLinux = System.getProperty("os.name").toLowerCase().contains("linux");
+        if (onMac) {
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         }
+
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_SAMPLES, 4);
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
+        long windowID;
+        try {
+            windowID = glfwCreateWindow(this.width, this.height, "Examples", NULL, NULL);
+        } catch(Exception e) {
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+            windowID = glfwCreateWindow(this.width, this.height, "Examples", NULL, NULL);
+        }
 
-        this.window = glfwCreateWindow(this.width, this.height, this.title, NULL, NULL);
+        this.window = windowID;
         if (this.window == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
 
-        addCloseable(GLFWKeyCallback.create(this::keyCallback));
-        glfwSetKeyCallback(this.window, (GLFWKeyCallback) this.closeables.getLast());
-
-        addCloseable(GLFWCursorPosCallback.create(this::mouseMoveCallback));
-        glfwSetCursorPosCallback(this.window, (GLFWCursorPosCallback) this.closeables.getLast());
-
-        addCloseable(GLFWMouseButtonCallback.create(this::mouseButtonCallback));
-        glfwSetMouseButtonCallback(this.window, (GLFWMouseButtonCallback) this.closeables.getLast());
-
-        addCloseable(GLFWFramebufferSizeCallback.create(this::resizeCallback));
-        glfwSetFramebufferSizeCallback(this.window, (GLFWFramebufferSizeCallback) this.closeables.getLast());
+        glfwSetKeyCallback(this.window, addCloseable(GLFWKeyCallback.create(this::keyCallback)));
+        glfwSetCursorPosCallback(this.window, addCloseable(GLFWCursorPosCallback.create(this::mouseMoveCallback)));
+        glfwSetMouseButtonCallback(this.window, addCloseable(GLFWMouseButtonCallback.create(this::mouseButtonCallback)));
+        glfwSetFramebufferSizeCallback(this.window, addCloseable(GLFWFramebufferSizeCallback.create(this::resizeCallback)));
+        glfwSetWindowSizeCallback(this.window, addCloseable(GLFWWindowSizeCallback.create(this::resizeCallbackWindow)));
 
 
         centerWindow(this.window);
@@ -116,8 +120,20 @@ public class Entry implements AutoCloseable {
         glfwMakeContextCurrent(this.window);
         glfwShowWindow(this.window);
 
+        setRealWindowSize(this.window);
+
         GL.createCapabilities();
         Capabilities.get(); // static init
+
+        var vendor = GL11.glGetString(GL11.GL_VENDOR);
+        var renderer = GL11.glGetString(GL11.GL_RENDERER);
+        var version = GL11.glGetString(GL11.GL_VERSION);
+
+        System.out.println("Graphics Card Vendor: " + vendor);
+        System.out.println("Graphics Card Renderer: " + renderer);
+        System.out.println("OpenGL Version: " + version);
+
+        Capabilities.get().print();
 
         glfwSwapInterval(1);
 
@@ -129,8 +145,6 @@ public class Entry implements AutoCloseable {
         glEnable(GL_MULTISAMPLE);
         glEnable(GL_CULL_FACE);
         glEnable(GL_DEPTH_TEST);
-        glEnable(GL_LINE_SMOOTH);
-        glEnable(GL_TEXTURE_2D);
 
         glEnable(GL_BLEND);
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -140,18 +154,12 @@ public class Entry implements AutoCloseable {
         this.lineRenderer = new LineRenderer();
 
         var atlas = new TextAtlas();
-        this.textRenderer2D = new TextRenderer(atlas);
-        this.textRenderer3D = new TextRenderer(atlas);
-        this.textRenderer3D.scale(0.02f);
+        this.textRenderer2D = new TextRenderer.UI(atlas);
+        this.textRenderer3D = new TextRenderer.World(atlas);
+        this.textRenderer3D.scale(0.01f);
         this.sceneRendering = new SceneDrawing(this.lineRenderer, this.textRenderer3D);
 
         this.camera = new Camera.FreeCam();
-        this.camera.x = 0;
-        this.camera.y = 15;
-        this.camera.z = 50;
-        var dir = new Vector3f(-this.camera.x, -this.camera.y, -this.camera.z).normalize();
-        this.camera.yaw = (float) Math.toDegrees(Math.atan2(dir.x, dir.z));
-        this.camera.pitch = (float) Math.toDegrees(Math.asin(dir.y));
 
 
         this.example = example;
@@ -159,6 +167,17 @@ public class Entry implements AutoCloseable {
         this.lastFrameTime = System.nanoTime();
 
         initExample();
+
+        var cameraPosition = this.example.initialCameraPosition;
+        this.camera.x = cameraPosition.x;
+        this.camera.y = cameraPosition.y;
+        this.camera.z = cameraPosition.z;
+
+        // look at 0, 0, 0
+        var dir = new Vector3f(-this.camera.x, -this.camera.y, -this.camera.z).normalize();
+        this.camera.yaw = (float) Math.toDegrees(Math.atan2(dir.x, dir.z));
+        this.camera.pitch = (float) Math.toDegrees(Math.asin(dir.y));
+
     }
 
     private void restart() {
@@ -169,15 +188,18 @@ public class Entry implements AutoCloseable {
     }
 
     private void initExample() {
-        var meshFactory = new MeshFactory(this.meshRenderer);
+        this.example.customColors.clear();
+        var meshFactory = new MeshFactory(this.meshRenderer, this.example.customColors);
+
 
         this.example.init(meshFactory);
         if (this.example.worldID == null) {
             throw new IllegalStateException("Example did not set Example.worldID in init() method");
         }
 
+
         this.debugDraw = new DebugDraw(meshFactory, this.sceneRendering);
-        this.configMap.reset();
+        this.example.drawConfig.reset();
 
         var size = Float.MAX_VALUE / 4;
         this.debugDraw.drawingBounds.lowerBound.set(-size);
@@ -217,17 +239,19 @@ public class Entry implements AutoCloseable {
         var updateTime = (float) ((afterUpdate - now) / 1e9d);
 
 
-        this.camera.move(this.window, this.deltaX, this.deltaY, dt * 10f);
+        this.camera.move(this.window, this.deltaX, this.deltaY, dt * 5f);
 
-        this.configMap.update(this.debugDraw);
+        this.example.drawConfig.update(this.debugDraw);
 
-        this.example.drawText(this.textRenderer2D);
-        this.configMap.render(this.textRenderer2D, this.height);
+        this.example.drawText2D(this.textRenderer2D);
+        this.example.drawText3D(this.textRenderer3D);
+        this.example.drawConfig.render(this.textRenderer2D, this.height);
 
-        var worldID = this.example.worldID;
-        if (worldID != null) {
-            this.example.b3.worldDraw(worldID, this.debugDraw, U64_MAX);
-        }
+        this.example.b3.worldDraw(this.example.worldID, this.debugDraw, U64_MAX);
+
+        this.lineRenderer.addLine(0, 0, 0, 1, 0, 0, Color.RED.argb());
+        this.lineRenderer.addLine(0, 0, 0, 0, 1, 0, Color.GREEN.argb());
+        this.lineRenderer.addLine(0, 0, 0, 0, 0, 1, Color.BLUE.argb());
 
         var projection = getViewProjection(this.width, this.height);
         this.meshRenderer.draw(projection, getCameraPosition());
@@ -245,7 +269,6 @@ public class Entry implements AutoCloseable {
         this.textRenderer2D.draw(ortho);
 
         glEnable(GL_DEPTH_TEST);
-
 
         var runtime = Runtime.getRuntime();
         var usedMemory = runtime.totalMemory() - runtime.freeMemory();
@@ -313,7 +336,7 @@ public class Entry implements AutoCloseable {
 
     private void mouseButtonCallback(long window, int button, int action, int mods) {
         if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS) {
-            var coords = screenToWorldCoords(this.width, this.height, this.mouseX, this.mouseY);
+            var coords = screenToWorldCoords(this.windowWidth, this.windowHeight, this.mouseX, this.mouseY);
             this.example.onClick(coords.dir(), coords.origin());
         }
     }
@@ -322,6 +345,7 @@ public class Entry implements AutoCloseable {
         if (action != GLFW_PRESS && action != GLFW_REPEAT) {
             return;
         }
+
         if (key == GLFW_KEY_R) {
             if (action == GLFW_PRESS) {
                 restart();
@@ -330,24 +354,27 @@ public class Entry implements AutoCloseable {
         }
 
         if (key == GLFW_KEY_ESCAPE) {
-            this.configMap.toggleShown();
+            this.example.drawConfig.toggleShown();
+            return;
         }
+
         if (key == GLFW_KEY_ENTER) {
-            this.configMap.toggle();
-            if (this.configMap.shown) {
+            this.example.drawConfig.toggle();
+            if (this.example.drawConfig.shown) {
                 return;
             }
         }
 
         if (key == GLFW_KEY_DOWN) {
-            this.configMap.moveDown();
-            if (this.configMap.shown) {
+            this.example.drawConfig.moveDown();
+            if (this.example.drawConfig.shown) {
                 return;
             }
         }
+
         if (key == GLFW_KEY_UP) {
-            this.configMap.moveUp();
-            if (this.configMap.shown) {
+            this.example.drawConfig.moveUp();
+            if (this.example.drawConfig.shown) {
                 return;
             }
         }
@@ -364,6 +391,13 @@ public class Entry implements AutoCloseable {
         this.height = height;
         glViewport(0, 0, width, height);
     }
+    private void resizeCallbackWindow(long window, int width, int height) {
+        if (width == 0 || height == 0) {
+            return;
+        }
+        this.windowWidth = width;
+        this.windowHeight = height;
+    }
 
     @Override
     public void close() {
@@ -379,6 +413,19 @@ public class Entry implements AutoCloseable {
         GL.setCapabilities(null);
     }
 
+    private void setRealWindowSize(long window) {
+        try (var stack = stackPush()) {
+            val windowWidthPointer = stack.mallocInt(1);
+            val windowHeightPointer = stack.mallocInt(1);
+            glfwGetWindowSize(window, windowWidthPointer, windowHeightPointer);
+
+            this.windowHeight = windowHeightPointer.get(0);
+            this.windowWidth = windowWidthPointer.get(0);
+
+        }
+
+
+    }
 
     private void centerWindow(long window) {
         try (var stack = stackPush()) {
@@ -391,6 +438,7 @@ public class Entry implements AutoCloseable {
                 System.err.println("Failed to get video mode for primary monitor, cannot center window");
                 return;
             }
+
             var windowWidth = windowWidthPointer.get(0);
             var windowHeight = windowHeightPointer.get(0);
 
@@ -422,18 +470,18 @@ public class Entry implements AutoCloseable {
                 int source, int type, int id, int severity, int length, long message,
                 long userParam
         ) {
-            if (severity == GL43.GL_DEBUG_SEVERITY_NOTIFICATION &&
-                    type == GL43.GL_DEBUG_TYPE_OTHER) {
+
+            if (severity == GL43.GL_DEBUG_SEVERITY_NOTIFICATION && type == GL43.GL_DEBUG_TYPE_OTHER) {
                 return;
             }
-
 
             var sourceString = getSourceString(source);
             var typeString = getTypeString(type);
             var severityString = getSeverityString(severity);
             var msg = GLDebugMessageCallback.getMessage(length, message);
 
-            if (severity == GL43.GL_DEBUG_SEVERITY_MEDIUM
+            if (
+                    severity == GL43.GL_DEBUG_SEVERITY_MEDIUM
                     && type == GL43.GL_DEBUG_TYPE_PERFORMANCE
                     && msg.contains("Program/shader state performance warning:")
                     && msg.contains("is being recompiled based on GL state.")
@@ -441,16 +489,15 @@ public class Entry implements AutoCloseable {
                 return;
             }
 
-            this.output.printf(
-                    """
-                            GL DEBUG MESSAGE:
-                            Source: %s
-                            Type: %s
-                            ID: %d
-                            Severity: %s
-                            Message: %s
-                            
-                            """, sourceString, typeString, id, severityString, msg
+            this.output.printf("""
+                    GL DEBUG MESSAGE:
+                    Source: %s
+                    Type: %s
+                    ID: %d
+                    Severity: %s
+                    Message: %s
+                    
+                    """, sourceString, typeString, id, severityString, msg
             );
         }
 
@@ -492,98 +539,6 @@ public class Entry implements AutoCloseable {
         }
     }
 
-    private static final class ConfigMap {
-        private boolean shown = false;
 
-        private final Map<String, Boolean> map = new LinkedHashMap<>();
-
-        void toggleShown() {
-            this.shown = !this.shown;
-        }
-
-        private int pointer = 0;
-        private void moveUp() {
-            if (!this.shown) {
-                return;
-            }
-            this.pointer -= 1;
-            if (this.pointer < 0) {
-                this.pointer = this.map.size() - 1;
-            }
-        }
-        private void moveDown() {
-            if (!this.shown) {
-                return;
-            }
-            this.pointer += 1;
-            if (this.pointer >= this.map.size()) {
-                this.pointer = 0;
-            }
-        }
-        private void toggle() {
-            if (!this.shown) {
-                return;
-            }
-            var key = this.map.keySet().stream().toList().get(this.pointer);
-            this.map.put(key, !get(key));
-        }
-
-        private void render(TextRenderer text, int height) {
-
-            var y = height - 38;
-            text.putString("Config (ESC)", 10, y - 10, 0, Color.WHITE);
-
-            if (this.shown) {
-
-                var i = 0;
-                for (var stringBooleanEntry : this.map.entrySet()) {
-                    i += 1;
-                    var key = stringBooleanEntry.getKey();
-                    var value = stringBooleanEntry.getValue();
-                    var color = value ? Color.GREEN : Color.RED;
-                    text.putString(key + ": " + value, 70, y - 20 - 25 * i, 0, color);
-                }
-
-                text.putString("  > ", 0, y - 20 - 25 * (this.pointer + 1), 0, Color.WHITE);
-
-            }
-        }
-
-        public ConfigMap() {
-            reset();
-        }
-
-        public void reset() {
-            this.map.clear();
-            enable("drawShapes");
-        }
-
-        public void enable(String key) {
-            this.map.put(key, true);
-        }
-
-        private void update(DebugDraw debugDraw) {
-            debugDraw.drawShapes = get("drawShapes");
-            debugDraw.drawJoints = get("drawJoints");
-            debugDraw.drawJointExtras = get("drawJointExtras");
-            debugDraw.drawBounds = get("drawBounds");
-            debugDraw.drawMass = get("drawMass");
-            debugDraw.drawBodyNames = get("drawBodyNames");
-            debugDraw.drawContacts = get("drawContacts");
-            debugDraw.drawAnchorA = get("drawAnchorA") ? 0 : 1;
-            debugDraw.drawGraphColors = get("drawGraphColors");
-            debugDraw.drawContactFeatures = get("drawContactFeatures");
-            debugDraw.drawContactNormals = get("drawContactNormals");
-            debugDraw.drawContactForces = get("drawContactForces");
-            debugDraw.drawFrictionForces = get("drawFrictionForces");
-            debugDraw.drawIslands = get("drawIslands");
-        }
-
-        private boolean get(String key) {
-            return this.map.computeIfAbsent(key, _ -> false);
-        }
-
-
-    }
 
 }

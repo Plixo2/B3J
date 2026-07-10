@@ -4,6 +4,7 @@ import io.github.plixo2.Example;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.threads.ExecutorTaskPool;
 import io.github.plixo2.framework.MeshFactory;
+import org.joml.Random;
 import org.joml.SimplexNoise;
 import org.joml.Vector3f;
 
@@ -13,6 +14,8 @@ public class HeigtField extends Example {
 
     @Override
     public void init(MeshFactory debugShapes) {
+        initialCameraPosition(0, 15, 40);
+
         var worldDef = new WorldDef();
         worldDef.debugShapeCollection(debugShapes);
 
@@ -21,26 +24,53 @@ public class HeigtField extends Example {
         worldDef.gravity().set(0, -10f, 0);
         this.worldID = this.b3.createWorld(this.region, worldDef);
 
+        var rd = new Random();
 
         for (var i = 0; i < 500; i++) {
-            var rx = (float) Math.random() * 100 - 50;
-            var ry = (float) Math.random() * 2;
-            var rz = (float) Math.random() * 100 - 50;
-            var sphere = spawnSphere(
-                    0.5f,
-                    new Vector3f(rx, 21 + ry, rz),
-                    s -> {
-                        s.baseMaterial().rollingResistance(0.2f);
-                    }
-            );
-            this.b3.setBodyName(sphere, "Sphere " + i);
+            var rx = rd.nextFloat() * 100 - 50;
+            var ry = rd.nextFloat() * 2;
+            var rz = rd.nextFloat() * 100 - 50;
 
-            if (Math.random() < 0.2) {
-                spawnCapsule(
-                        new Vector3f(rx - 1, 25 + ry, rz),
-                        new Capsule(0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f)
+            ShapeDef sphereDef = new ShapeDef();
+            sphereDef.density(1.0f);
+            sphereDef.baseMaterial().friction(0.1f);
+            sphereDef.baseMaterial().rollingResistance(0.2f);
+
+            var sphere = spawnSphere(
+                    BodyType.DYNAMIC,
+                    sphereDef,
+                    0.5f,
+                    new Vector3f(rx, 21 + ry, rz)
+            );
+            this.b3.bodySetName(sphere, "Sphere " + i);
+
+            if (rd.nextFloat() < 0.2) {
+                var capsule = new Capsule(
+                        0.5f,
+                        0.0f, 0.0f, 0.0f,
+                        0.0f, 1.0f, 0.0f
                 );
 
+                var capsuleBodyID = spawnCapsule(
+                        BodyType.DYNAMIC,
+                        new Vector3f(rx - 1, 25 + ry, rz), capsule
+                );
+                this.b3.bodyApplyAngularImpulse(
+                        capsuleBodyID,
+                        new Vector3f(rd.nextFloat() * 2f - 1f, 0, rd.nextFloat() * 2f - 1f),
+                        true
+                );
+            }
+
+            if (rd.nextFloat() < 0.2) {
+                var _ = spawnCone(
+                     BodyType.DYNAMIC,
+                     new Vector3f(rx, 18 + ry, rz - 2),
+                     0.5f + rd.nextFloat(),
+                     rd.nextFloat() * 0.5f,
+                     0.5f + rd.nextFloat() * 0.5f,
+                     8 + rd.nextInt(12)
+                );
             }
 
         }
@@ -84,31 +114,7 @@ public class HeigtField extends Example {
 
     @Override
     public void onClick(Vector3f dir, Vector3f origin) {
-        var b3 = this.b3;
-
-
-        var result = new RayResult();
-        var hit = b3.worldCastRayClosest(
-                result,
-                this.worldID,
-                origin,
-                new Vector3f(dir).mul(100),
-                new QueryFilter()
-        );
-
-        if (hit) {
-            var shape = result.shapeID();
-            var body = b3.shapeGetBody(shape);
-            var impuls = new Vector3f(dir);
-            var mass = b3.bodyGetMass(body);
-
-            impuls.mul(10.0f * mass);
-
-            b3.bodyApplyLinearImpulse(body, impuls, result.point(), true);
-
-        }
-
-
+        applyClickImpuls(dir, origin, 10f);
     }
 
 }

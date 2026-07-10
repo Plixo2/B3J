@@ -12,6 +12,7 @@ import java.lang.foreign.MemorySegment;
 
 @RequiredArgsConstructor
 public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
+
     private static final int CIRCLE_SEGMENTS = 32;
     private static final float[] circ_sin;
     private static final float[] circ_cos;
@@ -26,10 +27,10 @@ public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
         }
     }
 
-    private static final float TRANSFORM_AXIS_LENGTH = 1.0f;
+    private static final float TRANSFORM_AXIS_LENGTH = 0.9f;
 
     private final LineRenderer lineRenderer;
-    private final TextRenderer text3D;
+    private final TextRenderer.World text3D;
 
     private final Matrix4f normal = new Matrix4f();
     private final Vector3f v1 = new Vector3f();
@@ -38,10 +39,11 @@ public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
     @Override
     public boolean drawShape(MultiMesh.MeshRecord shape, Matrix4f transform, int color) {
 
+        var customColor = shape.customColor();
         shape.addDraw(
                 transform,
                 transform.normal(this.normal),
-                color
+                customColor != null ? customColor.argb() : color
         );
 
         return true;

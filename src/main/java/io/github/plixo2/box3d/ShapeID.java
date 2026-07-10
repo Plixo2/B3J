@@ -56,6 +56,8 @@ public final class ShapeID {
         return new ShapeID(identifier);
     }
 
-
+    public static ShapeID fromUnknown(long packedID) {
+        return new ShapeID(packedID);
+    }
 
 }

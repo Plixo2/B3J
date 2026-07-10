@@ -29,6 +29,7 @@ public class LineRenderer {
         this.mesh = Mesh.shaderCreatedQuad();
         this.buffer = new ShaderBuffer(128, GL_STREAM_DRAW, 0, MemorySide.CPU_AND_GPU_SIDE);
     }
+
     public void setWidth(float width) {
         this.width = width;
     }

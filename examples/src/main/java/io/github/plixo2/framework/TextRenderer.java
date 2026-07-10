@@ -1,9 +1,6 @@
 package io.github.plixo2.framework;
 
-import io.github.plixo2.abstraction.MemorySide;
-import io.github.plixo2.abstraction.Mesh;
-import io.github.plixo2.abstraction.Shader;
-import io.github.plixo2.abstraction.ShaderBuffer;
+import io.github.plixo2.abstraction.*;
 import lombok.Setter;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -15,7 +12,7 @@ import java.lang.foreign.ValueLayout;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.GL_STREAM_DRAW;
 
-public class TextRenderer {
+public abstract sealed class TextRenderer {
     private final TextAtlas textAtlas;
     private final Shader shader;
     private final Shader.Uniform<Matrix4f> u_projection;
@@ -29,13 +26,15 @@ public class TextRenderer {
     @Setter
     private float scale = 1.0f;
 
-    public TextRenderer(TextAtlas textAtlas) {
+    protected TextRenderer(TextAtlas textAtlas) {
         this.textAtlas = textAtlas;
+
         this.shader = Shader.fromResource("/text");
         this.u_projection = this.shader.uniform("u_projection", Matrix4f.class);
         this.u_right = this.shader.uniform("u_right", Vector3f.class);
         this.u_up = this.shader.uniform("u_up", Vector3f.class);
         this.u_texture = this.shader.uniform("u_texture", Integer.class);
+
         this.mesh = Mesh.shaderCreatedQuad();
         this.buffer = new ShaderBuffer(128, GL_STREAM_DRAW, 0, MemorySide.CPU_AND_GPU_SIDE);
     }
@@ -49,13 +48,12 @@ public class TextRenderer {
             return;
         }
 
-        var texture = this.textAtlas.texture().get();
         this.shader.bind();
         this.u_projection.loadCached(projection);
         this.u_right.loadCached(right);
         this.u_up.loadCached(up);
         this.u_texture.loadCached(0);
-        texture.bindTextureUnit(0);
+        this.textAtlas.texture().get().bindTextureUnit(0);
 
         this.buffer.upload();
         this.buffer.bind();
@@ -66,8 +64,9 @@ public class TextRenderer {
         this.buffer.clear();
     }
 
-    public void putString(
-            MemorySegment cString, long offset, float x, float y, float z,
+    private void putString(
+            MemorySegment cString, long offset,
+            float x, float y, float z,
             int color
     ) {
         var metrics = this.textAtlas.metrics();
@@ -94,9 +93,10 @@ public class TextRenderer {
 
     }
 
-    public void putString(
-            String text, float x, float y, float z,
-            io.github.plixo2.abstraction.Color color
+    private void putString(
+            String text,
+            float x, float y, float z,
+            Color color
     ) {
         var metrics = this.textAtlas.metrics();
         float xPos = x;
@@ -125,7 +125,7 @@ public class TextRenderer {
         }
     }
 
-    private void putGlyphData(
+    protected void putGlyphData(
             int color,
             float x, float y, float z,
             float width,
@@ -144,6 +144,48 @@ public class TextRenderer {
         this.buffer.putVector4f(x, y, z, 1.0f);
         this.buffer.putVector4f(width, height, offsetX, offsetY);
         this.count += 1;
+    }
+
+    public static final class World extends TextRenderer {
+
+        public World(TextAtlas textAtlas) {
+            super(textAtlas);
+        }
+
+        public void putString(
+                MemorySegment cString, long offset,
+                float x, float y, float z,
+                int color
+        ) {
+            super.putString(cString, offset, x, y, z, color);
+        }
+
+        public void putString(
+                String text,
+                float x, float y, float z,
+                Color color
+        ) {
+            super.putString(text, x, y, z, color);
+        }
+
+
+    }
+
+    public static final class UI extends TextRenderer {
+
+        public UI(TextAtlas textAtlas) {
+            super(textAtlas);
+        }
+
+        public void putString(
+                String text,
+                float x, float y,
+                Color color
+        ) {
+            super.putString(text, x, y, 0.0f, color);
+        }
+
+
     }
 
 

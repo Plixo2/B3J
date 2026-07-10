@@ -26,7 +26,6 @@ public class BodyDef {
     float gravityScale;
     float sleepThreshold;
     @Nullable String name;
-    @Nullable Object userData;
     MotionLocks motionLocks = new MotionLocks();
     boolean enableSleep;
     boolean isAwake;
@@ -59,7 +58,6 @@ public class BodyDef {
         b3BodyDef.gravityScale(segment, this.gravityScale);
         b3BodyDef.sleepThreshold(segment, this.sleepThreshold);
         b3BodyDef.name(segment, Internal.allocNullString(arena, this.name));
-        b3BodyDef.userData(segment, nls(this.userData));
         this.motionLocks.put(b3BodyDef.motionLocks(segment));
         b3BodyDef.enableSleep(segment, this.enableSleep);
         b3BodyDef.isAwake(segment, this.isAwake);

@@ -8,4 +8,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD, ElementType.LOCAL_VARIABLE, ElementType.RECORD_COMPONENT})
 public @interface U16 {
+
+    long MAX = Internal.U16_MAX;
+
 }

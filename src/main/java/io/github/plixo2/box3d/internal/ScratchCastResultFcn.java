@@ -1,7 +1,6 @@
 package io.github.plixo2.box3d.internal;
 
-import io.github.plixo2.box3d.CastResult;
-import io.github.plixo2.box3d.ShapeID;
+import io.github.plixo2.box3d.*;
 import org.box2d.box3d.b3CastResultFcn;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -17,13 +16,11 @@ public class ScratchCastResultFcn implements b3CastResultFcn.Function, AutoClose
 
     private final MemorySegment segment;
 
-    private final Function<MemorySegment, ShapeID> shapeCreator;
     private final Vector3f v1 = new Vector3f();
     private final Vector3f v2 = new Vector3f();
 
-    public ScratchCastResultFcn(Arena parent, Function<MemorySegment, ShapeID> shapeCreator) {
+    public ScratchCastResultFcn(Arena parent) {
         this.segment = b3CastResultFcn.allocate(this, parent);
-        this.shapeCreator = shapeCreator;
     }
 
     public MemorySegment set(CastResult function) {
@@ -35,7 +32,6 @@ public class ScratchCastResultFcn implements b3CastResultFcn.Function, AutoClose
     public void close() {
         this.function = null;
     }
-
 
     @Override
     public float apply(
@@ -51,7 +47,9 @@ public class ScratchCastResultFcn implements b3CastResultFcn.Function, AutoClose
         Objects.requireNonNull(this.function, "function not set");
         PrimitiveMemOps.setVec3(this.v1, point);
         PrimitiveMemOps.setVec3(this.v2, normal);
-        ShapeID shape = this.shapeCreator.apply(shapeId);
+
+        var packedID = PrimitiveMemOps.packShapeID(shapeId);
+        var shape = ShapeID.fromUnknown(packedID);
 
         return this.function.onHit(
                 shape,

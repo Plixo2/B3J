@@ -1,6 +1,7 @@
 package io.github.plixo2.abstraction;
 
 import io.github.plixo2.abstraction.texture.DisplayableTexture2D;
+import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
@@ -124,6 +125,7 @@ public class Shader extends GPUResource  {
     public class Uniform<T> {
         private final String name;
         private final Class<T> cls;
+        @Getter
         private final int location;
         private final ShaderValueLoader<T> loader;
         private @Nullable Object cachedValue = null;
@@ -370,8 +372,7 @@ public class Shader extends GPUResource  {
             return new Matrix3f(object);
         });
 
-        loaders.put(
-                Matrix2f.class, (object, cache, location) -> {
+        loaders.put(Matrix2f.class, (object, cache, location) -> {
             if (cache instanceof Matrix2f cachedMatrix) {
                 if (!cachedMatrix.equals(object)) {
                     cachedMatrix.set(object);

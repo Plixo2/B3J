@@ -1,4 +1,4 @@
-#version 460 core
+#version 430 core
 
 uniform mat4 u_projection;
 uniform vec3 u_right;

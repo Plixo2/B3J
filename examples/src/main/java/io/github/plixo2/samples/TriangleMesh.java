@@ -7,6 +7,7 @@ import io.github.plixo2.Example;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.framework.MeshFactory;
 import lombok.val;
+import org.joml.Random;
 import org.joml.Vector3f;
 
 
@@ -17,6 +18,7 @@ public class TriangleMesh extends Example {
 
     @Override
     public void init(MeshFactory debugShapes) {
+        initialCameraPosition(0, 15, 50);
 
         var worldDef = new WorldDef();
         worldDef.debugShapeCollection(debugShapes);
@@ -24,18 +26,25 @@ public class TriangleMesh extends Example {
         worldDef.gravity().set(0, -10f, 0);
         this.worldID = this.b3.createWorld(this.region, worldDef);
 
+        var rd = new Random();
+
         for (var i = 0; i < 1000; i++) {
-            var rx = (float) Math.random() * 50 - 25;
-            var ry = (float) Math.random() * 2;
-            var rz = (float) Math.random() * 50 - 25;
+            var rx = rd.nextFloat() * 50 - 25;
+            var ry = rd.nextFloat() * 2;
+            var rz = rd.nextFloat() * 50 - 25;
+
+            ShapeDef sphereDef = new ShapeDef();
+            sphereDef.density(1.0f);
+            sphereDef.baseMaterial().friction(0.1f);
+            sphereDef.baseMaterial().rollingResistance(0.9f);
+
             var sphere = spawnSphere(
+                    BodyType.DYNAMIC,
+                    sphereDef,
                     0.5f,
-                    new Vector3f(rx, 21 + ry, rz),
-                    s -> {
-                        s.baseMaterial().rollingResistance(0.9f);
-                    }
+                    new Vector3f(rx, 21 + ry, rz)
             );
-            this.b3.setBodyName(sphere, "Sphere " + i);
+            this.b3.bodySetName(sphere, "Sphere " + i);
         }
 
         var dynBodyDef = new BodyDef();

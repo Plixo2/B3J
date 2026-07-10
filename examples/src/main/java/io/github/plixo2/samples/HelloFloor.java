@@ -13,6 +13,7 @@ public class HelloFloor extends Example {
 
     @Override
     public void init(MeshFactory debugShapes) {
+        initialCameraPosition(0, 15, 10);
 
         var worldDef = new WorldDef();
         worldDef.debugShapeCollection(debugShapes);
@@ -35,7 +36,7 @@ public class HelloFloor extends Example {
         var levels = 45;
         var zlevels = 35;
         var zstart = -40;
-        var spacing = 2.0f;
+        var spacing = 1.0f;
 
         for (var z = 0; z < zlevels; z += 4) {
             levels -= 2;
@@ -44,48 +45,28 @@ public class HelloFloor extends Example {
                 var count = levels - y;
                 var offset = (count - 1) * spacing * 0.5f;
                 for (var x = 0; x < count; x++) {
-                    spawnBox(new Vector3f(
-                            x * spacing - offset,
-                            y * spacing + 1.0f,
-                            zstart + z
-                    ));
+                    var _ = spawnBox(
+                            BodyType.DYNAMIC,
+                            new Vector3f(
+                                x * spacing - offset,
+                                y * spacing + 0.5f,
+                                zstart + z
+                            )
+                    );
                 }
             }
         }
 
 
-        var sphere = spawnSphere(10, new Vector3f(0, 11, 22));
-        this.b3.setBodyName(sphere, "Sphere");
+        var sphere = spawnSphere(BodyType.DYNAMIC, 5, new Vector3f(0, 5, 10));
+        this.b3.bodySetName(sphere, "Sphere");
     }
 
 
 
     @Override
     public void onClick(Vector3f dir, Vector3f origin) {
-        var b3 = this.b3;
-
-        var result = new RayResult();
-        var hit = b3.worldCastRayClosest(
-                result,
-                this.worldID,
-                origin,
-                new Vector3f(dir).mul(100),
-                new QueryFilter()
-        );
-
-        if (hit) {
-            var shape = result.shapeID();
-            var body = b3.shapeGetBody(shape);
-            var impuls = new Vector3f(dir);
-            var mass = b3.bodyGetMass(body);
-
-            impuls.mul(20.0f * mass);
-
-            b3.bodyApplyLinearImpulse(body, impuls, result.point(), true);
-
-        }
-
-
+        applyClickImpuls(dir, origin, 20f);
     }
 
 

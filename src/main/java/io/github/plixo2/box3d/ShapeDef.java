@@ -15,7 +15,6 @@ import java.lang.foreign.SegmentAllocator;
 @Setter
 public class ShapeDef {
 
-    @Nullable Object userData;
     SurfaceMaterial[] materials = new SurfaceMaterial[0];
     SurfaceMaterial baseMaterial;
     float density;
@@ -46,7 +45,6 @@ public class ShapeDef {
 
     MemorySegment create(SegmentAllocator arena) {
         var segment = b3ShapeDef.allocate(arena);
-        b3ShapeDef.userData(segment, nls(this.userData));
 
         var materialCount = this.materials.length;
         MemorySegment materialArray;

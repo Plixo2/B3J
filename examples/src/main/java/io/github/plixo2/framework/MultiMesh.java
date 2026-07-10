@@ -1,15 +1,22 @@
 package io.github.plixo2.framework;
 
 import io.github.plixo2.abstraction.*;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
 import static org.lwjgl.opengl.GL15.GL_STREAM_DRAW;
 import static org.lwjgl.opengl.GL15C.*;
+import static org.lwjgl.opengl.GL20C.glUniform1i;
+import static org.lwjgl.opengl.GL32C.glDrawElementsBaseVertex;
 
 public class MultiMesh {
     private static final int FLOATS_PER_VERTEX = 6;
+    private static final int LEGACY_COMMAND_INTS = 3;
+    private static final int LEGACY_INDEX_OFFSET = 0;
+    private static final int LEGACY_VERTEX_OFFSET = 1;
+    private static final int LEGACY_INDEX_COUNT = 2;
     private static final int VERTEX_BYTE_CAPACITY = 1024 * 1024 * 1; // 1 mb
     private static final int INDEX_BYTE_CAPACITY = 1024 * 1024 * 1; // 1 mb
 
@@ -25,16 +32,19 @@ public class MultiMesh {
     private int indexCount;
 
     final Mesh mesh;
+    final boolean useLegacy;
 
-    private ElementCommandBuffer commandBuffer;
-    private int commandBufferSize = 0;
+    private @Nullable ElementCommandBuffer commandBuffer;
+    private @Nullable int[] legacyCommands;
+    private int commandCapacity = 0;
     private int count = 0;
 
     private final ShaderBuffer perInstanceData;
 
-    public MultiMesh(int minVertexCapacity, int minIndexCapacity) {
+    public MultiMesh(boolean useLegacy, int minVertexCapacity, int minIndexCapacity) {
         this.vertexByteCapacity = Math.max(minVertexCapacity * Float.BYTES, VERTEX_BYTE_CAPACITY);
         this.indexByteCapacity = Math.max(minIndexCapacity * Integer.BYTES, INDEX_BYTE_CAPACITY);
+        this.useLegacy = useLegacy;
 
         this.mesh = Mesh.fromSized(
                 this.vertexByteCapacity,
@@ -43,25 +53,43 @@ public class MultiMesh {
                 layout,
                 GL_TRIANGLES
         );
-        ensureCommandBuffer();
+        if (!useLegacy) {
+            ensureCommandBuffer();
+        }
 
         this.perInstanceData = new ShaderBuffer(64, GL_STREAM_DRAW, 0, MemorySide.CPU_AND_GPU_SIDE);
     }
     private void ensureCommandBuffer() {
-        if (this.commandBuffer == null) {
-            this.commandBuffer = new ElementCommandBuffer(64, MemorySide.CPU_AND_GPU_SIDE);
-            this.commandBufferSize = 64;
+        if (this.useLegacy) {
+
+            if (this.legacyCommands == null) {
+                this.legacyCommands = new int[64 * LEGACY_COMMAND_INTS];
+                this.commandCapacity = 64;
+                return;
+            }
+            var newCapacity = this.commandCapacity * 2;
+            var newCommands = new int[newCapacity * LEGACY_COMMAND_INTS];
+            System.arraycopy(this.legacyCommands, 0, newCommands, 0, this.commandCapacity * LEGACY_COMMAND_INTS);
+            this.legacyCommands = newCommands;
+            this.commandCapacity = newCapacity;
             return;
         }
-        var p = this.commandBuffer;
-        var data = p.byteBuffer();
 
-        this.commandBuffer = new ElementCommandBuffer(this.commandBufferSize * 2, MemorySide.CPU_AND_GPU_SIDE);
+        if (this.commandBuffer == null) {
+            this.commandBuffer = new ElementCommandBuffer(64, MemorySide.CPU_AND_GPU_SIDE);
+            this.commandCapacity = 64;
+            return;
+        }
+
+        var prev = this.commandBuffer;
+        var data = prev.byteBuffer();
+
+        this.commandBuffer = new ElementCommandBuffer(this.commandCapacity * 2, MemorySide.CPU_AND_GPU_SIDE);
         assert this.commandBuffer.byteBuffer() != null;
         this.commandBuffer.byteBuffer().put(data);
-        this.commandBufferSize *= 2;
+        this.commandCapacity *= 2;
 
-        p.free();
+        prev.free();
     }
 
 
@@ -71,7 +99,7 @@ public class MultiMesh {
     }
 
 
-    MeshRecord place(MeshCreator.MeshArgs mesh) {
+    MeshRecord place(MeshCreator.MeshArgs mesh, @Nullable Color customColor) {
         if (!canPlace(mesh)) {
             throw new RuntimeException("Cannot place mesh, capacity exceeded");
         }
@@ -88,6 +116,7 @@ public class MultiMesh {
         glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, (long) this.indexCount * Integer.BYTES, mesh.indices());
 
         var record = new MeshRecord(
+                customColor,
                 this,
                 this.vertexFloatCount / FLOATS_PER_VERTEX,
                 this.indexCount,
@@ -105,22 +134,52 @@ public class MultiMesh {
 
     void free() {
         this.mesh.free();
-        this.commandBuffer.free();
+        if (!this.useLegacy) {
+            assert this.commandBuffer != null;
+            this.commandBuffer.free();
+        }
         this.perInstanceData.free();
     }
 
-    void draw() {
-        this.commandBuffer.upload();
-        this.commandBuffer.bind();
-        this.perInstanceData.upload();
-        this.perInstanceData.bind();
-        this.mesh.bind();
+    void draw(Shader.Uniform<Integer> u_legacy_instance) {
 
-        this.mesh.multiDrawInstancedIndirect(0, this.count);
-        clearDraws();
-    }
 
-    private void clearDraws() {
+        if (this.useLegacy) {
+            assert this.legacyCommands != null;
+
+            this.perInstanceData.upload();
+            this.perInstanceData.bind();
+
+            this.mesh.bind();
+            var location = u_legacy_instance.location();
+            u_legacy_instance.loadCached(-1);
+            for (var i = 0; i < this.count; i++) {
+                var offset = i * LEGACY_COMMAND_INTS;
+                var indexOffset = this.legacyCommands[offset + LEGACY_INDEX_OFFSET];
+                var vertexOffset = this.legacyCommands[offset + LEGACY_VERTEX_OFFSET];
+                var indexCount = this.legacyCommands[offset + LEGACY_INDEX_COUNT];
+
+                glUniform1i(location, i);
+                glDrawElementsBaseVertex(
+                        GL_TRIANGLES,
+                        indexCount,
+                        GL_UNSIGNED_INT,
+                        (long) indexOffset * Integer.BYTES,
+                        vertexOffset
+                );
+            }
+        } else {
+            assert this.commandBuffer != null;
+
+            this.commandBuffer.upload();
+            this.commandBuffer.bind();
+
+            this.perInstanceData.upload();
+            this.perInstanceData.bind();
+
+            this.mesh.multiDrawInstancedIndirect(0, this.count);
+        }
+
         this.count = 0;
         this.perInstanceData.clear();
     }
@@ -133,7 +192,7 @@ public class MultiMesh {
             Matrix4f normal,
             int color
     ) {
-        if (this.count >= this.commandBufferSize) {
+        if (this.count >= this.commandCapacity) {
             ensureCommandBuffer();
         }
         var commandIndex = this.count;
@@ -148,19 +207,31 @@ public class MultiMesh {
         this.perInstanceData.putVector4f(r, g, b, a);
 
         this.count += 1;
-        this.commandBuffer.setCompleteDraw(
-                commandIndex,
-                indexCount,
-                1,
-                indexOffset,
-                vertexOffset,
-                commandIndex
-        );
+        if (this.useLegacy) {
+            assert this.legacyCommands != null;
+            var offset = commandIndex * LEGACY_COMMAND_INTS;
+            this.legacyCommands[offset + LEGACY_INDEX_OFFSET] = indexOffset;
+            this.legacyCommands[offset + LEGACY_VERTEX_OFFSET] = vertexOffset;
+            this.legacyCommands[offset + LEGACY_INDEX_COUNT] = indexCount;
+        } else {
+            assert this.commandBuffer != null;
+            this.commandBuffer.setCompleteDraw(
+                    commandIndex,
+                    indexCount,
+                    1,
+                    indexOffset,
+                    vertexOffset,
+                    commandIndex
+            );
+
+        }
+
 
     }
 
 
     public record MeshRecord(
+            @Nullable Color customColor,
             MultiMesh mesh,
             int vertexOffset,
             int indexOffset,

@@ -10,9 +10,8 @@ import java.lang.foreign.SegmentAllocator;
 
 @Setter
 @Getter
-public class RevoluteJointDef {
+public final class RevoluteJointDef extends AbstractJointDef<JointType.Revolute> {
 
-    private JointDef base;
     private float targetAngle;
     private boolean enableSpring;
     private float hertz;
@@ -29,7 +28,7 @@ public class RevoluteJointDef {
             BodyID bodyIdA,
             BodyID bodyIdB
     ) {
-        this.base = new JointDef(bodyIdA, bodyIdB);
+        super(JointType.REVOLUTE, bodyIdA, bodyIdB);
     }
 
     MemorySegment create(Quaternionf tempQuat, SegmentAllocator arena) {

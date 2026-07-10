@@ -4,6 +4,7 @@ layout (location = 0) in vec3 a_position;
 layout (location = 1) in vec3 a_normal;
 
 uniform mat4 u_projView;
+uniform int u_legacy_instance;
 
 struct DrawData {
     mat4 model;
