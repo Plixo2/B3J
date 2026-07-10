@@ -1061,6 +1061,11 @@ public final class B3 {
         return b3Shape_IsValid(shapeID(shapeId));
     }
 
+    /// @api b3World_IsValid
+    public boolean worldIsValid(WorldID worldId) {
+        return b3World_IsValid(worldID(worldId));
+    }
+
     /// @api b3Body_IsValid
     public boolean bodyIsValid(BodyID bodyId) {
         return b3Body_IsValid(bodyID(bodyId));
@@ -1137,9 +1142,22 @@ public final class B3 {
         b3DestroyShape(shapeID(shapeID), updateBodyMass);
     }
 
+    /// @api b3DestroyWorld
+    public void destroyWorld(WorldID worldID) {
+        if (!worldIsValid(worldID)) {
+            throw new IllegalStateException("World " +  worldID + " is not valid anymore");
+        }
 
-
-
+        var segment = worldID(worldID);
+        worldID.state.once();
+        b3DestroyWorld(segment);
+        if (worldID.taskPool != null) {
+            worldID.taskPool.close();
+        }
+        if (worldID.shapes != null) {
+            worldID.shapes.close();
+        }
+    }
 
 
 
@@ -1148,7 +1166,14 @@ public final class B3 {
 
     /// @api b3DestroyWorld
     void destroyWorld(int index1, int generation) {
-        b3DestroyWorld(worldID(index1, generation));
+        var segment = worldID(index1, generation);
+        if (!b3World_IsValid(segment)) {
+            throw new IllegalStateException(
+                    "World " +  WorldID.toString(index1, generation) + " is not valid anymore"
+            );
+        }
+
+        b3DestroyWorld(segment);
     }
 
     /// @api b3DestroyHull
@@ -1170,7 +1195,9 @@ public final class B3 {
     void destroyBody(long packedID) {
         var segment = bodyID(packedID);
         if (!b3Body_IsValid(segment)) {
-            throw new IllegalStateException("Body " + BodyID.toString(packedID) + " is not valid anymore");
+            throw new IllegalStateException(
+                    "Body " + BodyID.toString(packedID) + " is not valid anymore"
+            );
         }
         b3DestroyBody(segment);
     }

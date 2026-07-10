@@ -2,8 +2,6 @@ package io.github.plixo2.samples;
 
 import io.github.plixo2.Example;
 import io.github.plixo2.box3d.BodyType;
-import io.github.plixo2.box3d.QueryFilter;
-import io.github.plixo2.box3d.ShapeDef;
 import io.github.plixo2.box3d.WorldDef;
 import io.github.plixo2.box3d.threads.ExecutorTaskPool;
 import io.github.plixo2.framework.MeshFactory;

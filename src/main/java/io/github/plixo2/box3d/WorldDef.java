@@ -4,7 +4,7 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
-import io.github.plixo2.box3d.threads.AllocatedPool;
+import io.github.plixo2.box3d.internal.AllocatedPool;
 import io.github.plixo2.box3d.threads.TaskPool;
 import lombok.Getter;
 import lombok.Setter;

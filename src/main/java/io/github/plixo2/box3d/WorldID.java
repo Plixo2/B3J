@@ -3,7 +3,7 @@ package io.github.plixo2.box3d;
 import io.github.plixo2.box3d.internal.AllocState;
 import io.github.plixo2.box3d.internal.U16;
 import io.github.plixo2.box3d.region.Region;
-import io.github.plixo2.box3d.threads.AllocatedPool;
+import io.github.plixo2.box3d.internal.AllocatedPool;
 import org.box2d.box3d.b3WorldId;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,10 +16,10 @@ public final class WorldID {
     final @U16 int index1;
     final @U16 int generation;
 
-    private final AllocState state = AllocState.create();
+    final AllocState state = AllocState.create();
 
-    private final @Nullable AllocatedPool taskPool;               // keep alive
-    private final @Nullable DebugShapeCallbacks.Allocated shapes; // keep alive
+    final @Nullable AllocatedPool taskPool;               // keep alive
+    final @Nullable DebugShapeCallbacks.Allocated shapes; // keep alive
 
     private WorldID(
             @Nullable B3 instance,
@@ -55,10 +55,7 @@ public final class WorldID {
 
     @Override
     public String toString() {
-        return "WorldID{"
-                + "index1=" + this.index1
-                + ", generation=" + this.generation
-                + '}';
+        return toString(this.index1, this.generation);
     }
 
     public @U16 int index1() {
@@ -103,6 +100,14 @@ public final class WorldID {
                 index1,
                 generation
         );
+    }
+
+
+    static String toString(@U16 int index1, @U16 int generation) {
+        return "WorldID{"
+                + "index1=" + index1
+                + ", generation=" + generation
+                + '}';
     }
 
 }

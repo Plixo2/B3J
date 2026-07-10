@@ -55,11 +55,6 @@ public class HeigtField extends Example {
                         BodyType.DYNAMIC,
                         new Vector3f(rx - 1, 25 + ry, rz), capsule
                 );
-                this.b3.bodyApplyAngularImpulse(
-                        capsuleBodyID,
-                        new Vector3f(rd.nextFloat() * 2f - 1f, 0, rd.nextFloat() * 2f - 1f),
-                        true
-                );
             }
 
             if (rd.nextFloat() < 0.2) {
@@ -88,7 +83,6 @@ public class HeigtField extends Example {
         var heightFieldBody = this.b3.createBody(this.region, this.worldID, heightFieldBodyDef);
 
         var heightFieldShapeDef = new ShapeDef();
-//        heightFieldShapeDef.baseMaterial().friction(0.5f);
         var _ = this.b3.createHeightFieldShape(heightFieldBody, heightFieldShapeDef, heightFieldData);
 
     }
@@ -101,8 +95,8 @@ public class HeigtField extends Example {
             for (int z = 0; z < countZ; z++) {
                 var a = SimplexNoise.noise(x * 0.05f, z * 0.05f);
                 a += SimplexNoise.noise(7.7f + x * 0.1f, 43.3f + z * 0.1f) * 0.5f;
-                a += SimplexNoise.noise(7.7f + x * 0.2f, 43.3f + z * 0.2f) * 0.25f;
-                a += SimplexNoise.noise(7.7f + x * 0.4f, 43.3f + z * 0.4f) * 0.125f;
+                a += SimplexNoise.noise(2.7f + x * 0.2f, 3.3f + z * 0.2f) * 0.25f;
+                a += SimplexNoise.noise(1.7f + x * 0.4f, 7.3f + z * 0.4f) * 0.125f;
                 floatArray[x * countZ + z] = a * 2;
             }
         }

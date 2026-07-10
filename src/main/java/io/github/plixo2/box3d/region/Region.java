@@ -5,6 +5,7 @@ import io.github.plixo2.box3d.internal.AllocState;
 import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;
 
+// TODO description
 public sealed interface Region
         extends
             AutoCloseable

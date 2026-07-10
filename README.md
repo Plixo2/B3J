@@ -1,6 +1,6 @@
 # B3J 
 
-B3J is a handwritten Java wrapper of [Box3D](https://github.com/erincatto/box3d).
+B3J is a handwritten Java wrapper for [Box3D](https://github.com/erincatto/box3d).
 It is designed to be efficient, but convenient, and as close to the original Box3D as possible.
 
 
@@ -24,6 +24,15 @@ E.g. `b3Body_SetTransform` becomes `b3.bodySetTransform`
   - Some method require a `in` parameter to be filled. E.g. `Vector3f bodyGetPosition(Vector3f in, BodyID bodyId)`
   - Arguments of callbacks or custom Iterators can be mutable. Make sure to copy them if you want to keep them.
 
+- A [Region](src/main/java/io/github/plixo2/box3d/region/Region.java) is used to manage lifetimes.
+  - `Region.ofConfined()` creates a confined region, similar to `Arena.ofConfined()`
+  - `Region.ofConfined(Region parent`) creates a confined region with a parent region. 
+    The parent region will close the child, but the child region can be closed independently.
+  - `Region.ofGlobal()` creates a global region, which is never closed. 
+    Use this, for example, for objects that are destroyed by Box3D when the world is destroyed.
+  - `Region.ofAuto(FreeList freeList)` creates a region managed by the garbage collector. 
+    - Unlike `Arena.ofAuto()`, it takes a [FreeList](src/main/java/io/github/plixo2/box3d/region/FreeList.java) 
+    to be drained on your own thread. 
 
 ## Compatibility
 
@@ -42,7 +51,7 @@ This Project also uses the MIT license.
 
 Consider supporting the **original** development of Box3D through [Github Sponsors](https://github.com/sponsors/erincatto).
 
-Please consider giving this repository a star and dont forget to star the original [Box3D](https://github.com/erincatto/box3d).
+Please consider giving this repository a star and dont forget to star the [original](https://github.com/erincatto/box3d).
 
 ## LLM Usage
 

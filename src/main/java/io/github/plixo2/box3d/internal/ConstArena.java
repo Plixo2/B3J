@@ -4,6 +4,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 
+// TODO replace with SegmentAllocator.slicingAllocator
 public final class ConstArena implements SegmentAllocator {
     private final long size;
     private final MemorySegment segment;

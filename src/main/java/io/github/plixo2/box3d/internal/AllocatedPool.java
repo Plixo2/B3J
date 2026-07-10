@@ -1,5 +1,6 @@
-package io.github.plixo2.box3d.threads;
+package io.github.plixo2.box3d.internal;
 
+import io.github.plixo2.box3d.threads.TaskPool;
 import lombok.Getter;
 import org.box2d.box3d.b3EnqueueTaskCallback;
 import org.box2d.box3d.b3FinishTaskCallback;
@@ -7,9 +8,7 @@ import org.box2d.box3d.b3FinishTaskCallback;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-/// Keep the TaskPool and callbacks alive until the world is destroyed
 public class AllocatedPool {
-
 
     private TaskPool<?> taskPool;
     private Arena arena;
