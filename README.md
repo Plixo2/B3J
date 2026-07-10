@@ -1,4 +1,4 @@
-# B3J 
+# B3J
 
 ![Box3D Logo](https://box2d.org/images/logo.svg)
 
@@ -6,6 +6,8 @@ B3J is a Java binding library for [Box3D](https://github.com/erincatto/box3d).
 
 It is designed to be efficient yet convenient, 
 staying as close as possible to the original Box3D API. 
+
+Still in development ...
 
 ### [Examples](examples/src/main/java/io/github/plixo2/samples)
 
