@@ -1,6 +1,10 @@
 # B3J
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 ![Box3D Logo](https://box2d.org/images/logo.svg)
+
+
 
 B3J is a Java binding library for [Box3D](https://github.com/erincatto/box3d).
 
