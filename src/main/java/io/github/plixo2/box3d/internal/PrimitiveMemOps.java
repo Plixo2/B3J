@@ -6,7 +6,7 @@ import org.joml.*;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
-public class PrimitiveMemOps {
+public final class PrimitiveMemOps {
 
     private static final long transform_pos_offset = b3Transform.p$offset();
     private static final long transform_rot_offset = b3Transform.q$offset();

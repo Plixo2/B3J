@@ -30,7 +30,7 @@ public class WorldDef {
     boolean enableContinuous;
     @Nullable TaskPool<?> taskPool;
     @Nullable Object userData;
-    @Nullable DebugShapeCollection<?> debugShapeCollection;
+    @Nullable DebugShapeCallbacks<?> debugShapeCollection;
     @Nullable Object userDebugShapeContext;
     Capacity capacity = new Capacity();
 
@@ -71,11 +71,11 @@ public class WorldDef {
             finishTask = taskPool.finishTaskCallback();
         }
 
-        DebugShapeCollection.Allocated shapes = null;
+        DebugShapeCallbacks.Allocated shapes = null;
         MemorySegment createDebugShape = MemorySegment.NULL;
         MemorySegment destroyDebugShape = MemorySegment.NULL;
         if (this.debugShapeCollection != null) {
-            shapes = new DebugShapeCollection.Allocated(this.debugShapeCollection);
+            shapes = new DebugShapeCallbacks.Allocated(this.debugShapeCollection);
             createDebugShape = shapes.creation;
             destroyDebugShape = shapes.deletion;
         }
@@ -105,7 +105,7 @@ public class WorldDef {
         return new CreationResult(shapes, taskPool, segment);
     }
     record CreationResult(
-            @Nullable DebugShapeCollection.Allocated shapes,
+            @Nullable DebugShapeCallbacks.Allocated shapes,
             @Nullable AllocatedPool taskPool,
             MemorySegment segment
     ) {}

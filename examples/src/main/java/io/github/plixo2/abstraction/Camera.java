@@ -91,11 +91,17 @@ public interface Camera {
             var s = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
             var d = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
             var space = glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS;
-            var shift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS;
-            var ctrl = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
+            var shift = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS
+                    | glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS;
+            var ctrl = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS
+                    | glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS;
+            var alt = glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS
+                    | glfwGetKey(window, GLFW_KEY_RIGHT_ALT) == GLFW_PRESS;
 
             if (ctrl) {
                 delta *= 4f;
+            } else if (alt) {
+                delta *= 0.25f;
             }
 
             if (mouseDown) {

@@ -10,7 +10,8 @@ public class ExecutorTaskPool extends TaskPool<Future<?>> {
 
     public ExecutorTaskPool() {
         var cores = Math.max(Runtime.getRuntime().availableProcessors() - 1, 1);
-        this(cores, Executors.newFixedThreadPool(cores));
+        var factory = Thread.ofPlatform().daemon(false).name("box3d-worker-", 0).factory();
+        this(cores, Executors.newFixedThreadPool(cores, factory));
     }
 
 

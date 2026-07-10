@@ -1,8 +1,6 @@
 package io.github.plixo2.box3d.internal;
 
-import java.util.function.Consumer;
-
-public class AllocState {
+public final class AllocState {
 
     public boolean destroyed = false;
 

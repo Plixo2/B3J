@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.Map;
 
 @RequiredArgsConstructor
-public class MeshFactory extends DebugShapeCollection<MultiMesh.MeshRecord> {
+public class MeshFactory extends DebugShapeCallbacks<MultiMesh.MeshRecord> {
     private final MeshRenderer buffers;
     private final Map<ShapeID, Color> customColors;
 

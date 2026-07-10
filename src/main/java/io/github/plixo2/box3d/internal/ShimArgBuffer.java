@@ -6,7 +6,7 @@ import org.box2d.box3d.box3d_h;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-public class ShimArgBuffer {
+public final class ShimArgBuffer {
 
     private final MemorySegment segment;
 

@@ -11,7 +11,6 @@ final class GlobalRegion implements Region {
         // nothing
     }
 
-
     @Override
     public void close() {
         throw new UnsupportedOperationException("Attempted to close the global region");

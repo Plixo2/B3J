@@ -40,7 +40,7 @@ public class DebugDraw {
 
     /// @api b3DefaultDebugDraw
     public <T> DebugDraw(
-            DebugShapeCollection<T> shapes,
+            DebugShapeCallbacks<T> shapes,
             DebugDrawCallbacks<T> functions
     ) {
         float h = 100.0f * B3.lengthUnitsPerMeter();
@@ -100,7 +100,7 @@ public class DebugDraw {
     private static final class Callbacks<T> {
 
         private final DebugDrawCallbacks<T> functions;
-        private final DebugShapeCollection<T> shapes;
+        private final DebugShapeCallbacks<T> shapes;
 
         private final ShimArgBuffer drawShapeBuffer;
         private final ShimArgBuffer drawSegmentBuffer;
@@ -122,7 +122,7 @@ public class DebugDraw {
         Callbacks(
                 MemorySegment segment,
                 DebugDrawCallbacks<T> functions,
-                DebugShapeCollection<T> shapes
+                DebugShapeCallbacks<T> shapes
         ) {
             this.functions = functions;
             this.shapes = shapes;

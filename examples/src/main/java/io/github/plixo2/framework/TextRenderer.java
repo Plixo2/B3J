@@ -9,7 +9,6 @@ import org.joml.Vector4f;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
-import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.GL_STREAM_DRAW;
 
 public abstract sealed class TextRenderer {
@@ -62,6 +61,23 @@ public abstract sealed class TextRenderer {
 
         this.count = 0;
         this.buffer.clear();
+    }
+
+    public float stringWidth(String text) {
+        var metrics = this.textAtlas.metrics();
+        float width = 0.0f;
+
+        var limit = text.length();
+        for (var i = 0; i < limit; i++) {
+            var c = text.charAt(i);
+            if (c > 255) {
+                c = '?';
+            }
+            var metric = metrics[c];
+            width += metric.width() * this.scale;
+        }
+
+        return width;
     }
 
     private void putString(
@@ -183,6 +199,15 @@ public abstract sealed class TextRenderer {
                 Color color
         ) {
             super.putString(text, x, y, 0.0f, color);
+        }
+
+        public void putStringLeft(
+                String text,
+                float x, float y,
+                Color color
+        ) {
+            var width = stringWidth(text);
+            super.putString(text, x - width, y, 0.0f, color);
         }
 
 

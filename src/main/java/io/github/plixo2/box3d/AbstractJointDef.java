@@ -4,16 +4,16 @@ import lombok.Getter;
 
 @Getter
 public sealed abstract class AbstractJointDef<T extends JointType>
-        permits
-            DistanceJointDef,
-            FilterJointDef,
-            MotorJointDef,
-            ParallelJointDef,
-            PrismaticJointDef,
-            RevoluteJointDef,
-            SphericalJointDef,
-            WeldJointDef,
-            WheelJointDef
+    permits
+        DistanceJointDef,
+        FilterJointDef,
+        MotorJointDef,
+        ParallelJointDef,
+        PrismaticJointDef,
+        RevoluteJointDef,
+        SphericalJointDef,
+        WeldJointDef,
+        WheelJointDef
 {
 
     protected JointDef base;

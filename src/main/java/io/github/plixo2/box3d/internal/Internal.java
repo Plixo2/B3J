@@ -1,14 +1,11 @@
 package io.github.plixo2.box3d.internal;
 
 
-import org.box2d.box3d.b3MeshDef;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
-import java.util.function.Supplier;
 
 public final class Internal {
     public static final long U64_MAX = -1L;

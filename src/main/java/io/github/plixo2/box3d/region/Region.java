@@ -33,7 +33,6 @@ public sealed interface Region
         return new ConfinedRegion(parent);
     }
 
-
     void register(AllocState owner, Runnable cleanup);
 
     default void register(AllocState owner, MemorySegment segment, Consumer<MemorySegment> cleanup) {
@@ -43,4 +42,5 @@ public sealed interface Region
     /// @throws UnsupportedOperationException if the region cannot be closed manually
     @Override
     void close();
+
 }

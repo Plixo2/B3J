@@ -4,7 +4,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 
-public class ConstArena implements SegmentAllocator {
+public final class ConstArena implements SegmentAllocator {
     private final long size;
     private final MemorySegment segment;
     private final long address;

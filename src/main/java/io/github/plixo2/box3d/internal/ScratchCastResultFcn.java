@@ -7,12 +7,15 @@ import org.joml.Vector3f;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class ScratchCastResultFcn implements b3CastResultFcn.Function, AutoCloseable {
+import static org.box2d.box3d.box3d_h.b3World_CastRay;
 
-    private @Nullable CastResult function = null;
+public final class ScratchCastResultFcn implements b3CastResultFcn.Function {
+
+    private @Nullable volatile CastResult function = null;
 
     private final MemorySegment segment;
 
@@ -23,15 +26,32 @@ public class ScratchCastResultFcn implements b3CastResultFcn.Function, AutoClose
         this.segment = b3CastResultFcn.allocate(this, parent);
     }
 
-    public MemorySegment set(CastResult function) {
-        this.function = function;
-        return this.segment;
+    public MemorySegment invoke(
+            SegmentAllocator returnArena,
+            MemorySegment worldId,
+            MemorySegment origin,
+            MemorySegment translation,
+            MemorySegment filter,
+            CastResult fcn
+    ) {
+        this.function = fcn;
+
+        try {
+            return b3World_CastRay(
+                    returnArena,
+                    worldId,
+                    origin,
+                    translation,
+                    filter,
+                    this.segment,
+                    MemorySegment.NULL
+            );
+        } finally {
+            this.function = null;
+        }
+
     }
 
-    @Override
-    public void close() {
-        this.function = null;
-    }
 
     @Override
     public float apply(
@@ -44,14 +64,15 @@ public class ScratchCastResultFcn implements b3CastResultFcn.Function, AutoClose
             int childIndex,
             MemorySegment context
     ) {
-        Objects.requireNonNull(this.function, "function not set");
+        var function1 = this.function;
+        Objects.requireNonNull(function1, "function not set");
         PrimitiveMemOps.setVec3(this.v1, point);
         PrimitiveMemOps.setVec3(this.v2, normal);
 
         var packedID = PrimitiveMemOps.packShapeID(shapeId);
         var shape = ShapeID.fromUnknown(packedID);
 
-        return this.function.onHit(
+        return function1.onHit(
                 shape,
                 this.v1,
                 this.v2,

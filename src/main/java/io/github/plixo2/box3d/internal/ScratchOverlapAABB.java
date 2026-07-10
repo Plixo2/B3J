@@ -10,7 +10,7 @@ import java.lang.foreign.SegmentAllocator;
 
 import static org.box2d.box3d.box3d_h.b3jshimWorld_OverlapAABB;
 
-public class ScratchOverlapAABB {
+public final class ScratchOverlapAABB {
 
     private final ShimArgBuffer buffer;
 
@@ -39,7 +39,6 @@ public class ScratchOverlapAABB {
         }
 
         var total_size = b3ShapeId.sizeof();
-
         var data = this.buffer.data();
 
         for (var i = 0; i < count; i++) {

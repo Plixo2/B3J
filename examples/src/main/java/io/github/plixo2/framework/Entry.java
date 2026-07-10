@@ -245,7 +245,8 @@ public class Entry implements AutoCloseable {
 
         this.example.drawText2D(this.textRenderer2D);
         this.example.drawText3D(this.textRenderer3D);
-        this.example.drawConfig.render(this.textRenderer2D, this.height);
+        this.example.drawConfig.render(this.textRenderer2D, this.height, this.width);
+
 
         this.example.b3.worldDraw(this.example.worldID, this.debugDraw, U64_MAX);
 

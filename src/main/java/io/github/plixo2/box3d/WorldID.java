@@ -4,7 +4,6 @@ import io.github.plixo2.box3d.internal.AllocState;
 import io.github.plixo2.box3d.internal.U16;
 import io.github.plixo2.box3d.region.Region;
 import io.github.plixo2.box3d.threads.AllocatedPool;
-import io.github.plixo2.box3d.threads.TaskPool;
 import org.box2d.box3d.b3WorldId;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,14 +18,14 @@ public final class WorldID {
 
     private final AllocState state = AllocState.create();
 
-    private final @Nullable AllocatedPool taskPool; // keep alive
-    private final @Nullable DebugShapeCollection.Allocated shapes; // keep alive
+    private final @Nullable AllocatedPool taskPool;               // keep alive
+    private final @Nullable DebugShapeCallbacks.Allocated shapes; // keep alive
 
     private WorldID(
             @Nullable B3 instance,
             @Nullable Region region,
             @Nullable AllocatedPool taskPool,
-            @Nullable DebugShapeCollection.Allocated shapes,
+            @Nullable DebugShapeCallbacks.Allocated shapes,
             @U16 int index1,
             @U16 int generation
     ) {
@@ -91,7 +90,7 @@ public final class WorldID {
             B3 instance,
             Region region,
             @Nullable AllocatedPool taskPool,
-            @Nullable DebugShapeCollection.Allocated shapes,
+            @Nullable DebugShapeCallbacks.Allocated shapes,
             MemorySegment segment
     ) {
         var index1 = Short.toUnsignedInt(b3WorldId.index1(segment));

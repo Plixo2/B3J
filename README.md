@@ -1,9 +1,7 @@
 # B3J 
 
-![Box3D Logo](https://box2d.org/images/logo.svg)
-
 B3J is a handwritten Java wrapper of [Box3D](https://github.com/erincatto/box3d).
-It is designed to be a efficient and as close to the original Box3D as possible.
+It is designed to be efficient, but convenient, and as close to the original Box3D as possible.
 
 
 ### [Examples](examples/src/main/java/io/github/plixo2/samples)

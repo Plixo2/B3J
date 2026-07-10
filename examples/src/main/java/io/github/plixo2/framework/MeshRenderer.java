@@ -40,7 +40,7 @@ public class MeshRenderer {
     }
 
 
-    public void draw(
+    void draw(
             Matrix4f viewProjection,
             Vector3f cameraPosition
     ) {
@@ -55,7 +55,7 @@ public class MeshRenderer {
 
     }
 
-    public void free() {
+    void free() {
         this.buffers.forEach(MultiMesh::free);
         this.buffers.clear();
     }

@@ -8,13 +8,12 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
-public abstract class DebugShapeCollection<T> {
+public abstract class DebugShapeCallbacks<T> {
 
     private final LongObjectHashMap<T> objects = new LongObjectHashMap<>();
     private long counter = 1;
 
-    public DebugShapeCollection() {}
-
+    public DebugShapeCallbacks() {}
 
     protected abstract T create(ShapeID shapeID, ShapeType.Shape shape);
     protected abstract void delete(T object);
@@ -93,13 +92,13 @@ public abstract class DebugShapeCollection<T> {
 
 
     static final class Allocated {
-        private DebugShapeCollection<?> collection; // keep reference
+        private DebugShapeCallbacks<?> collection; // keep alive
         private Arena arena;
 
         MemorySegment creation;
         MemorySegment deletion;
 
-        Allocated(DebugShapeCollection<?> collection) {
+        Allocated(DebugShapeCallbacks<?> collection) {
             this.collection = collection;
             this.arena = Arena.ofConfined();
             this.creation = b3CreateDebugShapeCallback.allocate(collection::create, this.arena);

@@ -31,14 +31,13 @@ public class Determinism extends Example {
     private boolean saved = false;
 
     private final List<BodyID> bodies = new ArrayList<>();
+    private @Nullable BodyID spinner;
 
-    Region jointRegion;
     private float time = 0;
 
     @Override
     public void init(MeshFactory debugShapes) {
         initialCameraPosition(5, 15, 5);
-        this.jointRegion = Region.ofConfined();
         this.time = 0;
         this.bodies.clear();
         this.saved = false;
@@ -135,20 +134,14 @@ public class Determinism extends Example {
         );
 
 
-        BodyID spinner;
-        {
-            var dynBodyDef = new BodyDef();
-            dynBodyDef.type(BodyType.DYNAMIC);
-            dynBodyDef.position().set(new Vector3f(0, 7.5f, 0));
-            BodyID bodyId = this.b3.createBody(this.jointRegion, this.worldID, dynBodyDef);
+        this.spinner = spawnBox(
+                BodyType.DYNAMIC,
+                boxDef,
+                new Vector3f(29, 14f, 0.5f),
+                new Vector3f(0, 7.5f, 0)
+        );
 
-            var sSize = new Vector3f(29, 14f, 0.5f);
-            var dynamicBox = this.b3.makeBoxHull(sSize.x / 2f, sSize.y / 2f, sSize.z / 2f);
-            var _ = this.b3.createHullShape(bodyId, boxDef, dynamicBox.base());
-            spinner = bodyId;
-        }
-
-        var jointDef = new RevoluteJointDef(spinner, ball);
+        var jointDef = new RevoluteJointDef(this.spinner, ball);
         var axis = new Quaternionf();
         axis.rotateX(Math.PI_OVER_2_f);
 
@@ -159,7 +152,7 @@ public class Determinism extends Example {
         jointDef.motorSpeed(7f);
         jointDef.enableMotor(true);
 
-        var _ = this.b3.createRevoluteJoint(this.jointRegion, this.worldID, jointDef);
+        var _ = this.b3.createRevoluteJoint(Region.global(), this.worldID, jointDef);
 
     }
     private void spawnColorBox(
@@ -245,9 +238,9 @@ public class Determinism extends Example {
             System.out.println("Saved");
         }
 
-        if (this.time > 10 && this.jointRegion != null) {
-            this.jointRegion.close();
-            this.jointRegion = null;
+        if (this.time > 10 && this.spinner != null) {
+            this.b3.destroyBody(this.spinner);
+            this.spinner = null;
         }
 
 

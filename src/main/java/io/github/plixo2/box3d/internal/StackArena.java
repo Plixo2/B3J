@@ -4,7 +4,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 
-public class StackArena implements SegmentAllocator, AutoCloseable {
+public final class StackArena implements SegmentAllocator, AutoCloseable {
     private final long limit;
     private final MemorySegment segment;
     private final long adress;

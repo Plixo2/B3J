@@ -272,4 +272,5 @@ public class MemoryIterator<T> implements Iterable<T> {
         }
         return Math.toIntExact(size / elementBytes);
     }
+
 }
