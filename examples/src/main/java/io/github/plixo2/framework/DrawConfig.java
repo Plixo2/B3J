@@ -43,9 +43,17 @@ public class DrawConfig {
         this.map.put(key, !get(key));
     }
 
-    void render(TextRenderer.UI text, int height) {
+    void render(TextRenderer.UI text, int height, int width) {
 
         var y = height - 38;
+
+        var right = width - 10;
+        text.putStringLeft("WASD to move", right, y - 25 * 0, Color.BLACK);
+        text.putStringLeft("Space to move up, Shift to move down", right, y - 25 * 1, Color.BLACK);
+        text.putStringLeft("Ctrl to speed up, Alt to slow down", right, y - 25 * 2, Color.BLACK);
+        text.putStringLeft("Hold right mouse button to look around", right, y - 25 * 3, Color.BLACK);
+        text.putStringLeft("R to restart", right, y - 25 * 4, Color.BLACK);
+
         text.putString("Config (ESC)", 10, y - 10, Color.WHITE);
 
         if (!this.shown) {
