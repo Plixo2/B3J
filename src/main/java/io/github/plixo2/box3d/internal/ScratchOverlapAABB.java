@@ -43,7 +43,7 @@ public final class ScratchOverlapAABB {
 
         for (var i = 0; i < count; i++) {
             var byteOffset = i * total_size;
-            var packedID = PrimitiveMemOps.packShapeID(data, byteOffset);
+            var packedID = PrimitiveMemOps.packID(data, byteOffset);
             if (!fcn.onOverlap(ShapeID.fromUnknown(packedID))) {
                 break;
             }

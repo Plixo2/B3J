@@ -1,20 +1,13 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.AllocState;
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
-import io.github.plixo2.box3d.internal.U16;
-import io.github.plixo2.box3d.region.Region;
-import org.box2d.box3d.b3JointId;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.MemorySegment;
-import java.util.Objects;
 
 public final class JointID<T extends JointType> {
     public static final JointID<?> NULL_ID = new JointID<>(0);
 
     private final long packedID;
-
 
     private JointID(
             long packedID
@@ -93,15 +86,15 @@ public final class JointID<T extends JointType> {
     static <T extends JointType> JointID<T> of(
             MemorySegment segment
     ) {
-        var identifier = PrimitiveMemOps.packJointID(segment);
+        var identifier = PrimitiveMemOps.packID(segment);
         return new JointID<>(identifier);
     }
 
     static String toString(long packedID) {
         return "JointID{" +
-                "index1=" + PrimitiveMemOps.getJointIDIndexFromPacked(packedID) +
-                ", world0=" + PrimitiveMemOps.getJointIDWorldFromPacked(packedID) +
-                ", generation=" + PrimitiveMemOps.getJointIDGenerationFromPacked(packedID) +
+                "index1=" + PrimitiveMemOps.getIndexFromPacked(packedID) +
+                ", world0=" + PrimitiveMemOps.getWorldFromPacked(packedID) +
+                ", generation=" + PrimitiveMemOps.getGenerationFromPacked(packedID) +
                 '}';
     }
 

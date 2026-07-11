@@ -29,11 +29,11 @@ staying as close as possible to the original Box3D API.
 - Types & Methods are not prefixed with 'b3' and follow Java naming conventions.
   - E.g. `b3Body_SetTransform` becomes `b3.bodySetTransform`
 
-- Similar API to Box3D, but no identical.
+- Similar API to Box3D, but not identical.
   - Constructors are used, instead of `b3Default...` methods 
   - All other methods are found on the [B3](src/main/java/io/github/plixo2/box3d/B3.java) class:
 
-- Thread safety 
+- Thread safety
   - B3J allocates a small amount of memory upfront for efficient c calls
   - `B3.get()` will give you a thread unique instance. Dont share this across threads.
 

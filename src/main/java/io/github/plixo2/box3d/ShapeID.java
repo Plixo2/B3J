@@ -1,7 +1,6 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
-import io.github.plixo2.box3d.internal.U16;
 
 import java.lang.foreign.MemorySegment;
 
@@ -18,15 +17,6 @@ public final class ShapeID {
         return this.packedID;
     }
 
-    public int index1() {
-        return PrimitiveMemOps.getShapeIDIndexFromPacked(this.packedID);
-    }
-    public @U16 int world0() {
-        return PrimitiveMemOps.getShapeIDWorldFromPacked(this.packedID);
-    }
-    public @U16 int generation() {
-        return PrimitiveMemOps.getShapeIDGenerationFromPacked(this.packedID);
-    }
 
     @Override
     public boolean equals(Object object) {
@@ -45,14 +35,14 @@ public final class ShapeID {
     @Override
     public String toString() {
         return "ShapeID{" +
-                "index1=" + index1() +
-                ", world0=" + world0() +
-                ", generation=" + generation() +
+                "index1=" + PrimitiveMemOps.getIndexFromPacked(this.packedID) +
+                ", world0=" + PrimitiveMemOps.getWorldFromPacked(this.packedID) +
+                ", generation=" + PrimitiveMemOps.getGenerationFromPacked(this.packedID) +
                 '}';
     }
 
     static ShapeID of(MemorySegment segment) {
-        var identifier = PrimitiveMemOps.packShapeID(segment);
+        var identifier = PrimitiveMemOps.packID(segment);
         return new ShapeID(identifier);
     }
 

@@ -6,7 +6,6 @@ import lombok.Setter;
 import org.box2d.box3d.b3JointDef;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
@@ -59,8 +58,8 @@ public class JointDef {
     MemorySegment create(Quaternionf tempQuat, SegmentAllocator arena) {
         var segment = b3JointDef.allocate(arena);
 
-        PrimitiveMemOps.putBodyID(b3JointDef.bodyIdA(segment), this.bodyIdA.packedID());
-        PrimitiveMemOps.putBodyID(b3JointDef.bodyIdB(segment), this.bodyIdB.packedID());
+        PrimitiveMemOps.putPackedID(b3JointDef.bodyIdA(segment), this.bodyIdA.packedID());
+        PrimitiveMemOps.putPackedID(b3JointDef.bodyIdB(segment), this.bodyIdB.packedID());
 
         PrimitiveMemOps.putTransform(b3JointDef.localFrameA(segment), tempQuat, this.localFrameA);
         PrimitiveMemOps.putTransform(b3JointDef.localFrameB(segment), tempQuat, this.localFrameB);

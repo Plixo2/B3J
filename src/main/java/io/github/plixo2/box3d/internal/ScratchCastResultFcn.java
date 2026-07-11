@@ -9,7 +9,6 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.util.Objects;
-import java.util.function.Function;
 
 import static org.box2d.box3d.box3d_h.b3World_CastRay;
 
@@ -69,7 +68,7 @@ public final class ScratchCastResultFcn implements b3CastResultFcn.Function {
         PrimitiveMemOps.setVec3(this.v1, point);
         PrimitiveMemOps.setVec3(this.v2, normal);
 
-        var packedID = PrimitiveMemOps.packShapeID(shapeId);
+        var packedID = PrimitiveMemOps.packID(shapeId);
         var shape = ShapeID.fromUnknown(packedID);
 
         return function1.onHit(

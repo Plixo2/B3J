@@ -1260,12 +1260,14 @@ public final class B3 {
 
 
 
+
+
     /// @api b3DestroyWorld
-    void destroyWorld(int index1, int generation) {
-        var segment = worldID(index1, generation);
+    void destroyWorld(long packedID) {
+        var segment = worldID(packedID);
         if (!b3World_IsValid(segment)) {
             throw new IllegalStateException(
-                    "World " +  WorldID.toString(index1, generation) + " is not valid anymore"
+                    "World " +  WorldID.toString(packedID) + " is not valid anymore"
             );
         }
 
@@ -1307,19 +1309,17 @@ public final class B3 {
 
 
     private MemorySegment worldID(WorldID worldID) {
-        worldID.ensureAccess();
-        return worldID(worldID.index1, worldID.generation);
+        return worldID(worldID.packedID());
     }
-    private MemorySegment worldID(int index1, int generation) {
-        b3WorldId.index1(this.worldIDSegment, assertU16(index1, "index1"));
-        b3WorldId.generation(this.worldIDSegment, assertU16(generation, "generation"));
+    private MemorySegment worldID(long packedID) {
+        PrimitiveMemOps.putPackedWorldID(this.worldIDSegment, packedID);
         return this.worldIDSegment;
     }
     private MemorySegment bodyID(BodyID bodyID) {
         return bodyID(bodyID.packedID());
     }
     private MemorySegment bodyID(long packedID) {
-        PrimitiveMemOps.putBodyID(this.bodyIDSegment, packedID);
+        PrimitiveMemOps.putPackedID(this.bodyIDSegment, packedID);
         return this.bodyIDSegment;
     }
     private MemorySegment contactID(ContactID contactID) {
@@ -1329,14 +1329,14 @@ public final class B3 {
         return this.contactIDSegment;
     }
     private MemorySegment shapeID(ShapeID shapeID) {
-        PrimitiveMemOps.putShapeID(this.shapeIDSegment, shapeID.packedID());
+        PrimitiveMemOps.putPackedID(this.shapeIDSegment, shapeID.packedID());
         return this.shapeIDSegment;
     }
     private MemorySegment jointID(JointID<?> jointID) {
         return jointID(jointID.packedID());
     }
     private MemorySegment jointID(long packedID) {
-        PrimitiveMemOps.putJointID(this.jointIDSegment, packedID);
+        PrimitiveMemOps.putPackedID(this.jointIDSegment, packedID);
         return this.jointIDSegment;
     }
     private MemorySegment transform(Matrix4f transform) {

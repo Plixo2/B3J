@@ -31,7 +31,6 @@ public class WorldDef {
     boolean enableSleep;
     boolean enableContinuous;
     @Nullable TaskScheduler taskPool;
-    @Nullable Object userData;
     @Nullable DebugShapeCallbacks<?> debugShapeCollection;
     @Nullable Object userDebugShapeContext;
     Capacity capacity = new Capacity();
@@ -88,7 +87,6 @@ public class WorldDef {
         }
 
 
-
         PrimitiveMemOps.putVec3(b3WorldDef.gravity(segment), this.gravity);
         b3WorldDef.restitutionThreshold(segment, this.restitutionThreshold);
         b3WorldDef.hitEventThreshold(segment, this.hitEventThreshold);
@@ -104,7 +102,6 @@ public class WorldDef {
         b3WorldDef.enqueueTask(segment, enqueueTask);
         b3WorldDef.finishTask(segment, finishTask);
         b3WorldDef.userTaskContext(segment, MemorySegment.NULL);
-        b3WorldDef.userData(segment, nls(this.userData));
         b3WorldDef.createDebugShape(segment, createDebugShape);
         b3WorldDef.destroyDebugShape(segment, destroyDebugShape);
         b3WorldDef.userDebugShapeContext(segment, nls(this.userDebugShapeContext));

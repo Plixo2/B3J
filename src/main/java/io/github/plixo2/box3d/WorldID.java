@@ -1,6 +1,7 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.AllocState;
+import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.internal.U16;
 import io.github.plixo2.box3d.region.Region;
 import io.github.plixo2.box3d.internal.AllocatedPool;
@@ -11,10 +12,9 @@ import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 
 public final class WorldID {
-    public static final WorldID NULL_ID = new WorldID(null, null, null, null, 0, 0);
+    public static final WorldID NULL_ID = new WorldID(null, null, null, null, 0);
 
-    final @U16 int index1;
-    final @U16 int generation;
+    private final long packedID;
 
     final AllocState state = AllocState.create();
 
@@ -26,19 +26,17 @@ public final class WorldID {
             @Nullable Region region,
             @Nullable AllocatedPool taskPool,
             @Nullable DebugShapeCallbacks.Allocated shapes,
-            @U16 int index1,
-            @U16 int generation
+            long packedID
     ) {
 
-        this.index1 = index1;
-        this.generation = generation;
+        this.packedID = packedID;
 
         this.taskPool = taskPool;
         this.shapes = shapes;
 
         if (instance != null && region != null) {
             region.register(this.state, () -> {
-                instance.destroyWorld(index1, generation);
+                instance.destroyWorld(packedID);
                 if (taskPool != null) {
                     taskPool.close();
                 }
@@ -49,34 +47,14 @@ public final class WorldID {
         }
     }
 
-    void ensureAccess() {
+    public long packedID() {
         this.state.ensureAccess();
+        return this.packedID;
     }
-
-
-
-    public WorldID reinterpret(B3 instance, Region region) {
-        return new WorldID(
-                Objects.requireNonNull(instance),
-                Objects.requireNonNull(region),
-                this.taskPool, this.shapes,
-                this.index1, this.generation
-        );
-    }
-
-    public @U16 int index1() {
-        this.state.ensureAccess();
-        return this.index1;
-    }
-    public @U16 int generation() {
-        this.state.ensureAccess();
-        return this.generation;
-    }
-
 
     @Override
     public String toString() {
-        return toString(this.index1, this.generation);
+        return toString(this.packedID);
     }
 
     @Override
@@ -84,12 +62,12 @@ public final class WorldID {
         if (!(object instanceof WorldID worldID)) {
             return false;
         }
-        return this.index1 == worldID.index1 && this.generation == worldID.generation;
+        return this.packedID == worldID.packedID;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.index1, this.generation);
+        return Long.hashCode(this.packedID);
     }
 
     static WorldID of(
@@ -99,23 +77,21 @@ public final class WorldID {
             @Nullable DebugShapeCallbacks.Allocated shapes,
             MemorySegment segment
     ) {
-        var index1 = Short.toUnsignedInt(b3WorldId.index1(segment));
-        var generation = Short.toUnsignedInt(b3WorldId.generation(segment));
+        var identifier = PrimitiveMemOps.packWorldID(segment);
         return new WorldID(
                 instance,
                 region,
                 taskPool,
                 shapes,
-                index1,
-                generation
+                identifier
         );
     }
 
 
-    static String toString(@U16 int index1, @U16 int generation) {
+    static String toString(long packedID) {
         return "WorldID{"
-                + "index1=" + index1
-                + ", generation=" + generation
+                + "index1=" + PrimitiveMemOps.getWorldIDIndexFromPackedID(packedID)
+                + ", generation=" + PrimitiveMemOps.getWorldIDGenerationFromPackedID(packedID)
                 + '}';
     }
 

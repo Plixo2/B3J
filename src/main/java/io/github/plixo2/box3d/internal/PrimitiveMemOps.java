@@ -3,7 +3,6 @@ package io.github.plixo2.box3d.internal;
 import org.box2d.box3d.*;
 import org.joml.*;
 
-import java.awt.geom.AffineTransform;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
@@ -144,6 +143,9 @@ public final class PrimitiveMemOps {
     }
 
     static {
+        if (b3WorldId.sizeof() != Integer.BYTES) {
+            throw new RuntimeException("b3WorldId layout mismatch");
+        }
         if (b3BodyId.sizeof() != Long.BYTES) {
             throw new RuntimeException("b3BodyId layout mismatch");
         }
@@ -155,67 +157,47 @@ public final class PrimitiveMemOps {
         }
     }
 
-    public static long packBodyID(MemorySegment segment) {
-        return packBodyID(segment, 0);
+
+    public static long packID(MemorySegment segment) {
+        return packID(segment, 0);
     }
-    public static long packBodyID(MemorySegment segment, long offset) {
+    public static long packID(MemorySegment segment, long offset) {
         return segment.get(ValueLayout.JAVA_LONG, offset);
     }
-    public static void putBodyID(MemorySegment segment, long id) {
+
+    public static void putPackedID(MemorySegment segment, long id) {
         segment.set(ValueLayout.JAVA_LONG, 0, id);
     }
 
-    public static long packShapeID(MemorySegment segment) {
-        return packShapeID(segment, 0);
-    }
-    public static long packShapeID(MemorySegment segment, long offset) {
-        return segment.get(ValueLayout.JAVA_LONG, offset);
-    }
-    public static void putShapeID(MemorySegment segment, long id) {
-        segment.set(ValueLayout.JAVA_LONG, 0, id);
-    }
-
-    public static long packJointID(MemorySegment segment) {
-        return packJointID(segment, 0);
-    }
-    public static long packJointID(MemorySegment segment, long offset) {
-        return segment.get(ValueLayout.JAVA_LONG, offset);
-    }
-    public static void putJointID(MemorySegment segment, long id) {
-        segment.set(ValueLayout.JAVA_LONG, 0, id);
-    }
-
-
-    public static int getBodyIDIndexFromPacked(long packed) {
+    public static int getIndexFromPacked(long packed) {
         return (int) (packed & 0xFFFFFFFFL);
     }
-    public static int getBodyIDWorldFromPacked(long packed) {
+    public static int getWorldFromPacked(long packed) {
         return (int) ((packed >> 32) & 0xFFFFL);
     }
-    public static int getBodyIDGenerationFromPacked(long packed) {
-        return (int) ((packed >> 48) & 0xFFFFL);
-    }
-
-    public static int getShapeIDIndexFromPacked(long packed) {
-        return (int) (packed & 0xFFFFFFFFL);
-    }
-    public static int getShapeIDWorldFromPacked(long packed) {
-        return (int) ((packed >> 32) & 0xFFFFL);
-    }
-    public static int getShapeIDGenerationFromPacked(long packed) {
-        return (int) ((packed >> 48) & 0xFFFFL);
-    }
-
-    public static int getJointIDIndexFromPacked(long packed) {
-        return (int) (packed & 0xFFFFFFFFL);
-    }
-    public static int getJointIDWorldFromPacked(long packed) {
-        return (int) ((packed >> 32) & 0xFFFFL);
-    }
-    public static int getJointIDGenerationFromPacked(long packed) {
+    public static int getGenerationFromPacked(long packed) {
         return (int) ((packed >> 48) & 0xFFFFL);
     }
 
 
+    public static long packWorldID(MemorySegment segment) {
+        return packID(segment, 0);
+    }
+    public static long packWorldID(MemorySegment segment, long offset) {
+        return Integer.toUnsignedLong(segment.get(ValueLayout.JAVA_INT, offset));
+    }
+    public static void putPackedWorldID(MemorySegment segment, long worldID) {
+        var asInt = (int) worldID;
+        segment.set(ValueLayout.JAVA_INT, 0, asInt);
+    }
+
+    public static int getWorldIDIndexFromPackedID(long packedID) {
+        packedID = packedID & 0xFFFFFFFFL;
+        return (int) (packedID & 0xFFFFL);
+    }
+    public static int getWorldIDGenerationFromPackedID(long packedID) {
+        packedID = packedID & 0xFFFFFFFFL;
+        return (int) ((packedID >> 16) & 0xFFFFL);
+    }
 
 }

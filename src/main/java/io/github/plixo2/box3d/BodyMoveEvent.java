@@ -18,27 +18,25 @@ public class BodyMoveEvent {
     @Getter
     private boolean fellAsleep;
 
+    @Getter
     private final Matrix4f transform = new Matrix4f();
 
-    @Getter
-    private long userData;
 
     private BodyMoveEvent() {}
 
-    public Matrix4f transform(Matrix4f dest) {
-        return dest.set(this.transform);
+    public BodyMoveEvent(BodyMoveEvent other) {
+        this.bodyID = other.bodyID;
+        this.fellAsleep = other.fellAsleep;
+        this.transform.set(other.transform);
     }
-
 
 
     private BodyMoveEvent set(MemorySegment segment, long offset) {
 
-        var userDataOffset   = offset + b3BodyMoveEvent.userData$offset();
         var transformOffset  = offset + b3BodyMoveEvent.transform$offset();
         var bodyIDOffset     = offset + b3BodyMoveEvent.bodyId$offset();
         var fellAsleepOffset = offset + b3BodyMoveEvent.fellAsleep$offset();
 
-        this.userData = segment.get(ValueLayout.JAVA_LONG, userDataOffset);
         PrimitiveMemOps.setTransform(this.transform, segment,  transformOffset);
         this.bodyID = BodyID.of(null, null, segment, bodyIDOffset);
         this.fellAsleep = segment.get(ValueLayout.JAVA_BOOLEAN, fellAsleepOffset);
