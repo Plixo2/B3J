@@ -7,9 +7,7 @@ import org.joml.Matrix4f;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
 import static org.lwjgl.opengl.GL15.GL_STREAM_DRAW;
-import static org.lwjgl.opengl.GL15C.*;
 import static org.lwjgl.opengl.GL20C.glUniform1i;
-import static org.lwjgl.opengl.GL32C.glDrawElementsBaseVertex;
 
 public class MultiMesh {
     private static final int FLOATS_PER_VERTEX = 6;
@@ -107,13 +105,15 @@ public class MultiMesh {
         var vertexCount = vertexFloatCount / FLOATS_PER_VERTEX;
         var indexCount = mesh.indices().length;
 
-        var vbo = this.mesh.getTemporaryVertexBufferObject();
-        var ebo = this.mesh.getTemporaryVertexElementObject();
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferSubData(GL_ARRAY_BUFFER, (long) this.vertexFloatCount * Float.BYTES, mesh.verticies());
+        this.mesh.uploadVerticies(
+                (long) this.vertexFloatCount * Float.BYTES,
+                mesh.verticies()
+        );
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, (long) this.indexCount * Integer.BYTES, mesh.indices());
+        this.mesh.uploadIndicies(
+                (long) this.indexCount * Integer.BYTES,
+                mesh.indices()
+        );
 
         var record = new MeshRecord(
                 customColor,
@@ -160,10 +160,8 @@ public class MultiMesh {
                 var indexCount = this.legacyCommands[offset + LEGACY_INDEX_COUNT];
 
                 glUniform1i(location, i);
-                glDrawElementsBaseVertex(
-                        GL_TRIANGLES,
+                this.mesh.drawBaseVertex(
                         indexCount,
-                        GL_UNSIGNED_INT,
                         (long) indexOffset * Integer.BYTES,
                         vertexOffset
                 );
@@ -184,7 +182,7 @@ public class MultiMesh {
         this.perInstanceData.clear();
     }
 
-    private void addDraw(
+    private void putDraw(
             int vertexOffset,
             int indexOffset,
             int indexCount,
@@ -238,12 +236,12 @@ public class MultiMesh {
             int vertexCount,
             int indexCount
     ) {
-        void addDraw(
+        void putDraw(
                 Matrix4f transform,
                 Matrix4f normal,
                 int color
         ) {
-            this.mesh.addDraw(
+            this.mesh.putDraw(
                     this.vertexOffset,
                     this.indexOffset,
                     this.indexCount,

@@ -12,38 +12,43 @@ It is designed to be efficient yet convenient,
 staying as close as possible to the original Box3D API. 
 
 > [!WARNING]  
-> Still in development ... Usable, but far from feature complete.
+> Still in development. Probably not usable and far from feature complete.
 
 
 ### [Examples](examples/src/main/java/io/github/plixo2/samples)
 
-- `lwjgl` used for rendering with OpenGL 4.5
+- `lwjgl` used for rendering with OpenGL > 4.3
 - Use the [instance Main Methods](https://openjdk.org/jeps/445) to run the examples.
 
 ## Usage (and Box3d differences)
 
-- Constructors are used, instead of `b3Default...` methods
-- [JOML](https://github.com/JOML-CI/JOML) is used for math and vector operations.
+- [JOML](https://github.com/JOML-CI/JOML) for fast math and vector operations.
+  - A `Matrix4f` is used as a rigid transform instead of `b3Transform`.
+  - `Vector3f` and `Quaternionf` are used for `b3Vec3` and `b3Quat`.
+
 - Types & Methods are not prefixed with `b3` and follow Java naming conventions.
-E.g. `b3Body_SetTransform` becomes `b3.bodySetTransform`
+  - E.g. `b3Body_SetTransform` becomes `b3.bodySetTransform`
 
-- All methods are found on the [B3](src/main/java/io/github/plixo2/box3d/B3.java) class:
+- Similar API to Box3D, but no identical.
+  - Constructors are used, instead of `b3Default...` methods 
+  - All other methods are found on the [B3](src/main/java/io/github/plixo2/box3d/B3.java) class:
+
+- Thread safety 
   - B3J allocates a small amount of memory upfront for efficient c calls
-  - `B3.get()` will give you a thread unique instance. Dont share this between threads.
+  - `B3.get()` will give you a thread unique instance. Dont share this across threads.
 
-- B3J allocates as few objects as possible and reuses existing objects. 
-  - Some method require a `in` parameter to be filled. E.g. `Vector3f bodyGetPosition(Vector3f in, BodyID bodyId)`
-  - Arguments of callbacks or custom Iterators can be mutable. Make sure to copy them if you want to keep them.
+- Memory Efficient
+  - B3J allocates as few objects as possible and reuses existing objects. 
+  - Some method require a `in` parameter to be filled in. E.g. `Vector3f bodyGetPosition(Vector3f in, BodyID bodyId)`
+  - Arguments of callbacks or custom Iterators can be mutable. Make sure to copy them if you want to keep the objects.
+  - Some arguments can be `null`, when they are not needed.
 
-- A [Region](src/main/java/io/github/plixo2/box3d/region/Region.java) is used to manage lifetimes.
-  - `Region.ofConfined()` creates a confined region, similar to `Arena.ofConfined()`
-  - `Region.ofConfined(Region parent`) creates a confined region with a parent region. 
-    The parent region will close the child, but the child region can be closed independently.
-  - `Region.ofGlobal()` creates a global region, which is never closed. 
-    Use this, for example, for objects that are destroyed by Box3D when the world is destroyed.
-  - `Region.ofAuto(FreeList freeList)` creates a region managed by the garbage collector. 
-    - Unlike `Arena.ofAuto()`, it takes a [FreeList](src/main/java/io/github/plixo2/box3d/region/FreeList.java) 
-    to be drained on your own thread. 
+- Fearless Resource Management
+  - A [Region](src/main/java/io/github/plixo2/box3d/region/Region.java) is used to manage resources. 
+  - `BodyID`, `WorldID`, `MeshData` and `HeightFieldData` are managed by regions. 
+    - They will be automatically destroyed when the region is closed.
+    - You can also destroy them manually beforehand.
+  - See [Region](src/main/java/io/github/plixo2/box3d/region/Region.java) for more details and available regions.
 
 ## Compatibility
 

@@ -4,8 +4,7 @@ import io.github.plixo2.Example;
 import io.github.plixo2.abstraction.Color;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.internal.U64;
-import io.github.plixo2.box3d.region.Region;
-import io.github.plixo2.box3d.threads.ExecutorTaskPool;
+import io.github.plixo2.box3d.threads.BuildInScheduler;
 import io.github.plixo2.framework.DrawConfig;
 import io.github.plixo2.framework.MeshFactory;
 import io.github.plixo2.framework.TextRenderer;
@@ -27,7 +26,9 @@ public class Joints extends Example {
         var worldDef = new WorldDef();
         worldDef.debugShapeCollection(debugShapes);
 
-        worldDef.taskPool(new ExecutorTaskPool());
+        if (this.threaded) {
+            worldDef.taskPool(new BuildInScheduler());
+        }
 
         worldDef.gravity().set(0, -10f, 0);
         this.worldID = this.b3.createWorld(this.region, worldDef);
@@ -42,12 +43,15 @@ public class Joints extends Example {
 
 
         revolute(-10);
+
     }
 
     @Override
     public void drawText3D(TextRenderer.World text) {
         text.putString("Revolute joints", 0, 0, -10, Color.WHITE);
     }
+
+
 
     private void revolute(float z) {
         spawnFalling(new Vector3f(5, 0, z));
@@ -102,16 +106,12 @@ public class Joints extends Example {
         }
 
         // is destroyed when any body is destroyed
-        var _ = this.b3.createRevoluteJoint(Region.global(), this.worldID, jointDef);
-
-
-
-
+        var _ = this.b3.createRevoluteJoint(this.worldID, jointDef);
     }
     private void spawnFalling(Vector3f position) {
 
-        var cubeA = spawnBox(new Vector3f(-0.5f, 6, 0).add(position), 45f);
-        var cubeB = spawnBox(new Vector3f( 0.5f, 6, 0).add(position), -45f);
+        var cubeA = spawnAngleBox(new Vector3f(-0.5f, 6, 0).add(position), 45f);
+        var cubeB = spawnAngleBox(new Vector3f( 0.5f, 6, 0).add(position), -45f);
 
         this.b3.bodySetName(cubeA, "cube-A");
         this.b3.bodySetName(cubeB, "cube-B");
@@ -128,12 +128,11 @@ public class Joints extends Example {
         jointDef.base().localFrameB().translation(localB);
 
         // is destroyed when any body is destroyed
-        var _ = this.b3.createRevoluteJoint(Region.global(), this.worldID, jointDef);
+        var _ = this.b3.createRevoluteJoint(this.worldID, jointDef);
 
         var _ = spawnSphere(BodyType.STATIC, 0.2f, new Vector3f(0, 5, -0.1f).add(position));
     }
-
-    private BodyID spawnBox(Vector3f position, float rotation) {
+    private BodyID spawnAngleBox(Vector3f position, float rotation) {
         var bodyId = spawnBox(BodyType.DYNAMIC, position);
 
         var transform = this.b3.bodyGetTransform(new Matrix4f(), bodyId);

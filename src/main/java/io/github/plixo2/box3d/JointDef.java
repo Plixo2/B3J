@@ -42,6 +42,19 @@ public class JointDef {
         this.drawScale = B3.lengthUnitsPerMeter();
     }
 
+    public JointDef(JointDef other) {
+        this.bodyIdA = other.bodyIdA;
+        this.bodyIdB = other.bodyIdB;
+        this.localFrameA.set(other.localFrameA);
+        this.localFrameB.set(other.localFrameB);
+        this.forceThreshold = other.forceThreshold;
+        this.torqueThreshold = other.torqueThreshold;
+        this.constraintHertz = other.constraintHertz;
+        this.constraintDampingRatio = other.constraintDampingRatio;
+        this.drawScale = other.drawScale;
+        this.collideConnected = other.collideConnected;
+    }
+
 
     MemorySegment create(Quaternionf tempQuat, SegmentAllocator arena) {
         var segment = b3JointDef.allocate(arena);

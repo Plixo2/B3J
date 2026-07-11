@@ -46,6 +46,26 @@ public class BodyDef {
         this.enableContactRecycling = true;
     }
 
+    public BodyDef(BodyDef other) {
+        this.type = other.type;
+        this.position.set(other.position);
+        this.rotation.set(other.rotation);
+        this.linearVelocity.set(other.linearVelocity);
+        this.angularVelocity.set(other.angularVelocity);
+        this.linearDamping = other.linearDamping;
+        this.angularDamping = other.angularDamping;
+        this.gravityScale = other.gravityScale;
+        this.sleepThreshold = other.sleepThreshold;
+        this.name = other.name;
+        this.motionLocks.set(other.motionLocks);
+        this.enableSleep = other.enableSleep;
+        this.isAwake = other.isAwake;
+        this.isBullet = other.isBullet;
+        this.isEnabled = other.isEnabled;
+        this.allowFastRotation = other.allowFastRotation;
+        this.enableContactRecycling = other.enableContactRecycling;
+    }
+
     MemorySegment create(SegmentAllocator arena) {
         var segment = b3BodyDef.allocate(arena);
         b3BodyDef.type(segment, this.type.code());

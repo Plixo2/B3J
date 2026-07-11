@@ -4,6 +4,7 @@ import io.github.plixo2.Example;
 import io.github.plixo2.abstraction.Color;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.region.Region;
+import io.github.plixo2.box3d.threads.BuildInScheduler;
 import io.github.plixo2.box3d.threads.ExecutorTaskPool;
 import io.github.plixo2.framework.MeshFactory;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +26,7 @@ import java.util.List;
 
 
 public class Determinism extends Example {
-    private static final boolean record = false;
+    private static final boolean record = true;
     private static final int SIZE = 29;
 
     private boolean saved = false;
@@ -45,7 +46,10 @@ public class Determinism extends Example {
         var worldDef = new WorldDef();
         worldDef.debugShapeCollection(debugShapes);
 
-        worldDef.taskPool(new ExecutorTaskPool());
+        if (this.threaded) {
+            worldDef.taskPool(new BuildInScheduler());
+        }
+
 
         worldDef.gravity().set(0, -4f, 0);
         this.worldID = this.b3.createWorld(this.region, worldDef);
@@ -152,7 +156,7 @@ public class Determinism extends Example {
         jointDef.motorSpeed(7f);
         jointDef.enableMotor(true);
 
-        var _ = this.b3.createRevoluteJoint(Region.global(), this.worldID, jointDef);
+        var _ = this.b3.createRevoluteJoint(this.worldID, jointDef);
 
     }
     private void spawnColorBox(
@@ -162,6 +166,7 @@ public class Determinism extends Example {
             Vector3f position,
             @Nullable DataInputStream stream
     ) throws IOException {
+
         var dynBodyDef = new BodyDef();
         dynBodyDef.type(bodyType);
         dynBodyDef.position().set(position);
@@ -234,8 +239,8 @@ public class Determinism extends Example {
             this.saved = true;
             if (record) {
                 save();
+                System.out.println("Saved");
             }
-            System.out.println("Saved");
         }
 
         if (this.time > 10 && this.spinner != null) {

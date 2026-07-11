@@ -26,6 +26,12 @@ public non-sealed class Mesh implements ShapeType.Shape {
     public Mesh(MeshData data) {
         this(data, 1.0f, 1.0f, 1.0f);
     }
+    public Mesh(Mesh other) {
+        this.data = other.data;
+        this.scaleX = other.scaleX;
+        this.scaleY = other.scaleY;
+        this.scaleZ = other.scaleZ;
+    }
 
     MemorySegment create(SegmentAllocator arena) {
         var segment = b3Mesh.allocate(arena);

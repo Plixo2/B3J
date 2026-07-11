@@ -10,11 +10,8 @@ import static io.github.plixo2.box3d.internal.Internal.assertU8;
 public class HullHalfEdge {
 
     public @U8 int next;
-
     public @U8 int twin;
-
     public @U8 int origin;
-
     public @U8 int face;
 
     public HullHalfEdge(@U8 int next, @U8 int twin, @U8 int origin, @U8 int face) {

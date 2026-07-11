@@ -11,7 +11,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public class MemoryIterator<T> implements Iterable<T> {
+public sealed class MemoryIterator<T> implements Iterable<T> {
     protected final T element;
     protected final long elementBytes;
     protected final MemorySegment segment;
@@ -33,6 +33,31 @@ public class MemoryIterator<T> implements Iterable<T> {
         } else {
             this.length = assertSize(segment, elementBytes);
         }
+
+        this.set = set;
+    }
+
+    public MemoryIterator(
+            T element,
+            MemorySegment segment,
+            long byteLength,
+            long elementBytes,
+            BiConsumer<T, MemorySegment> set
+    ) {
+
+
+        if (segment.address() == 0) {
+            this.length = 0;
+        } else {
+            this.length = assertSize(byteLength, elementBytes);
+            if (byteLength > segment.byteSize()) {
+                segment = segment.reinterpret(byteLength);
+            }
+        }
+
+        this.element = element;
+        this.segment = segment;
+        this.elementBytes = elementBytes;
 
         this.set = set;
     }
@@ -104,13 +129,20 @@ public class MemoryIterator<T> implements Iterable<T> {
 
 
 
-    static abstract class OfPrimitive<T> extends MemoryIterator<T> {
+    static abstract sealed class OfPrimitive<T> extends MemoryIterator<T> {
 
         OfPrimitive(
                 MemorySegment segment,
                 long elementBytes
         ) {
             super(null, segment, elementBytes, null);
+        }
+        OfPrimitive(
+                MemorySegment segment,
+                long byteLength,
+                long elementBytes
+        ) {
+            super(null, segment, elementBytes, byteLength, null);
         }
 
         protected abstract T getAtIndex(int index);
@@ -167,14 +199,17 @@ public class MemoryIterator<T> implements Iterable<T> {
 
     }
 
-    public static class OfInt extends OfPrimitive<Integer> {
+    public static final class OfInt extends OfPrimitive<Integer> {
         public OfInt(MemorySegment segment) {
             super(segment, Integer.BYTES);
+        }
+        public OfInt(MemorySegment segment, long byteLength) {
+            super(segment, byteLength, Integer.BYTES);
         }
 
         @Override
         protected Integer getAtIndex(int index) {
-            return this.segment.get(ValueLayout.JAVA_INT, index * 4L);
+            return this.segment.getAtIndex(ValueLayout.JAVA_INT, index);
         }
 
         public int[] collect() {
@@ -182,15 +217,18 @@ public class MemoryIterator<T> implements Iterable<T> {
         }
 
     }
-    public static class OfLong extends OfPrimitive<Long> {
+    public static sealed class OfLong extends OfPrimitive<Long> {
 
         public OfLong(MemorySegment segment) {
             super(segment, Long.BYTES);
         }
+        public OfLong(MemorySegment segment, long byteLength) {
+            super(segment, byteLength, Long.BYTES);
+        }
 
         @Override
         protected Long getAtIndex(int index) {
-            return this.segment.get(ValueLayout.JAVA_LONG, index * 8L);
+            return this.segment.getAtIndex(ValueLayout.JAVA_LONG, index);
         }
 
         public long[] collect() {
@@ -200,14 +238,17 @@ public class MemoryIterator<T> implements Iterable<T> {
 
     }
 
-    public static class OfU32 extends OfPrimitive<Long> {
+    public static final class OfU32 extends OfPrimitive<Long> {
         public OfU32(MemorySegment segment) {
             super(segment, Integer.BYTES);
+        }
+        public OfU32(MemorySegment segment, long byteLength) {
+            super(segment, byteLength, Integer.BYTES);
         }
 
         @Override
         protected Long getAtIndex(int index) {
-            return Integer.toUnsignedLong(this.segment.get(ValueLayout.JAVA_INT, index * 4L));
+            return Integer.toUnsignedLong(this.segment.getAtIndex(ValueLayout.JAVA_INT, index));
         }
 
         public long[] collect() {
@@ -219,20 +260,26 @@ public class MemoryIterator<T> implements Iterable<T> {
         }
 
     }
-    public static class OfU64 extends OfLong {
+    public static final class OfU64 extends OfLong {
         public OfU64(MemorySegment segment) {
             super(segment);
         }
+        public OfU64(MemorySegment segment, long byteLength) {
+            super(segment, byteLength);
+        }
     }
 
-    public static class OfU16 extends OfPrimitive<Integer> {
+    public static final class OfU16 extends OfPrimitive<Integer> {
         public OfU16(MemorySegment segment) {
             super(segment, Short.BYTES);
+        }
+        public OfU16(MemorySegment segment, long byteLength) {
+            super(segment, byteLength, Short.BYTES);
         }
 
         @Override
         protected Integer getAtIndex(int index) {
-            return Short.toUnsignedInt(this.segment.get(ValueLayout.JAVA_SHORT, index * 2L));
+            return Short.toUnsignedInt(this.segment.getAtIndex(ValueLayout.JAVA_SHORT, index));
         }
 
         public int[] collect() {
@@ -245,14 +292,17 @@ public class MemoryIterator<T> implements Iterable<T> {
 
     }
 
-    public static class OfU8 extends OfPrimitive<Integer> {
+    public static final class OfU8 extends OfPrimitive<Integer> {
         public OfU8(MemorySegment segment) {
             super(segment, Byte.BYTES);
+        }
+        public OfU8(MemorySegment segment, long byteLength) {
+            super(segment, byteLength, Byte.BYTES);
         }
 
         @Override
         protected Integer getAtIndex(int index) {
-            return Byte.toUnsignedInt(this.segment.get(ValueLayout.JAVA_BYTE, index));
+            return Byte.toUnsignedInt(this.segment.getAtIndex(ValueLayout.JAVA_BYTE, index));
         }
 
         public int[] collect() {
@@ -267,6 +317,12 @@ public class MemoryIterator<T> implements Iterable<T> {
 
     private static int assertSize(MemorySegment segment, long elementBytes) {
         long size = segment.byteSize();
+        if (size % elementBytes != 0) {
+            throw new IllegalArgumentException("Segment size " + size + " is not a multiple of element size " + elementBytes);
+        }
+        return Math.toIntExact(size / elementBytes);
+    }
+    private static int assertSize(long size, long elementBytes) {
         if (size % elementBytes != 0) {
             throw new IllegalArgumentException("Segment size " + size + " is not a multiple of element size " + elementBytes);
         }

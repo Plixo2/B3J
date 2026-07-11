@@ -53,9 +53,15 @@ public final class WorldID {
         this.state.ensureAccess();
     }
 
-    @Override
-    public String toString() {
-        return toString(this.index1, this.generation);
+
+
+    public WorldID reinterpret(B3 instance, Region region) {
+        return new WorldID(
+                Objects.requireNonNull(instance),
+                Objects.requireNonNull(region),
+                this.taskPool, this.shapes,
+                this.index1, this.generation
+        );
     }
 
     public @U16 int index1() {
@@ -68,7 +74,10 @@ public final class WorldID {
     }
 
 
-
+    @Override
+    public String toString() {
+        return toString(this.index1, this.generation);
+    }
 
     @Override
     public boolean equals(Object object) {

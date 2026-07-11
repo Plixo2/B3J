@@ -30,9 +30,10 @@ final class ConfinedRegion implements Region {
 
     @Override
     public void close() {
-        this.state.once();
-        releaseList(this.resources);
-        this.resources = null;
+        if (this.state.guard()) {
+            releaseList(this.resources);
+            this.resources = null;
+        }
     }
 
 

@@ -3,6 +3,7 @@ package io.github.plixo2.samples;
 import io.github.plixo2.Example;
 import io.github.plixo2.box3d.BodyType;
 import io.github.plixo2.box3d.WorldDef;
+import io.github.plixo2.box3d.threads.BuildInScheduler;
 import io.github.plixo2.box3d.threads.ExecutorTaskPool;
 import io.github.plixo2.framework.MeshFactory;
 import org.joml.Vector3f;
@@ -15,19 +16,21 @@ public class Queries extends Example {
         var worldDef = new WorldDef();
         worldDef.debugShapeCollection(debugShapes);
 
-        worldDef.taskPool(new ExecutorTaskPool());
+        if (this.threaded) {
+            worldDef.taskPool(new BuildInScheduler());
+        }
 
         worldDef.gravity().set(0, -4f, 0);
         this.worldID = this.b3.createWorld(this.region, worldDef);
 
         spawnBox(
                 BodyType.STATIC,
-                new Vector3f(30.0f, 1, 30),
+                new Vector3f(50.0f, 1, 50),
                 new Vector3f(0, -1, 0)
         );
 
         var levels = 45;
-        var zstart = -40;
+        var zstart = -20;
         var spacing = 1.0f;
 
         for (var y = 0; y < levels; y++) {

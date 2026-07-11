@@ -5,6 +5,7 @@ import de.javagl.obj.ObjReader;
 import de.javagl.obj.ObjUtils;
 import io.github.plixo2.Example;
 import io.github.plixo2.box3d.*;
+import io.github.plixo2.box3d.threads.BuildInScheduler;
 import io.github.plixo2.framework.MeshFactory;
 import lombok.val;
 import org.joml.Random;
@@ -23,10 +24,15 @@ public class TriangleMesh extends Example {
         var worldDef = new WorldDef();
         worldDef.debugShapeCollection(debugShapes);
 
+        if (this.threaded) {
+            worldDef.taskPool(new BuildInScheduler());
+        }
+
         worldDef.gravity().set(0, -10f, 0);
         this.worldID = this.b3.createWorld(this.region, worldDef);
 
         var rd = new Random();
+
 
         for (var i = 0; i < 1000; i++) {
             var rx = rd.nextFloat() * 50 - 25;
@@ -68,7 +74,6 @@ public class TriangleMesh extends Example {
             return;
         }
 
-
         var shapeDef = new ShapeDef();
         shapeDef.density(1.0f);
         shapeDef.baseMaterial().friction(0.1f);
@@ -76,8 +81,6 @@ public class TriangleMesh extends Example {
         var _ = this.b3.createMeshShape(bodyId, shapeDef, meshData, new Vector3f(30f));
 
     }
-
-
 
     private MeshDef load() throws IOException {
         var stream = TriangleMesh.class.getResourceAsStream("/models/monkey.obj");

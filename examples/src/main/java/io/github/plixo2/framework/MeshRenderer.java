@@ -98,7 +98,6 @@ public class MeshRenderer {
 
             try {
                 var shader = new Shader(vertex_, fragment);
-                System.err.println("Shader compiled with fallback GL_ARB_shader_draw_parameters & 4.3");
                 return new ShaderCompileResult(shader, false);
             } catch(Exception e) {
                 // pass
@@ -112,10 +111,9 @@ public class MeshRenderer {
         );
         vertex__ = vertex__.replace("gl_DrawID", "u_legacy_instance");
 
-        System.err.println("Shader compiled with fallback u_legacy_instance & 4.3. Consider updating your GPU driver");
-
         return new ShaderCompileResult(new Shader(vertex__, fragment), true);
     }
+
 
     record ShaderCompileResult(Shader shader, boolean legacy) { }
 

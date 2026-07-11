@@ -16,7 +16,7 @@ import java.lang.foreign.MemorySegment;
 public class MeshData {
     private final MemorySegment segment;
 
-    private final AllocState state =  AllocState.create();
+    final AllocState state =  AllocState.create();
 
     MeshData(
             @Nullable B3 instance,

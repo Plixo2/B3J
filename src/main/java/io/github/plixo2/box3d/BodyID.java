@@ -7,6 +7,7 @@ import io.github.plixo2.box3d.region.Region;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.MemorySegment;
+import java.util.Objects;
 
 public final class BodyID {
     public static final BodyID NULL_ID = new BodyID(null, null, 0);
@@ -33,6 +34,14 @@ public final class BodyID {
     public long packedID() {
         this.state.ensureAccess();
         return this.packedID;
+    }
+
+    public BodyID reinterpret(B3 instance, Region region) {
+        return new BodyID(
+                Objects.requireNonNull(instance),
+                Objects.requireNonNull(region),
+                this.packedID
+        );
     }
 
     public int index1() {

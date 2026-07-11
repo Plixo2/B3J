@@ -13,52 +13,64 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 
 /**
- * From LWJGL3
+ * From LWJGL3 examples
  */
 public class ByteBufferUtils {
+
     public static ByteBuffer ioResourceToByteBuffer(String resource, int bufferSize) throws IOException {
-        ByteBuffer buffer;
         URL url = Thread.currentThread().getContextClassLoader().getResource(resource);
-        if (url == null)
+        if (url == null) {
             throw new IOException("Classpath resource not found: " + resource);
-        File file = new File(url.getFile());
+        }
+
+        var file = new File(url.getFile());
         if (file.isFile()) {
             FileInputStream fis = new FileInputStream(file);
             FileChannel fc = fis.getChannel();
-            buffer = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
+            var buffer = fc.map(FileChannel.MapMode.READ_ONLY, 0, fc.size());
             fc.close();
             fis.close();
-        } else {
-            buffer = BufferUtils.createByteBuffer(bufferSize);
-            InputStream source = url.openStream();
-            if (source == null)
-                throw new FileNotFoundException(resource);
-            try {
-                byte[] buf = new byte[8192];
-                while (true) {
-                    int bytes = source.read(buf, 0, buf.length);
-                    if (bytes == -1)
-                        break;
-                    if (buffer.remaining() < bytes)
-                        buffer = resizeBuffer(buffer, Math.max(buffer.capacity() * 2, buffer.capacity() - buffer.remaining() + bytes));
-                    buffer.put(buf, 0, bytes);
-                }
-                buffer.flip();
-            } finally {
-                source.close();
-            }
+            return buffer;
         }
+
+        var buffer = BufferUtils.createByteBuffer(bufferSize);
+
+        var source = url.openStream();
+        if (source == null) {
+            throw new FileNotFoundException(resource);
+        }
+
+        try (source) {
+            byte[] buf = new byte[8192];
+            while (true) {
+                int bytes = source.read(buf, 0, buf.length);
+
+                if (bytes == -1) {
+                    break;
+                }
+
+                if (buffer.remaining() < bytes) {
+                    var newCapacity = Math.max(
+                            buffer.capacity() * 2,
+                            buffer.capacity() - buffer.remaining() + bytes
+                    );
+                    buffer = resizeBuffer(buffer, newCapacity);
+                }
+
+                buffer.put(buf, 0, bytes);
+            }
+            buffer.flip();
+        }
+
         return buffer;
     }
 
     public static ByteBuffer inputSteamToByteBuffer(Path path) throws IOException {
-        ByteBuffer buffer;
         try (var fis = new FileInputStream(path.toFile())) {
             try (var fc = fis.getChannel()) {
-                buffer = fc.map(FileChannel.MapMode.READ_ONLY, 0L, fc.size());
+                return fc.map(FileChannel.MapMode.READ_ONLY, 0L, fc.size());
             }
         }
-        return buffer;
     }
 
     private static ByteBuffer resizeBuffer(ByteBuffer buffer, int newCapacity) {
@@ -67,7 +79,6 @@ public class ByteBufferUtils {
         newBuffer.put(buffer);
         return newBuffer;
     }
-
 
 
     public static class ByteBufferBackedInputStream extends InputStream {

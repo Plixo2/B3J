@@ -2,10 +2,16 @@ package io.github.plixo2.box3d.internal;
 
 public final class AllocState {
 
-    public boolean destroyed = false;
+    private boolean destroyed = false;
 
     private AllocState() {
 
+    }
+
+    public synchronized boolean guard() {
+        var wasDestroyed = this.destroyed;
+        this.destroyed = true;
+        return !wasDestroyed;
     }
 
     public synchronized void once() {

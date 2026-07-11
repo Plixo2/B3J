@@ -12,7 +12,7 @@ public non-sealed class HeightFieldData implements ShapeType.Shape {
 
     private final MemorySegment segment;
 
-    private final AllocState state =  AllocState.create();
+    final AllocState state =  AllocState.create();
 
     HeightFieldData(
             @Nullable B3 instance,

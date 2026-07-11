@@ -8,12 +8,24 @@ import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap;
 
 import java.lang.foreign.MemorySegment;
 
-public abstract class TaskPool<T> implements b3EnqueueTaskCallback.Function, b3FinishTaskCallback.Function, AutoCloseable {
+import static io.github.plixo2.box3d.internal.Internal.assertU32;
+
+public abstract non-sealed class CustomTaskScheduler<T>
+        implements
+            TaskScheduler,
+            AutoCloseable,
+            b3EnqueueTaskCallback.Function,
+            b3FinishTaskCallback.Function
+{
 
     @Getter
     private final int workerCount;
 
-    protected TaskPool(int workerCount) {
+    protected CustomTaskScheduler(int workerCount) {
+        if (workerCount < 1) {
+            throw new IllegalArgumentException("workerCount must be at least 1");
+        }
+
         this.workerCount = workerCount;
     }
 

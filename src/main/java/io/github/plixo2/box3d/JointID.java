@@ -8,31 +8,21 @@ import org.box2d.box3d.b3JointId;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.MemorySegment;
+import java.util.Objects;
 
 public final class JointID<T extends JointType> {
-    public static final JointID<?> NULL_ID = new JointID<>(null, null, 0);
+    public static final JointID<?> NULL_ID = new JointID<>(0);
 
     private final long packedID;
 
-    final AllocState state = AllocState.create();
 
     private JointID(
-            @Nullable B3 instance,
-            @Nullable Region region,
             long packedID
     ) {
         this.packedID = packedID;
-
-        if (instance != null && region != null) {
-            region.register(this.state, () -> {
-                instance.destroyJoint(packedID);
-            });
-        }
-
     }
 
     public long packedID() {
-        this.state.ensureAccess();
         return this.packedID;
     }
 
@@ -101,12 +91,10 @@ public final class JointID<T extends JointType> {
     }
 
     static <T extends JointType> JointID<T> of(
-            @Nullable B3 instance,
-            @Nullable Region region,
             MemorySegment segment
     ) {
         var identifier = PrimitiveMemOps.packJointID(segment);
-        return new JointID<>(instance, region, identifier);
+        return new JointID<>(identifier);
     }
 
     static String toString(long packedID) {

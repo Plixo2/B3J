@@ -10,13 +10,16 @@ import java.nio.*;
 import java.util.function.BiConsumer;
 
 import static org.lwjgl.opengl.GL11.GL_FLOAT;
+import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLE_STRIP;
+import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
 import static org.lwjgl.opengl.GL15.glDeleteBuffers;
 import static org.lwjgl.opengl.GL15C.*;
 import static org.lwjgl.opengl.GL20C.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 import static org.lwjgl.opengl.GL30C.*;
 import static org.lwjgl.opengl.GL31.glDrawElementsInstanced;
+import static org.lwjgl.opengl.GL32C.glDrawElementsBaseVertex;
 
 public class Mesh extends GPUResource  {
     private static final boolean drawIndirectSupported = Capabilities.get().drawIndirect();
@@ -332,6 +335,33 @@ public class Mesh extends GPUResource  {
             glEnableVertexAttribArray(i);
         }
     }
+    public void drawBaseVertex(
+            int count,
+            long indexOffset,
+            int baseVertex
+    ) {
+        bind();
+
+        if (count == 0) {
+            return;
+        }
+        if (this.indicesType == USE_ARRAYS) {
+            System.err.println("Mesh.drawBaseVertex called on a mesh without an index buffer");
+            return;
+        }
+
+        glDrawElementsBaseVertex(
+                this.type,
+                count,
+                this.indicesType,
+                indexOffset,
+                baseVertex
+        );
+
+
+
+    }
+
 
     public void draw() {
         bind();
@@ -403,6 +433,22 @@ public class Mesh extends GPUResource  {
         }
     }
 
+    public void uploadVerticies(
+            long offset,
+            float[] data
+    ) {
+        ensureAllocated();
+        glBindBuffer(GL_ARRAY_BUFFER, this.handleData.vertexBufferObject);
+        glBufferSubData(GL_ARRAY_BUFFER, offset, data);
+    }
+    public void uploadIndicies(
+            long offset,
+            int[] data
+    ) {
+        ensureAllocated();
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this.handleData.vertexElementObject);
+        glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset, data);
+    }
 
     /// dont store, since the underlying data may be deleted when this object no longer exists
     public int getTemporaryVertexArrayObject() {

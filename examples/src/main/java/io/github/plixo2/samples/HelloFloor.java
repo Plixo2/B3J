@@ -1,6 +1,7 @@
 package io.github.plixo2.samples;
 
 import io.github.plixo2.Example;
+import io.github.plixo2.box3d.threads.BuildInScheduler;
 import io.github.plixo2.framework.MeshFactory;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.threads.ExecutorTaskPool;
@@ -18,7 +19,9 @@ public class HelloFloor extends Example {
         var worldDef = new WorldDef();
         worldDef.debugShapeCollection(debugShapes);
 
-        worldDef.taskPool(new ExecutorTaskPool());
+        if (this.threaded) {
+            worldDef.taskPool(new BuildInScheduler());
+        }
 
         worldDef.gravity().set(0, -10f, 0);
         this.worldID = this.b3.createWorld(this.region, worldDef);

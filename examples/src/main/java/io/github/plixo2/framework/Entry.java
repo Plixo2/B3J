@@ -12,10 +12,7 @@ import lombok.val;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.*;
-import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL43;
-import org.lwjgl.opengl.GLDebugMessageCallback;
+import org.lwjgl.opengl.*;
 import org.lwjgl.system.NativeResource;
 
 import java.io.PrintStream;
@@ -50,6 +47,8 @@ public class Entry implements AutoCloseable {
     private long lastFPSUpdate;
     private int lastUpdatedFPS = 0;
     private int fpsCounter = 0;
+    private final RollingAverage physicsTimeAverage = new RollingAverage(1_000);
+    private final RollingAverage dtAverage = new RollingAverage(1_000);
 
 
     private final long window;
@@ -71,42 +70,61 @@ public class Entry implements AutoCloseable {
     public Entry(Example example) {
         System.setProperty("joml.format", "false");
 
+        var ctrlBlue = "\u001B[34m";
+        var ctrlRed = "\u001B[31m";
+        var ctrlReset = "\u001B[0m";
+
+
         GLFWErrorCallback.createPrint(System.err).set();
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
         }
 
         glfwDefaultWindowHints();
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-
 
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        var onMac = System.getProperty("os.name").toLowerCase().contains("mac");
-        var onLinux = System.getProperty("os.name").toLowerCase().contains("linux");
+        var os = System.getProperty("os.name").toLowerCase();
+        var onMac = os.contains("mac");
+        var onLinux = os.contains("linux");
         if (onMac) {
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         }
 
+        if (onLinux) {
+            glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GLFW_FALSE);
+        }
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         glfwWindowHint(GLFW_SAMPLES, 4);
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 
-        long windowID;
-        try {
-            windowID = glfwCreateWindow(this.width, this.height, "Examples", NULL, NULL);
-        } catch(Exception e) {
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-            windowID = glfwCreateWindow(this.width, this.height, "Examples", NULL, NULL);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+
+        var windowName = getWindowName(example);
+        long windowID = createWindow(windowName, this.width, this.height);
+
+        glfwMakeContextCurrent(windowID);
+        GL.createCapabilities();
+
+        var vendor = GL11.glGetString(GL11.GL_VENDOR);
+        var renderer = GL11.glGetString(GL11.GL_RENDERER);
+        var version = GL11.glGetString(GL11.GL_VERSION);
+        var glslVersion = GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION);
+
+        if (renderer != null && renderer.toLowerCase().contains("llvmpipe")) {
+            glfwDestroyWindow(windowID);
+            glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GLFW_FALSE);
+            System.out.println(ctrlRed + "Detected llvmpipe renderer, disabling framebuffer scaling" + ctrlReset);
+            windowID = createWindow(windowName, this.width, this.height);
+
+            glfwMakeContextCurrent(windowID);
+            GL.createCapabilities();
         }
 
+
         this.window = windowID;
-        if (this.window == NULL) {
-            throw new RuntimeException("Failed to create the GLFW window");
-        }
 
         glfwSetKeyCallback(this.window, addCloseable(GLFWKeyCallback.create(this::keyCallback)));
         glfwSetCursorPosCallback(this.window, addCloseable(GLFWCursorPosCallback.create(this::mouseMoveCallback)));
@@ -114,26 +132,27 @@ public class Entry implements AutoCloseable {
         glfwSetFramebufferSizeCallback(this.window, addCloseable(GLFWFramebufferSizeCallback.create(this::resizeCallback)));
         glfwSetWindowSizeCallback(this.window, addCloseable(GLFWWindowSizeCallback.create(this::resizeCallbackWindow)));
 
-
         centerWindow(this.window);
 
-        glfwMakeContextCurrent(this.window);
         glfwShowWindow(this.window);
 
+        // can differ due to content scale
         setRealWindowSize(this.window);
 
-        GL.createCapabilities();
         Capabilities.get(); // static init
 
-        var vendor = GL11.glGetString(GL11.GL_VENDOR);
-        var renderer = GL11.glGetString(GL11.GL_RENDERER);
-        var version = GL11.glGetString(GL11.GL_VERSION);
 
-        System.out.println("Graphics Card Vendor: " + vendor);
-        System.out.println("Graphics Card Renderer: " + renderer);
-        System.out.println("OpenGL Version: " + version);
+        // actual version can differ from requested version
+        int[] major = new int[1];
+        int[] minor = new int[1];
+        glGetIntegerv(GL30.GL_MAJOR_VERSION, major);
+        glGetIntegerv(GL30.GL_MINOR_VERSION, minor);
+        var majorVersion = major[0];
+        var minorVersion = minor[0];
+        if (majorVersion < 4 || (majorVersion == 4 && minorVersion < 3)) {
+            throw new RuntimeException("OpenGL version 4.3 or higher is required");
+        }
 
-        Capabilities.get().print();
 
         glfwSwapInterval(1);
 
@@ -144,11 +163,24 @@ public class Entry implements AutoCloseable {
 
         glEnable(GL_MULTISAMPLE);
         glEnable(GL_CULL_FACE);
-        glEnable(GL_DEPTH_TEST);
 
         glEnable(GL_BLEND);
         glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+
+
+
+        System.out.println(ctrlBlue);
+        System.out.println("Graphics Card Vendor: " + vendor);
+        System.out.println("Graphics Card Renderer: " + renderer);
+        System.out.println("GLSL Version: " + glslVersion);
+        System.out.println("OpenGL Version: " + version);
+
+        Capabilities.get().print();
+
+        System.out.println();
+        System.out.println();
+        System.out.println(ctrlReset);
 
         this.meshRenderer = new MeshRenderer();
         this.lineRenderer = new LineRenderer();
@@ -222,6 +254,7 @@ public class Entry implements AutoCloseable {
 
         var now = System.nanoTime();
         var dt = (float) ((now - this.lastFrameTime) / 1e9d);
+        var dtAvg = this.dtAverage.add(now, dt);
         this.lastFrameTime = now;
 
         if (now - this.lastFPSUpdate > 1e9d) {
@@ -232,12 +265,16 @@ public class Entry implements AutoCloseable {
         this.fpsCounter++;
 
 
-
         this.example.update(dt);
 
         var afterUpdate = System.nanoTime();
-        var updateTime = (float) ((afterUpdate - now) / 1e9d);
+        var dtPhysics = (float) ((afterUpdate - now) / 1e9d);
+        var dtPhysicsAvg = this.physicsTimeAverage.add(afterUpdate, dtPhysics);
 
+        var t = glfwGetKey(this.window, GLFW_KEY_T) == GLFW_PRESS;
+        if (t) {
+            this.example.update(dt);
+        }
 
         this.camera.move(this.window, this.deltaX, this.deltaY, dt * 5f);
 
@@ -246,7 +283,16 @@ public class Entry implements AutoCloseable {
         this.example.drawText2D(this.textRenderer2D);
         this.example.drawText3D(this.textRenderer3D);
         this.example.drawConfig.render(this.textRenderer2D, this.height, this.width);
+        this.putInstructions(this.textRenderer2D);
 
+        this.putStats(
+                this.textRenderer2D,
+                this.lastUpdatedFPS,
+                dtPhysics * 1000f,
+                dtPhysicsAvg * 1000f,
+                dtAvg * 1000f,
+                usedMemoryMB()
+        );
 
         this.example.b3.worldDraw(this.example.worldID, this.debugDraw, U64_MAX);
 
@@ -254,6 +300,7 @@ public class Entry implements AutoCloseable {
         this.lineRenderer.addLine(0, 0, 0, 0, 1, 0, Color.GREEN.argb());
         this.lineRenderer.addLine(0, 0, 0, 0, 0, 1, Color.BLUE.argb());
 
+        glEnable(GL_DEPTH_TEST);
         var projection = getViewProjection(this.width, this.height);
         this.meshRenderer.draw(projection, getCameraPosition());
 
@@ -269,26 +316,85 @@ public class Entry implements AutoCloseable {
         var ortho = new Matrix4f().ortho2D(0, this.width, 0, this.height);
         this.textRenderer2D.draw(ortho);
 
-        glEnable(GL_DEPTH_TEST);
-
-        var runtime = Runtime.getRuntime();
-        var usedMemory = runtime.totalMemory() - runtime.freeMemory();
-        var usedMemoryMB = usedMemory / (1024 * 1024);
-
-        var title = String.format(
-                "%4d FPS   %6.2f ms / %6.2f ms  %5d MB used",
-                this.lastUpdatedFPS,
-                updateTime * 1000f,
-                dt * 1000f,
-                usedMemoryMB
-        );
-        GLFW.glfwSetWindowTitle(this.window, title);
 
         this.deltaX = 0;
         this.deltaY = 0;
     }
 
-    Camera.WorldCoords screenToWorldCoords(
+
+    @Override
+    public void close() {
+        glfwSetWindowShouldClose(this.window, true);
+
+        for (var closeable : this.closeables) {
+            closeable.close();
+        }
+
+        glfwDestroyWindow(this.window);
+        glfwFreeCallbacks(this.window);
+        glfwTerminate();
+        //noinspection DataFlowIssue
+        GL.setCapabilities(null);
+    }
+    private void putInstructions(TextRenderer.UI text) {
+        var y = this.height - 38;
+
+        var right = this.width - 10;
+        text.putStringLeft("WASD to move", right, y - 25 * 0, Color.WHITE);
+        text.putStringLeft("Space to move up, Shift to move down", right, y - 25 * 1, Color.WHITE);
+        text.putStringLeft("Ctrl to speed up, Alt to slow down", right, y - 25 * 2, Color.WHITE);
+        text.putStringLeft("Hold right mouse button to look around", right, y - 25 * 3, Color.WHITE);
+        text.putStringLeft("T to speed up physics simulation", right, y - 25 * 4, Color.WHITE);
+        text.putStringLeft("M to toggle multithreading", right, y - 25 * 5, Color.WHITE);
+        text.putStringLeft("R to restart", right, y - 25 * 6, Color.WHITE);
+    }
+    private void putStats(
+            TextRenderer.UI text,
+            int fps,
+            float dtPhysics,
+            float dtPhysicsAvg,
+            float dt,
+            long mb
+    ) {
+        var right = this.width - 10;
+
+        var ms50 = (1.0 / 50.0) * 1000.0;
+        var isPhysicsSlow = dtPhysicsAvg > ms50;
+        var isRenderSlow = dt > ms50;
+
+
+        text.putStringLeft(
+                fps + " FPS",
+                right,
+                100,
+                Color.WHITE
+        );
+        text.putStringLeft(
+                "Physics: " + String.format("%5.2f", dtPhysics) + " ms "
+                + "(" + String.format("%5.2f", dtPhysicsAvg) + " ms Ø)",
+                right, 75,
+                isPhysicsSlow ? Color.RED : Color.WHITE
+        );
+        text.putStringLeft(
+                "Frame: " + String.format("%5.2f", dt) + " ms",
+                right, 50,
+                isRenderSlow ? Color.RED : Color.WHITE
+        );
+        text.putStringLeft(
+                "Memory: " + mb + " MB",
+                right, 25,
+                Color.WHITE
+        );
+
+        text.putStringLeft(
+                this.example.threaded ? "Multi-threaded" : "Single-threaded",
+                right, 0,
+                Color.WHITE
+        );
+
+    }
+
+    private Camera.WorldCoords screenToWorldCoords(
             int width,
             int height,
             float x,
@@ -353,6 +459,13 @@ public class Entry implements AutoCloseable {
             }
             return;
         }
+        if (key == GLFW_KEY_M) {
+            if (action == GLFW_PRESS) {
+                this.example.threaded = !this.example.threaded;
+                restart();
+            }
+            return;
+        }
 
         if (key == GLFW_KEY_ESCAPE) {
             this.example.drawConfig.toggleShown();
@@ -400,19 +513,6 @@ public class Entry implements AutoCloseable {
         this.windowHeight = height;
     }
 
-    @Override
-    public void close() {
-        glfwSetWindowShouldClose(this.window, true);
-
-        for (var closeable : this.closeables) {
-            closeable.close();
-        }
-
-        glfwDestroyWindow(this.window);
-        glfwFreeCallbacks(this.window);
-        glfwTerminate();
-        GL.setCapabilities(null);
-    }
 
     private void setRealWindowSize(long window) {
         try (var stack = stackPush()) {
@@ -422,13 +522,44 @@ public class Entry implements AutoCloseable {
 
             this.windowHeight = windowHeightPointer.get(0);
             this.windowWidth = windowWidthPointer.get(0);
-
         }
-
 
     }
 
-    private void centerWindow(long window) {
+    private static long createWindow(String name, int width, int height) {
+        long windowID = NULL;
+        try {
+            windowID = glfwCreateWindow(width, height, name, NULL, NULL);
+        } catch(Exception e) {
+            // ignore
+        }
+
+        if (windowID == NULL) {
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+            windowID = glfwCreateWindow(width, height, name, NULL, NULL);
+        }
+
+        if (windowID == NULL) {
+            throw new RuntimeException("Failed to create the GLFW window");
+        }
+        return windowID;
+    }
+    private String getWindowName(Example example) {
+        var name = example.getClass().getSimpleName();
+        if (name.isBlank()) {
+            return "Examples";
+        }
+        return name;
+    }
+
+    private static long usedMemoryMB() {
+        var runtime = Runtime.getRuntime();
+        var usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        return usedMemory / (1024 * 1024);
+    }
+
+    private static void centerWindow(long window) {
         try (var stack = stackPush()) {
             val windowWidthPointer = stack.mallocInt(1);
             val windowHeightPointer = stack.mallocInt(1);
@@ -455,6 +586,58 @@ public class Entry implements AutoCloseable {
         }
         this.closeables.add(closeable);
         return closeable;
+    }
+
+    private static class RollingAverage {
+        private static final int INITIAL_CAPACITY = 256;
+
+        private final long windowNanos;
+        private long[] times = new long[INITIAL_CAPACITY];
+        private float[] values = new float[INITIAL_CAPACITY];
+        private int start = 0;
+        private int size = 0;
+        private double total = 0;
+
+        RollingAverage(long windowMS) {
+            this.windowNanos = windowMS * 1_000_000L;
+        }
+
+        float add(long time, float value) {
+            ensureCapacity();
+
+            var index = (this.start + this.size) % this.times.length;
+            this.times[index] = time;
+            this.values[index] = value;
+            this.size++;
+            this.total += value;
+
+            var cutoff = time - this.windowNanos;
+            while (this.size > 0 && this.times[this.start] < cutoff) {
+                this.total -= this.values[this.start];
+                this.start = (this.start + 1) % this.times.length;
+                this.size--;
+            }
+
+            return (float) (this.total / this.size);
+        }
+
+        private void ensureCapacity() {
+            if (this.size < this.times.length) {
+                return;
+            }
+
+            var newTimes = new long[this.times.length * 2];
+            var newValues = new float[this.values.length * 2];
+            for (var i = 0; i < this.size; i++) {
+                var index = (this.start + i) % this.times.length;
+                newTimes[i] = this.times[index];
+                newValues[i] = this.values[index];
+            }
+
+            this.times = newTimes;
+            this.values = newValues;
+            this.start = 0;
+        }
     }
 
 
@@ -539,7 +722,6 @@ public class Entry implements AutoCloseable {
             };
         }
     }
-
 
 
 }

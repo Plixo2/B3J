@@ -21,7 +21,7 @@ public class HelloBox3D {
             worldDef.gravity().y = -10f;
 
             // Multithreading
-            // worldDef.taskPool(new ExecutorTaskPool());
+            // worldDef.taskPool(new BuildInScheduler());
 
             var worldID = b3.createWorld(region, worldDef);
 

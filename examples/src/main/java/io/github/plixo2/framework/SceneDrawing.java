@@ -40,7 +40,7 @@ public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
     public boolean drawShape(MultiMesh.MeshRecord shape, Matrix4f transform, int color) {
 
         var customColor = shape.customColor();
-        shape.addDraw(
+        shape.putDraw(
                 transform,
                 transform.normal(this.normal),
                 customColor != null ? customColor.argb() : color

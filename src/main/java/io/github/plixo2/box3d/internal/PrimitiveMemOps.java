@@ -3,8 +3,11 @@ package io.github.plixo2.box3d.internal;
 import org.box2d.box3d.*;
 import org.joml.*;
 
+import java.awt.geom.AffineTransform;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+
+import static org.joml.Matrix4fc.PROPERTY_ORTHONORMAL;
 
 public final class PrimitiveMemOps {
 
@@ -82,11 +85,18 @@ public final class PrimitiveMemOps {
             Matrix4f matrix
     ) {
 
-        if ((matrix.properties() & Matrix4fc.PROPERTY_ORTHONORMAL) == 0) {
-            tempQuat.setFromUnnormalized(matrix);
-        } else {
+        // PROPERTY_ORTHONORMAL implies PROPERTY_AFFINE
+        if (
+                   (matrix.properties() & PROPERTY_ORTHONORMAL) != 0
+                || (matrix.determineProperties().properties() & PROPERTY_ORTHONORMAL) != 0
+        ) {
             tempQuat.setFromNormalized(matrix);
+        } else {
+            throw new IllegalArgumentException(
+                    "Matrix4f transforms must only contain translation and rotation"
+            );
         }
+
 
         segment.set(ValueLayout.JAVA_FLOAT, transform_pos_offset + Float.BYTES * 0, matrix.m30());
         segment.set(ValueLayout.JAVA_FLOAT, transform_pos_offset + Float.BYTES * 1, matrix.m31());

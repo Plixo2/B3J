@@ -42,6 +42,22 @@ public class ShapeDef {
         this.invokeContactCreation = true;
     }
 
+    public ShapeDef(ShapeDef other) {
+        this.materials = other.materials;
+        this.baseMaterial = other.baseMaterial;
+        this.density = other.density;
+        this.explosionScale = other.explosionScale;
+        this.filter = other.filter;
+        this.enableCustomFiltering = other.enableCustomFiltering;
+        this.isSensor = other.isSensor;
+        this.enableSensorEvents = other.enableSensorEvents;
+        this.enableContactEvents = other.enableContactEvents;
+        this.enableHitEvents = other.enableHitEvents;
+        this.enablePreSolveEvents = other.enablePreSolveEvents;
+        this.invokeContactCreation = other.invokeContactCreation;
+        this.updateBodyMass = other.updateBodyMass;
+    }
+
 
     MemorySegment create(SegmentAllocator arena) {
         var segment = b3ShapeDef.allocate(arena);

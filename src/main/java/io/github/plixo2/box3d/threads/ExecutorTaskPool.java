@@ -5,7 +5,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class ExecutorTaskPool extends TaskPool<Future<?>> {
+public class ExecutorTaskPool extends CustomTaskScheduler<Future<?>> {
     private final ExecutorService executor;
 
     public ExecutorTaskPool() {

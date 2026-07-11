@@ -53,6 +53,7 @@ public final class B3 {
     private final ScratchCastResultFcn scratchCastFn = new ScratchCastResultFcn(this.scratchArena);
     private final ScratchOverlapAABB scratchOverlapAABB = new ScratchOverlapAABB(this.scratchArena);
 
+    private final SimplexCache emptyDistanceCache = new SimplexCache();
 
     /// @api b3CreateWorld
     public WorldID createWorld(
@@ -160,7 +161,16 @@ public final class B3 {
         }
         var vertexCount = Math.toIntExact((byteLength / (3 * Float.BYTES)));
 
-        var hull = b3CreateHull(points, vertexCount, maxVertexCount);
+        MemorySegment hull;
+
+        try (var arena = Arena.ofConfined()) {
+             hull = b3CreateHull(
+                     ensureOffHeap(arena, points),
+                     vertexCount,
+                     maxVertexCount
+             );
+        }
+
         if (hull.address() == 0) {
             return null;
         }
@@ -367,7 +377,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3World_CastRayClosest
     public boolean worldCastRayClosest(
-            RayResult in,
+            @Nullable RayResult in,
             WorldID worldID,
             Vector3f origin,
             Vector3f translation,
@@ -385,7 +395,10 @@ public final class B3 {
         if (!RayResult.hit(result)) {
             return false;
         }
-        in.set(result);
+
+        if (in != null) {
+            in.set(result);
+        }
 
         return true;
 
@@ -713,6 +726,47 @@ public final class B3 {
         }
     }
 
+    /// @api b3ShapeDistance
+    @Contract("null, _, _, _ -> null; !null, _, _, _ -> !null")
+    public @Nullable DistanceOutput shapeDistance(
+            @Nullable DistanceOutput in,
+            DistanceInput input,
+            @Nullable SimplexCache cache,
+            @Nullable Simplexes simplexes
+    ) {
+        var simplexesSegment = simplexes != null
+                ? simplexes.segment
+                : MemorySegment.NULL;
+
+        var simplexCapacity = simplexes != null
+                ? simplexes.capacity
+                : 0;
+
+        SimplexCache simplexCache;
+        if (cache != null) {
+            simplexCache = cache;
+        } else {
+            this.emptyDistanceCache.clear();
+            simplexCache = this.emptyDistanceCache;
+        }
+        try (this.argArena) {
+            var distanceOutput = b3ShapeDistance(
+                    this.returnArena,
+                    input.create(this.scratchQuat, this.argArena),
+                    simplexCache.segment,
+                    simplexesSegment,
+                    simplexCapacity
+            );
+
+            if (in != null) {
+                in.set(distanceOutput);
+            }
+
+            return in;
+        }
+    }
+
+
     /// convenience method
     ///
     /// @api b3CreateDistanceJoint
@@ -725,28 +779,26 @@ public final class B3 {
     /// @api b3CreateWeldJoint
     /// @api b3CreateWheelJoint
     public <T extends JointType> JointID<T> createJoint(
-            Region region,
             WorldID worldID,
             AbstractJointDef<T> def
     ) {
         //noinspection unchecked
         return (JointID<T>) switch (def) {
-            case DistanceJointDef distance -> createDistanceJoint(region, worldID, distance);
-            case FilterJointDef filter -> createFilterJoint(region, worldID, filter);
-            case MotorJointDef motor -> createMotorJoint(region, worldID, motor);
-            case ParallelJointDef parallel -> createParallelJoint(region, worldID, parallel);
-            case PrismaticJointDef prismatic -> createPrismaticJoint(region, worldID, prismatic);
-            case RevoluteJointDef revolute -> createRevoluteJoint(region, worldID, revolute);
-            case SphericalJointDef spherical -> createSphericalJoint(region, worldID, spherical);
-            case WeldJointDef weld -> createWeldJoint(region, worldID, weld);
-            case WheelJointDef wheel -> createWheelJoint(region, worldID, wheel);
+            case DistanceJointDef distance -> createDistanceJoint(worldID, distance);
+            case FilterJointDef filter -> createFilterJoint(worldID, filter);
+            case MotorJointDef motor -> createMotorJoint(worldID, motor);
+            case ParallelJointDef parallel -> createParallelJoint(worldID, parallel);
+            case PrismaticJointDef prismatic -> createPrismaticJoint(worldID, prismatic);
+            case RevoluteJointDef revolute -> createRevoluteJoint(worldID, revolute);
+            case SphericalJointDef spherical -> createSphericalJoint(worldID, spherical);
+            case WeldJointDef weld -> createWeldJoint(worldID, weld);
+            case WheelJointDef wheel -> createWheelJoint(worldID, wheel);
         };
     }
 
 
     /// @api b3CreateRevoluteJoint
     public JointID<JointType.Revolute> createRevoluteJoint(
-            Region region,
             WorldID worldID,
             RevoluteJointDef def
     ) {
@@ -756,13 +808,12 @@ public final class B3 {
                     worldID(worldID),
                     def.create(this.scratchQuat, this.argArena)
             );
-            return JointID.of(this, region, jointID);
+            return JointID.of(jointID);
         }
     }
 
     /// @api b3CreatePrismaticJoint
     public JointID<JointType.Prismatic> createPrismaticJoint(
-            Region region,
             WorldID worldID,
             PrismaticJointDef def
     ) {
@@ -772,13 +823,12 @@ public final class B3 {
                     worldID(worldID),
                     def.create(this.scratchQuat, this.argArena)
             );
-            return JointID.of(this, region, jointID);
+            return JointID.of(jointID);
         }
     }
 
     /// @api b3CreateWeldJoint
     public JointID<JointType.Weld> createWeldJoint(
-            Region region,
             WorldID worldID,
             WeldJointDef def
     ) {
@@ -788,13 +838,12 @@ public final class B3 {
                     worldID(worldID),
                     def.create(this.scratchQuat, this.argArena)
             );
-            return JointID.of(this, region, jointID);
+            return JointID.of(jointID);
         }
     }
 
     /// @api b3CreateWheelJoint
     public JointID<JointType.Wheel> createWheelJoint(
-            Region region,
             WorldID worldID,
             WheelJointDef def
     ) {
@@ -804,13 +853,12 @@ public final class B3 {
                     worldID(worldID),
                     def.create(this.scratchQuat, this.argArena)
             );
-            return JointID.of(this, region, jointID);
+            return JointID.of(jointID);
         }
     }
 
     /// @api b3CreateSphericalJoint
     public JointID<JointType.Spherical> createSphericalJoint(
-            Region region,
             WorldID worldID,
             SphericalJointDef def
     ) {
@@ -820,13 +868,12 @@ public final class B3 {
                     worldID(worldID),
                     def.create(this.scratchQuat, this.argArena)
             );
-            return JointID.of(this, region, jointID);
+            return JointID.of(jointID);
         }
     }
 
     /// @api b3CreateParallelJoint
     public JointID<JointType.Parallel> createParallelJoint(
-            Region region,
             WorldID worldID,
             ParallelJointDef def
     ) {
@@ -836,13 +883,12 @@ public final class B3 {
                     worldID(worldID),
                     def.create(this.scratchQuat, this.argArena)
             );
-            return JointID.of(this, region, jointID);
+            return JointID.of(jointID);
         }
     }
 
     /// @api b3CreateDistanceJoint
     public JointID<JointType.Distance> createDistanceJoint(
-            Region region,
             WorldID worldID,
             DistanceJointDef def
     ) {
@@ -852,13 +898,12 @@ public final class B3 {
                     worldID(worldID),
                     def.create(this.scratchQuat, this.argArena)
             );
-            return JointID.of(this, region, jointID);
+            return JointID.of(jointID);
         }
     }
 
     /// @api b3CreateMotorJoint
     public JointID<JointType.Motor> createMotorJoint(
-            Region region,
             WorldID worldID,
             MotorJointDef def
     ) {
@@ -868,13 +913,12 @@ public final class B3 {
                     worldID(worldID),
                     def.create(this.scratchQuat, this.argArena)
             );
-            return JointID.of(this, region, jointID);
+            return JointID.of(jointID);
         }
     }
 
     /// @api b3CreateFilterJoint
     public JointID<JointType.Filter> createFilterJoint(
-            Region region,
             WorldID worldID,
             FilterJointDef def
     ) {
@@ -884,7 +928,7 @@ public final class B3 {
                     worldID(worldID),
                     def.create(this.scratchQuat, this.argArena)
             );
-            return JointID.of(this, region, jointID);
+            return JointID.of(jointID);
         }
     }
 
@@ -1128,9 +1172,7 @@ public final class B3 {
         if (!jointIsValid(jointID)) {
             throw new IllegalStateException("Joint " + jointID + " is not valid anymore");
         }
-        var segment = jointID(jointID);
-        jointID.state.once();
-        b3DestroyJoint(segment, wakeAttached);
+        b3DestroyJoint(jointID(jointID), wakeAttached);
     }
 
 
@@ -1144,19 +1186,37 @@ public final class B3 {
 
     /// @api b3DestroyWorld
     public void destroyWorld(WorldID worldID) {
-        if (!worldIsValid(worldID)) {
-            throw new IllegalStateException("World " +  worldID + " is not valid anymore");
-        }
+        try {
+            if (!worldIsValid(worldID)) {
+                throw new IllegalStateException("World " +  worldID + " is not valid anymore");
+            }
 
-        var segment = worldID(worldID);
-        worldID.state.once();
-        b3DestroyWorld(segment);
-        if (worldID.taskPool != null) {
-            worldID.taskPool.close();
+            var segment = worldID(worldID);
+            worldID.state.once();
+            b3DestroyWorld(segment);
+
+        } finally {
+            if (worldID.taskPool != null) {
+                worldID.taskPool.close();
+            }
+            if (worldID.shapes != null) {
+                worldID.shapes.close();
+            }
         }
-        if (worldID.shapes != null) {
-            worldID.shapes.close();
-        }
+    }
+
+    /// @api b3DestroyMesh
+    public void destroyMesh(MeshData meshData) {
+        var segment = meshData.segment();
+        meshData.state.once();
+        b3DestroyMesh(segment);
+    }
+
+    /// @api b3DestroyHeightField
+    public void destroyHeightField(HeightFieldData data) {
+        var segment = data.segment();
+        data.state.once();
+        b3DestroyHeightField(segment);
     }
 
 
@@ -1201,18 +1261,6 @@ public final class B3 {
         }
         b3DestroyBody(segment);
     }
-
-    /// @api b3DestroyJoint
-    void destroyJoint(long packedID) {
-        var segment = jointID(packedID);
-        if (!b3Joint_IsValid(segment)) {
-            // joint may been destroyed by the destruction
-            // of one of the attached bodies,
-            return;
-        }
-        b3DestroyJoint(segment, false);
-    }
-
 
     /// @api b3GetLengthUnitsPerMeter
     static float lengthUnitsPerMeter() {

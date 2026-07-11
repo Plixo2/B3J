@@ -15,6 +15,7 @@ import java.util.Map;
 
 public abstract class Example {
     public Region region = Region.ofConfined();
+    public boolean threaded = true;
 
     public final B3 b3 = B3.get();
 

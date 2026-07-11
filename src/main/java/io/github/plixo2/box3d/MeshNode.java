@@ -11,17 +11,11 @@ import java.lang.foreign.ValueLayout;
 public class MeshNode {
 
     public Vector3f lowerBound = new Vector3f();
-
     public @U32 int axis;
-
     public @U32 int childOffset;
-
     public @U32 int type;
-
     public @U32 int triangleCount;
-
     public Vector3f upperBound = new Vector3f();
-
     public @U32 int triangleOffset;
 
     public MeshNode() {

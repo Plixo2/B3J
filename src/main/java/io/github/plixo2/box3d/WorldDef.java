@@ -5,7 +5,9 @@ import java.lang.foreign.SegmentAllocator;
 
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.internal.AllocatedPool;
-import io.github.plixo2.box3d.threads.TaskPool;
+import io.github.plixo2.box3d.threads.BuildInScheduler;
+import io.github.plixo2.box3d.threads.CustomTaskScheduler;
+import io.github.plixo2.box3d.threads.TaskScheduler;
 import lombok.Getter;
 import lombok.Setter;
 import org.box2d.box3d.b3WorldDef;
@@ -28,7 +30,7 @@ public class WorldDef {
     @Nullable Object restitutionCallback;
     boolean enableSleep;
     boolean enableContinuous;
-    @Nullable TaskPool<?> taskPool;
+    @Nullable TaskScheduler taskPool;
     @Nullable Object userData;
     @Nullable DebugShapeCallbacks<?> debugShapeCollection;
     @Nullable Object userDebugShapeContext;
@@ -61,24 +63,31 @@ public class WorldDef {
         var segment = b3WorldDef.allocate(arena);
 
         AllocatedPool taskPool = null;
-        var workerCount = 0;
         var enqueueTask = MemorySegment.NULL;
         var finishTask = MemorySegment.NULL;
-        if (this.taskPool != null) {
-            taskPool = AllocatedPool.of(this.taskPool);
-            workerCount = this.taskPool.workerCount();
-            enqueueTask = taskPool.enqueueTaskCallback();
-            finishTask = taskPool.finishTaskCallback();
-        }
+
+        var workerCount = switch (this.taskPool) {
+            case BuildInScheduler(var wc) -> wc;
+            case CustomTaskScheduler<?> scheduler -> {
+                taskPool = AllocatedPool.of(scheduler);
+                enqueueTask = taskPool.enqueueTaskCallback();
+                finishTask = taskPool.finishTaskCallback();
+                yield scheduler.workerCount();
+            }
+            case null -> 0;
+        };
 
         DebugShapeCallbacks.Allocated shapes = null;
-        MemorySegment createDebugShape = MemorySegment.NULL;
-        MemorySegment destroyDebugShape = MemorySegment.NULL;
+        var createDebugShape = MemorySegment.NULL;
+        var destroyDebugShape = MemorySegment.NULL;
+
         if (this.debugShapeCollection != null) {
             shapes = new DebugShapeCallbacks.Allocated(this.debugShapeCollection);
             createDebugShape = shapes.creation;
             destroyDebugShape = shapes.deletion;
         }
+
+
 
         PrimitiveMemOps.putVec3(b3WorldDef.gravity(segment), this.gravity);
         b3WorldDef.restitutionThreshold(segment, this.restitutionThreshold);
