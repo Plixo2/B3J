@@ -22,7 +22,7 @@ staying as close as possible to the original Box3D API.
 
 ## Usage (and Box3d differences)
 
-- [JOML](https://github.com/JOML-CI/JOML) for fast math and vector operations.
+- [JOML](https://github.com/JOML-CI/JOML) is used for fast math and vector operations.
   - A `Matrix4f` is used as a rigid transform instead of `b3Transform`.
   - `Vector3f` and `Quaternionf` are used for `b3Vec3` and `b3Quat`.
 
