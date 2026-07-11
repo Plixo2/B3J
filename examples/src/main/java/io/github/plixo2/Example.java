@@ -24,7 +24,7 @@ public abstract class Example {
     public final DrawConfig drawConfig = new DrawConfig();
     public final Map<ShapeID, Color> customColors = new HashMap<>();
 
-    final void main() {
+    public final void main() {
         try (var renderer = new Entry(this)) {
             renderer.loop();
         }
@@ -84,10 +84,10 @@ public abstract class Example {
 
         var shape = result.shapeID();
         var body = this.b3.shapeGetBody(shape);
-        var impuls = new Vector3f(dir);
+        var impuls = new Vector3f(result.normal());
         var mass = this.b3.bodyGetMass(body);
 
-        impuls.mul(strength * mass);
+        impuls.mul(-strength * mass);
 
         this.b3.bodyApplyLinearImpulse(body, impuls, result.point(), true);
 

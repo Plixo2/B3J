@@ -7,6 +7,12 @@ import java.lang.foreign.MemorySegment;
 public final class JointID<T extends JointType> {
     public static final JointID<?> NULL_ID = new JointID<>(0);
 
+    @SuppressWarnings("unchecked")
+    public static <T extends JointType> JointID<T> NULL_ID() {
+        return (JointID<T>) NULL_ID;
+    }
+
+
     private final long packedID;
 
     private JointID(
@@ -20,47 +26,47 @@ public final class JointID<T extends JointType> {
     }
 
     @SuppressWarnings("unchecked")
-    public JointID<JointType.Parallel> cast(JointType.Parallel type) {
+    public JointID<JointType.Parallel> reinterpret(JointType.Parallel type) {
         return (JointID<JointType.Parallel>)this;
     }
 
     @SuppressWarnings("unchecked")
-    public JointID<JointType.Distance> cast(JointType.Distance type) {
+    public JointID<JointType.Distance> reinterpret(JointType.Distance type) {
         return (JointID<JointType.Distance>)this;
     }
 
     @SuppressWarnings("unchecked")
-    public JointID<JointType.Filter> cast(JointType.Filter type) {
+    public JointID<JointType.Filter> reinterpret(JointType.Filter type) {
         return (JointID<JointType.Filter>)this;
     }
 
     @SuppressWarnings("unchecked")
-    public JointID<JointType.Motor> cast(JointType.Motor type) {
+    public JointID<JointType.Motor> reinterpret(JointType.Motor type) {
         return (JointID<JointType.Motor>)this;
     }
 
     @SuppressWarnings("unchecked")
-    public JointID<JointType.Prismatic> cast(JointType.Prismatic type) {
+    public JointID<JointType.Prismatic> reinterpret(JointType.Prismatic type) {
         return (JointID<JointType.Prismatic>)this;
     }
 
     @SuppressWarnings("unchecked")
-    public JointID<JointType.Revolute> cast(JointType.Revolute type) {
+    public JointID<JointType.Revolute> reinterpret(JointType.Revolute type) {
         return (JointID<JointType.Revolute>)this;
     }
 
     @SuppressWarnings("unchecked")
-    public JointID<JointType.Spherical> cast(JointType.Spherical type) {
+    public JointID<JointType.Spherical> reinterpret(JointType.Spherical type) {
         return (JointID<JointType.Spherical>)this;
     }
 
     @SuppressWarnings("unchecked")
-    public JointID<JointType.Weld> cast(JointType.Weld type) {
+    public JointID<JointType.Weld> reinterpret(JointType.Weld type) {
         return (JointID<JointType.Weld>)this;
     }
 
     @SuppressWarnings("unchecked")
-    public JointID<JointType.Wheel> cast(JointType.Wheel type) {
+    public JointID<JointType.Wheel> reinterpret(JointType.Wheel type) {
         return (JointID<JointType.Wheel>)this;
     }
 

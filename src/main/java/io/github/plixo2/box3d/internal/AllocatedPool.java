@@ -1,6 +1,6 @@
 package io.github.plixo2.box3d.internal;
 
-import io.github.plixo2.box3d.threads.CustomTaskScheduler;
+import io.github.plixo2.box3d.tasks.CustomTaskScheduler;
 import lombok.Getter;
 import org.box2d.box3d.b3EnqueueTaskCallback;
 import org.box2d.box3d.b3FinishTaskCallback;

@@ -1,4 +1,4 @@
-package io.github.plixo2.box3d.threads;
+package io.github.plixo2.box3d.tasks;
 
 public sealed interface TaskScheduler
     permits

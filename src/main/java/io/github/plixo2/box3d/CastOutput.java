@@ -9,7 +9,6 @@ import org.joml.Vector3f;
 import java.lang.foreign.MemorySegment;
 
 @Getter
-@ToString
 public class CastOutput {
 
     private final Vector3f normal = new Vector3f();
@@ -19,13 +18,29 @@ public class CastOutput {
     private int triangleIndex;
     private int childIndex;
     private int materialIndex;
-
+    private boolean hit;
 
     public CastOutput() {
 
     }
 
-    void set(MemorySegment segment) {
+    public CastOutput(CastOutput other) {
+        this.normal.set(other.normal);
+        this.point.set(other.point);
+        this.fraction = other.fraction;
+        this.iterations = other.iterations;
+        this.triangleIndex = other.triangleIndex;
+        this.childIndex = other.childIndex;
+        this.materialIndex = other.materialIndex;
+        this.hit = other.hit;
+    }
+
+    void setMiss() {
+        this.hit = false;
+    }
+
+    void setOnHit(MemorySegment segment) {
+        this.hit = true;
         PrimitiveMemOps.setVec3(this.normal, b3CastOutput.normal(segment));
         PrimitiveMemOps.setVec3(this.point, b3CastOutput.point(segment));
         this.fraction = b3CastOutput.fraction(segment);

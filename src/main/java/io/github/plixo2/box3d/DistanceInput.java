@@ -14,7 +14,6 @@ import java.lang.foreign.SegmentAllocator;
 @Setter
 public class DistanceInput {
 
-
     private ShapeProxy proxyA;
     private ShapeProxy proxyB;
 

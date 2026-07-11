@@ -14,7 +14,7 @@ import static org.box2d.box3d.box3d_h.b3World_CastRay;
 
 public final class ScratchCastResultFcn implements b3CastResultFcn.Function {
 
-    private @Nullable volatile CastResult function = null;
+    private @Nullable volatile CastResultFcn function = null;
 
     private final MemorySegment segment;
 
@@ -31,7 +31,7 @@ public final class ScratchCastResultFcn implements b3CastResultFcn.Function {
             MemorySegment origin,
             MemorySegment translation,
             MemorySegment filter,
-            CastResult fcn
+            CastResultFcn fcn
     ) {
         this.function = fcn;
 
@@ -71,15 +71,20 @@ public final class ScratchCastResultFcn implements b3CastResultFcn.Function {
         var packedID = PrimitiveMemOps.packID(shapeId);
         var shape = ShapeID.fromUnknown(packedID);
 
-        return function1.onHit(
-                shape,
-                this.v1,
-                this.v2,
-                fraction,
-                userMaterialId,
-                triangleIndex,
-                childIndex
-        );
+        try {
+            return function1.onHit(
+                    shape,
+                    this.v1,
+                    this.v2,
+                    fraction,
+                    userMaterialId,
+                    triangleIndex,
+                    childIndex
+            );
+        } catch(Exception e) {
+            Internal.unhandledCallbackException(e);
+            return 0.0f; // 0 to terminate the ray
+        }
     }
 
 

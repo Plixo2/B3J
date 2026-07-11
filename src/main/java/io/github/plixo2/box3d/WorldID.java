@@ -8,7 +8,12 @@ import io.github.plixo2.box3d.internal.AllocatedPool;
 import org.box2d.box3d.b3WorldId;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.lang.foreign.MemorySegment;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 
 public final class WorldID {
@@ -83,6 +88,17 @@ public final class WorldID {
                 region,
                 taskPool,
                 shapes,
+                identifier
+        );
+    }
+
+    static WorldID of(MemorySegment segment) {
+        var identifier = PrimitiveMemOps.packWorldID(segment);
+        return new WorldID(
+                null,
+                null,
+                null,
+                null,
                 identifier
         );
     }

@@ -2,7 +2,6 @@ package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.internal.U64;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
 import org.box2d.box3d.b3RayResult;
@@ -12,10 +11,9 @@ import java.lang.foreign.MemorySegment;
 
 
 @Getter
-@ToString
 public class RayResult {
 
-    private ShapeID shapeID;
+    private ShapeID shapeID = ShapeID.NULL_ID;
     private final Vector3f point = new Vector3f();
     private final Vector3f normal = new Vector3f();
     private @U64 long userMaterialId;
@@ -24,9 +22,23 @@ public class RayResult {
     private int childIndex;
     private int leafVisits;
     private int nodeVisits;
+    private boolean hit;
 
     public RayResult() {
 
+    }
+
+    public RayResult(RayResult other) {
+        this.shapeID = other.shapeID;
+        this.point.set(other.point);
+        this.normal.set(other.normal);
+        this.userMaterialId = other.userMaterialId;
+        this.fraction = other.fraction;
+        this.triangleIndex = other.triangleIndex;
+        this.childIndex = other.childIndex;
+        this.leafVisits = other.leafVisits;
+        this.nodeVisits = other.nodeVisits;
+        this.hit = other.hit;
     }
 
 
@@ -36,7 +48,13 @@ public class RayResult {
         return in;
     }
 
-    void set(MemorySegment segment) {
+    void setMiss() {
+        this.hit = false;
+        this.shapeID = ShapeID.NULL_ID;
+    }
+
+    void setOnHit(MemorySegment segment) {
+        this.hit = true;
         this.shapeID = ShapeID.of(b3RayResult.shapeId(segment));
         PrimitiveMemOps.setVec3(this.point, b3RayResult.point(segment));
         PrimitiveMemOps.setVec3(this.normal, b3RayResult.normal(segment));

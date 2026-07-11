@@ -8,21 +8,66 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
+import org.joml.Vector2f;
 import org.joml.Vector3f;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.FloatBuffer;
+import java.util.Objects;
 
 import static io.github.plixo2.box3d.internal.Internal.*;
 import static org.box2d.box3d.box3d_h.*;
+import static org.box2d.box3d.box3d_h.B3_MAX_ROTATION;
 
 public final class B3 {
 
-    public static final long DEFAULT_CATEGORY_BITS = U64_MAX;
-    public static final long DEFAULT_MASK_BITS = U64_MAX;
+    static {
+        Internal.setAssertFcn();
+    }
+
+    /// @api B3_DEFAULT_CATEGORY_BITS
+    public static final long DEFAULT_CATEGORY_BITS = U64.MAX;
+    /// @api B3_DEFAULT_MASK_BITS
+    public static final long DEFAULT_MASK_BITS = U64.MAX;
+    /// @api B3_HEIGHT_FIELD_HOLE
     public static final @U8 int HEIGHT_FIELD_HOLE = B3_HEIGHT_FIELD_HOLE;
+    /// @api B3_MAX_WORKERS
+    public static final @U32 int MAX_WORKERS = B3_MAX_WORKERS;
+    /// @api B3_MAX_TASKS
+    public static final @U32 int MAX_TASKS = B3_MAX_TASKS;
+    /// @api B3_GRAPH_COLOR_COUNT
+    public static final @U32 int GRAPH_COLOR_COUNT = B3_GRAPH_COLOR_COUNT;
+    /// @api B3_CONTACT_MANIFOLD_COUNT_BUCKETS
+    public static final @U32 int CONTACT_MANIFOLD_COUNT_BUCKETS = B3_CONTACT_MANIFOLD_COUNT_BUCKETS;
+    /// @api B3_MAX_WORLDS
+    public static final @U32 int MAX_WORLDS = B3_MAX_WORLDS;
+    /// @api B3_MAX_ROTATION
+    public static final float MAX_ROTATION = B3_MAX_ROTATION;
+    /// @api B3_CONTACT_RECYCLE_ANGULAR_DISTANCE
+    public static final @U32 float CONTACT_RECYCLE_ANGULAR_DISTANCE = B3_CONTACT_RECYCLE_ANGULAR_DISTANCE;
+    /// @api B3_AABB_MARGIN_FRACTION
+    public static final @U32 float AABB_MARGIN_FRACTION = B3_AABB_MARGIN_FRACTION;
+    /// @api B3_TIME_TO_SLEEP
+    public static final @U32 float TIME_TO_SLEEP = B3_TIME_TO_SLEEP;
+    /// @api B3_BODY_NAME_LENGTH
+    public static final @U32 int BODY_NAME_LENGTH = B3_BODY_NAME_LENGTH;
+    /// @api B3_SHAPE_NAME_LENGTH
+    public static final @U32 int SHAPE_NAME_LENGTH = B3_SHAPE_NAME_LENGTH;
+    /// @api B3_MAX_MANIFOLD_POINTS
+    public static final @U32 int MAX_MANIFOLD_POINTS = B3_MAX_MANIFOLD_POINTS;
+    /// @api B3_MAX_SHAPE_CAST_POINTS
+    public static final @U32 int MAX_SHAPE_CAST_POINTS = B3_MAX_SHAPE_CAST_POINTS;
+    /// @api B3_SHAPE_POWER
+    public static final @U32 int SHAPE_POWER = B3_SHAPE_POWER;
+    /// @api B3_CHILD_POWER
+    public static final @U32 int CHILD_POWER = B3_CHILD_POWER;
+    /// @api B3_MAX_SHAPES
+    public static final @U32 int MAX_SHAPES = B3_MAX_SHAPES;
+    /// @api B3_MAX_CHILD_SHAPES
+    public static final @U32 int MAX_CHILD_SHAPES = B3_MAX_CHILD_SHAPES;
+
 
     private static final ThreadLocal<B3> tls = ThreadLocal.withInitial(B3::new);
 
@@ -32,28 +77,81 @@ public final class B3 {
         return tls.get();
     }
 
-    static final int SECRET_COOKIE = 1152023; // took your cookie
 
-    private final Arena scratchArena = Arena.ofAuto();
-    private final ConstArena returnArena = new ConstArena(this.scratchArena, 1024);      // 1 KB
-    private final StackArena argArena    = new StackArena(this.scratchArena, 32 * 1024); // 32 KB
+    //<editor-fold desc="Static" default-state="collapsed">
 
-    private final MemorySegment worldIDSegment = b3WorldId.allocate(this.scratchArena);
-    private final MemorySegment bodyIDSegment = b3BodyId.allocate(this.scratchArena);
-    private final MemorySegment contactIDSegment = b3ContactId.allocate(this.scratchArena);
-    private final MemorySegment shapeIDSegment = b3ShapeId.allocate(this.scratchArena);
-    private final MemorySegment jointIDSegment = b3JointId.allocate(this.scratchArena);
-    private final MemorySegment vec3Segment = b3Vec3.allocate(this.scratchArena);
-    private final MemorySegment quatSegment = b3Quat.allocate(this.scratchArena);
-    private final MemorySegment vec3Segment2 = b3Vec3.allocate(this.scratchArena);
-    private final MemorySegment transformSegment = b3Transform.allocate(this.scratchArena);
-    private final MemorySegment aabbSegment = b3AABB.allocate(this.scratchArena);
+    /// @api b3GetVersion
+    public static Version getVersion() {
+        try (var arena = Arena.ofConfined()) {
+            return Version.of(b3GetVersion(arena));
+        }
+    }
 
-    private final Quaternionf scratchQuat = new Quaternionf();
-    private final ScratchCastResultFcn scratchCastFn = new ScratchCastResultFcn(this.scratchArena);
-    private final ScratchOverlapAABB scratchOverlapAABB = new ScratchOverlapAABB(this.scratchArena);
+    /// @api b3SetAssertFcn
+    public static void setAssertFcn(AssertFcn assertFcn) {
+        Internal.setAssertFcn(assertFcn);
+    }
 
-    private final SimplexCache emptyDistanceCache = new SimplexCache();
+    /// @api b3SetStallThreshold
+    public static void setStallThreshold(float seconds) {
+        b3SetStallThreshold(seconds);
+    }
+    /// @api b3GetStallThreshold
+    public static float getStallThreshold() {
+        return b3GetStallThreshold();
+    }
+
+    /// @api b3GetLengthUnitsPerMeter
+    public static float getLengthUnitsPerMeter() {
+        return b3GetLengthUnitsPerMeter();
+    }
+    /// @api b3SetLengthUnitsPerMeter
+    public static void setLengthUnitsPerMeter(float lengthUnits) {
+        b3SetLengthUnitsPerMeter(lengthUnits);
+    }
+
+    /// @api B3_HUGE
+    public static float HUGE() {
+        return 1.0e5f * b3GetLengthUnitsPerMeter();
+    }
+    /// @api B3_LINEAR_SLOP
+    public static float LINEAR_SLOP() {
+        return 0.005f * b3GetLengthUnitsPerMeter();
+    }
+    /// @api B3_MIN_CAPSULE_LENGTH
+    public static float MIN_CAPSULE_LENGTH() {
+        return LINEAR_SLOP();
+    }
+    /// @api B3_OVERLAP_SLOP
+    public static float OVERLAP_SLOP() {
+        return 0.1f * LINEAR_SLOP();
+    }
+    /// @api B3_SPECULATIVE_DISTANCE
+    public static float SPECULATIVE_DISTANCE() {
+        return 4.0f * LINEAR_SLOP();
+    }
+    /// @api B3_MESH_REST_OFFSET
+    public static float B3_MESH_REST_OFFSET() {
+        return 1.0f * LINEAR_SLOP();
+    }
+    /// @api B3_CONTACT_RECYCLE_DISTANCE
+    public static float B3_CONTACT_RECYCLE_DISTANCE() {
+        return 10.0f * LINEAR_SLOP();
+    }
+    /// @api B3_CONTACT_RECYCLE_ANGULAR_DISTANCE
+    public static float B3_CONTACT_RECYCLE_ANGULAR_DISTANCE() {
+        return 0.99240388f;
+    }
+    /// @api B3_MAX_AABB_MARGIN
+    public static float B3_MAX_AABB_MARGIN() {
+        return 0.05f * b3GetLengthUnitsPerMeter();
+    }
+
+
+    //</editor-fold>
+
+    //<editor-fold desc="World" default-state="collapsed">
+
 
     /// @api b3CreateWorld
     public WorldID createWorld(
@@ -77,21 +175,34 @@ public final class B3 {
         }
     }
 
-    /// @api b3CreateBody
-    public BodyID createBody(
-            Region region,
-            WorldID worldID,
-            BodyDef bodyDef
-    ) {
-        try (this.argArena) {
-            var bodyID = b3CreateBody(
-                    this.returnArena,
-                    worldID(worldID),
-                    bodyDef.create(this.argArena)
-            );
-            return BodyID.of(this, region, bodyID);
-        }
+    /// @api b3World_GetBodyEvents
+    public Iterable<BodyMoveEvent> worldGetBodyEvents() {
+        var eventSegment = b3World_GetBodyEvents(this.returnArena, this.worldIDSegment);
+
+        var moveEvents = b3BodyEvents.moveEvents(eventSegment);
+        var moveCount = b3BodyEvents.moveCount(eventSegment);
+
+        return () -> new BodyMoveEvent.Iterator(moveEvents, moveCount);
     }
+
+    /// @api b3World_Step
+    public void worldStep(WorldID worldID, float timeStep, int subStepCount) {
+        b3World_Step(worldID(worldID), timeStep, subStepCount);
+    }
+
+    /// @api b3World_Draw
+    public void worldDraw(
+            WorldID worldID,
+            DebugDraw draw,
+            @U64 long maskBits
+    ) {
+        b3jshimWorld_Draw(worldID(worldID), draw.segment(), maskBits);
+        draw.invoke();
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="Hull" default-state="collapsed">
+
 
     /// @api b3MakeBoxHull
     public BoxHull makeBoxHull(float hx, float hy, float hz) {
@@ -103,45 +214,6 @@ public final class B3 {
     public BoxHull makeCubeHull(float halfWidth) {
         var hull = b3MakeCubeHull(Arena.ofAuto(), halfWidth);
         return new BoxHull(hull);
-    }
-
-    /// @api b3CreateHullShape
-    public ShapeID createHullShape(BodyID bodyID, ShapeDef def, HullData hull) {
-        try (this.argArena) {
-            var shapeID = b3CreateHullShape(
-                    this.returnArena,
-                    bodyID(bodyID),
-                    def.create(this.argArena),
-                    hull.segment
-            );
-            return ShapeID.of(shapeID);
-        }
-    }
-
-    /// @api b3CreateSphereShape
-    public ShapeID createSphereShape(BodyID bodyID, ShapeDef def, Sphere sphere) {
-        try (this.argArena) {
-            var shapeID = b3CreateSphereShape(
-                    this.returnArena,
-                    bodyID(bodyID),
-                    def.create(this.argArena),
-                    sphere.create(this.argArena)
-            );
-            return ShapeID.of(shapeID);
-        }
-    }
-
-    /// @api b3CreateCapsuleShape
-    public ShapeID createCapsuleShape(BodyID bodyID, ShapeDef def, Capsule capsule) {
-        try (this.argArena) {
-            var shapeID = b3CreateCapsuleShape(
-                    this.returnArena,
-                    bodyID(bodyID),
-                    def.create(this.argArena),
-                    capsule.create(this.argArena)
-            );
-            return ShapeID.of(shapeID);
-        }
     }
 
     /// @api b3MakeTransformedBoxHull
@@ -163,9 +235,9 @@ public final class B3 {
 
         MemorySegment hull;
 
-        try (var arena = Arena.ofConfined()) {
+        try (this.argArena) {
              hull = b3CreateHull(
-                     ensureOffHeap(arena, points),
+                     ensureOffHeap(this.argArena, points),
                      vertexCount,
                      maxVertexCount
              );
@@ -226,6 +298,26 @@ public final class B3 {
         );
         return new HullData(hull);
     }
+    //</editor-fold>
+
+    //<editor-fold desc="Height Field" default-state="collapsed">
+
+
+    /// @api b3CreateHeightField
+    public HeightFieldData createHeightField(
+            Region region,
+            HeightFieldDef def
+    ) {
+        try (this.argArena) {
+            var segment = def.create(this.argArena);
+            var heightField = b3CreateHeightField(segment);
+            return new HeightFieldData(this, region, heightField);
+        }
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="Mesh" default-state="collapsed">
+
 
     /// @api b3CreateMesh
     public @Nullable MeshData createMesh(
@@ -233,8 +325,8 @@ public final class B3 {
             MeshDef meshDef,
             int @Nullable [] degenerateTriangleIndices
     ) {
-        try (var arena = Arena.ofConfined()) {
-            var def = meshDef.create(arena);
+        try (this.argArena) {
+            var def = meshDef.create(this.argArena);
 
             MemorySegment mesh;
 
@@ -244,18 +336,16 @@ public final class B3 {
                 var cap = degenerateTriangleIndices.length;
 
                 // cannot use MemorySegment.ofArray, has to be off-heap
-                try (var degenerateArena = Arena.ofConfined()) {
-                    var data = degenerateArena.allocate(ValueLayout.JAVA_INT.byteSize() * cap);
+                var data = this.argArena.allocate(ValueLayout.JAVA_INT.byteSize() * cap);
 
-                    mesh = b3CreateMesh(def, data, cap);
+                mesh = b3CreateMesh(def, data, cap);
 
-                    // copy back
-                    MemorySegment.copy(
-                            data, ValueLayout.JAVA_INT, 0, // src
-                            degenerateTriangleIndices, 0,  // dst
-                            cap                            // length
-                    );
-                }
+                // copy back
+                MemorySegment.copy(
+                        data, ValueLayout.JAVA_INT, 0, // src
+                        degenerateTriangleIndices, 0,  // dst
+                        cap                            // length
+                );
             }
 
             if (mesh.address() == 0) {
@@ -271,6 +361,55 @@ public final class B3 {
             MeshDef meshDef
     ) {
         return createMesh(region, meshDef, null);
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="Shape" default-state="collapsed">
+
+
+    /// @api b3Shape_GetBody
+    public BodyID shapeGetBody(ShapeID shapeId) {
+        var body = b3Shape_GetBody(this.returnArena, shapeID(shapeId));
+        return BodyID.of(body);
+    }
+
+    /// @api b3CreateHullShape
+    public ShapeID createHullShape(BodyID bodyID, ShapeDef def, HullData hull) {
+        try (this.argArena) {
+            var shapeID = b3CreateHullShape(
+                    this.returnArena,
+                    bodyID(bodyID),
+                    def.create(this.argArena),
+                    hull.segment
+            );
+            return ShapeID.of(shapeID);
+        }
+    }
+
+    /// @api b3CreateSphereShape
+    public ShapeID createSphereShape(BodyID bodyID, ShapeDef def, Sphere sphere) {
+        try (this.argArena) {
+            var shapeID = b3CreateSphereShape(
+                    this.returnArena,
+                    bodyID(bodyID),
+                    def.create(this.argArena),
+                    sphere.create(this.argArena)
+            );
+            return ShapeID.of(shapeID);
+        }
+    }
+
+    /// @api b3CreateCapsuleShape
+    public ShapeID createCapsuleShape(BodyID bodyID, ShapeDef def, Capsule capsule) {
+        try (this.argArena) {
+            var shapeID = b3CreateCapsuleShape(
+                    this.returnArena,
+                    bodyID(bodyID),
+                    def.create(this.argArena),
+                    capsule.create(this.argArena)
+            );
+            return ShapeID.of(shapeID);
+        }
     }
 
     /// @api b3CreateMeshShape
@@ -292,18 +431,6 @@ public final class B3 {
         }
     }
 
-    /// @api b3CreateHeightField
-    public HeightFieldData createHeightField(
-            Region region,
-            HeightFieldDef def
-    ) {
-        try (var arena = Arena.ofConfined()) {
-            var segment = def.create(arena);
-            var heightField = b3CreateHeightField(segment);
-            return new HeightFieldData(this, region, heightField);
-        }
-    }
-
 
     /// @api b3CreateHeightFieldShape
     public ShapeID createHeightFieldShape(
@@ -321,15 +448,19 @@ public final class B3 {
             return ShapeID.of(shapeID);
         }
     }
+    //</editor-fold>
+
+    //<editor-fold desc="Spatial Queries" default-state="collapsed">
+
 
     /// @api b3World_OverlapAABB
     @Contract("null, _, _, _, _ -> null; !null, _, _, _, _ -> !null")
     public @Nullable TreeStats worldOverlapAABB(
-            @Nullable TreeStats statsIn,
+            @Nullable TreeStats in,
             WorldID worldID,
             AABB aabb,
             QueryFilter filter,
-            OverlapResult fcn
+            OverlapResultFcn fcn
     ) {
 
         var stats = this.scratchOverlapAABB.invoke(
@@ -340,23 +471,23 @@ public final class B3 {
                 fcn
         );
 
-        if (statsIn != null) {
-            statsIn.set(stats);
+        if (in != null) {
+            in.set(stats);
         }
 
-        return statsIn;
+        return in;
 
     }
 
     /// @api b3World_CastRay
     @Contract("null, _, _, _, _, _ -> null; !null, _, _, _, _, _ -> !null")
     public @Nullable TreeStats worldCastRay(
-            @Nullable TreeStats statsIn,
+            @Nullable TreeStats in,
             WorldID worldID,
             Vector3f origin,
             Vector3f translation,
             QueryFilter filter,
-            CastResult fcn
+            CastResultFcn fcn
     ) {
 
         var stats = this.scratchCastFn.invoke(
@@ -368,11 +499,11 @@ public final class B3 {
                 fcn
         );
 
-        if (statsIn != null) {
-            statsIn.set(stats);
+        if (in != null) {
+            in.set(stats);
         }
 
-        return statsIn;
+        return in;
 
     }
 
@@ -394,18 +525,94 @@ public final class B3 {
                 filter.segment
         );
 
-        if (!RayResult.hit(result)) {
-            return false;
-        }
-
+        var hit = RayResult.hit(result);
         if (in != null) {
-            in.set(result);
+            if (hit) {
+                in.setOnHit(result);
+            } else {
+                in.setMiss();
+            }
         }
-
-        return true;
+        return hit;
 
     }
 
+    /// @return true if `hit`, false otherwise
+    /// @api b3Body_CastRay
+    public boolean bodyCastRay(
+            @Nullable BodyCastResult in,
+            BodyID bodyID,
+            Vector3f origin,
+            Vector3f translation,
+            QueryFilter filter,
+            float maxFraction,
+            Matrix4f bodyTransform
+    ) {
+
+        var result = b3Body_CastRay(
+                this.returnArena,
+                bodyID(bodyID),
+                vec3(origin),
+                vec3_2(translation),
+                filter.segment,
+                maxFraction,
+                transform(bodyTransform)
+        );
+
+        var hit = BodyCastResult.hit(result);
+        if (in != null) {
+            if (hit) {
+                in.setOnHit(result);
+            } else {
+                in.setMiss();
+            }
+        }
+        return hit;
+
+    }
+
+    /// @return true if `hit`, false otherwise
+    /// @api b3Body_CastShape
+    public boolean bodyCastShape(
+            @Nullable BodyCastResult in,
+            BodyID bodyID,
+            Vector3f origin,
+            ShapeProxy proxy,
+            Vector3f translation,
+            QueryFilter filter,
+            float maxFraction,
+            boolean canEncroach,
+            Matrix4f bodyTransform
+    ) {
+        try (this.argArena) {
+
+            var result = b3Body_CastShape(
+                    this.returnArena,
+                    bodyID(bodyID),
+                    vec3(origin),
+                    proxy.create(this.argArena),
+                    vec3_2(translation),
+                    filter.segment,
+                    maxFraction,
+                    canEncroach,
+                    transform(bodyTransform)
+            );
+
+            var hit = BodyCastResult.hit(result);
+            if (in != null) {
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
+            }
+            return hit;
+        }
+
+    }
+
+
+    /// @return true if `hit`, false otherwise
     /// @api b3RayCastSphere
     public boolean rayCastSphere(
             @Nullable CastOutput in,
@@ -420,19 +627,20 @@ public final class B3 {
                     input.create(this.argArena)
             );
 
-            if (!CastOutput.hit(result)) {
-                return false;
-            }
-
+            var hit = CastOutput.hit(result);
             if (in != null) {
-                in.set(result);
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
             }
-
-            return true;
+            return hit;
         }
 
     }
 
+    /// @return true if `hit`, false otherwise
     /// @api b3RayCastHollowSphere
     public boolean rayCastHollowSphere(
             @Nullable CastOutput in,
@@ -447,19 +655,20 @@ public final class B3 {
                     input.create(this.argArena)
             );
 
-            if (!CastOutput.hit(result)) {
-                return false;
-            }
-
+            var hit = CastOutput.hit(result);
             if (in != null) {
-                in.set(result);
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
             }
-
-            return true;
+            return hit;
         }
 
     }
 
+    /// @return true if `hit`, false otherwise
     /// @api b3RayCastCapsule
     public boolean rayCastCapsule(
             @Nullable CastOutput in,
@@ -474,19 +683,20 @@ public final class B3 {
                     input.create(this.argArena)
             );
 
-            if (!CastOutput.hit(result)) {
-                return false;
-            }
-
+            var hit = CastOutput.hit(result);
             if (in != null) {
-                in.set(result);
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
             }
-
-            return true;
+            return hit;
         }
 
     }
 
+    /// @return true if `hit`, false otherwise
     /// @api b3RayCastHull
     public boolean rayCastHull(
             @Nullable CastOutput in,
@@ -501,20 +711,20 @@ public final class B3 {
                     input.create(this.argArena)
             );
 
-            if (!CastOutput.hit(result)) {
-                return false;
-            }
-
+            var hit = CastOutput.hit(result);
             if (in != null) {
-                in.set(result);
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
             }
-
-            return true;
+            return hit;
         }
 
     }
 
-
+    /// @return true if `hit`, false otherwise
     /// @api b3RayCastMesh
     public boolean rayCastMesh(
             @Nullable CastOutput in,
@@ -529,19 +739,20 @@ public final class B3 {
                     input.create(this.argArena)
             );
 
-            if (!CastOutput.hit(result)) {
-                return false;
-            }
-
+            var hit = CastOutput.hit(result);
             if (in != null) {
-                in.set(result);
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
             }
-
-            return true;
+            return hit;
         }
 
     }
 
+    /// @return true if `hit`, false otherwise
     /// @api b3RayCastHeightField
     public boolean rayCastHeightField(
             @Nullable CastOutput in,
@@ -556,20 +767,20 @@ public final class B3 {
                     input.create(this.argArena)
             );
 
-            if (!CastOutput.hit(result)) {
-                return false;
-            }
-
+            var hit = CastOutput.hit(result);
             if (in != null) {
-                in.set(result);
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
             }
-
-            return true;
+            return hit;
         }
 
     }
 
-
+    /// @return true if `hit`, false otherwise
     /// @api b3ShapeCastSphere
     public boolean shapeCastSphere(
             @Nullable CastOutput in,
@@ -584,19 +795,20 @@ public final class B3 {
                     input.create(this.argArena)
             );
 
-            if (!CastOutput.hit(result)) {
-                return false;
-            }
-
+            var hit = CastOutput.hit(result);
             if (in != null) {
-                in.set(result);
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
             }
-
-            return true;
+            return hit;
         }
 
     }
 
+    /// @return true if `hit`, false otherwise
     /// @api b3ShapeCastCapsule
     public boolean shapeCastCapsule(
             @Nullable CastOutput in,
@@ -611,19 +823,20 @@ public final class B3 {
                     input.create(this.argArena)
             );
 
-            if (!CastOutput.hit(result)) {
-                return false;
-            }
-
+            var hit = CastOutput.hit(result);
             if (in != null) {
-                in.set(result);
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
             }
-
-            return true;
+            return hit;
         }
 
     }
 
+    /// @return true if `hit`, false otherwise
     /// @api b3ShapeCastHull
     public boolean shapeCastHull(
             @Nullable CastOutput in,
@@ -638,19 +851,20 @@ public final class B3 {
                     input.create(this.argArena)
             );
 
-            if (!CastOutput.hit(result)) {
-                return false;
-            }
-
+            var hit = CastOutput.hit(result);
             if (in != null) {
-                in.set(result);
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
             }
-
-            return true;
+            return hit;
         }
 
     }
 
+    /// @return true if `hit`, false otherwise
     /// @api b3ShapeCastMesh
     public boolean shapeCastMesh(
             @Nullable CastOutput in,
@@ -665,19 +879,20 @@ public final class B3 {
                     input.create(this.argArena)
             );
 
-            if (!CastOutput.hit(result)) {
-                return false;
-            }
-
+            var hit = CastOutput.hit(result);
             if (in != null) {
-                in.set(result);
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
             }
-
-            return true;
+            return hit;
         }
 
     }
 
+    /// @return true if `hit`, false otherwise
     /// @api b3ShapeCastHeightField
     public boolean shapeCastHeightField(
             @Nullable CastOutput in,
@@ -692,19 +907,18 @@ public final class B3 {
                     input.create(this.argArena)
             );
 
-            if (!CastOutput.hit(result)) {
-                return false;
-            }
-
+            var hit = CastOutput.hit(result);
             if (in != null) {
-                in.set(result);
+                if (hit) {
+                    in.setOnHit(result);
+                } else {
+                    in.setMiss();
+                }
             }
-
-            return true;
+            return hit;
         }
 
     }
-
 
     /// @api b3OverlapHull
     public boolean overlapHull(HullData hullData, Matrix4f transform, ShapeProxy proxy) {
@@ -801,174 +1015,26 @@ public final class B3 {
             return in;
         }
     }
+    //</editor-fold>
+
+    //<editor-fold desc="Body" default-state="collapsed">
 
 
-    /// convenience method
-    ///
-    /// @api b3CreateDistanceJoint
-    /// @api b3CreateFilterJoint
-    /// @api b3CreateMotorJoint
-    /// @api b3CreateParallelJoint
-    /// @api b3CreatePrismaticJoint
-    /// @api b3CreateRevoluteJoint
-    /// @api b3CreateSphericalJoint
-    /// @api b3CreateWeldJoint
-    /// @api b3CreateWheelJoint
-    public <T extends JointType> JointID<T> createJoint(
+    /// @api b3CreateBody
+    public BodyID createBody(
+            Region region,
             WorldID worldID,
-            AbstractJointDef<T> def
-    ) {
-        //noinspection unchecked
-        return (JointID<T>) switch (def) {
-            case DistanceJointDef distance -> createDistanceJoint(worldID, distance);
-            case FilterJointDef filter -> createFilterJoint(worldID, filter);
-            case MotorJointDef motor -> createMotorJoint(worldID, motor);
-            case ParallelJointDef parallel -> createParallelJoint(worldID, parallel);
-            case PrismaticJointDef prismatic -> createPrismaticJoint(worldID, prismatic);
-            case RevoluteJointDef revolute -> createRevoluteJoint(worldID, revolute);
-            case SphericalJointDef spherical -> createSphericalJoint(worldID, spherical);
-            case WeldJointDef weld -> createWeldJoint(worldID, weld);
-            case WheelJointDef wheel -> createWheelJoint(worldID, wheel);
-        };
-    }
-
-
-    /// @api b3CreateRevoluteJoint
-    public JointID<JointType.Revolute> createRevoluteJoint(
-            WorldID worldID,
-            RevoluteJointDef def
+            BodyDef bodyDef
     ) {
         try (this.argArena) {
-            var jointID = b3CreateRevoluteJoint(
+            var bodyID = b3CreateBody(
                     this.returnArena,
                     worldID(worldID),
-                    def.create(this.scratchQuat, this.argArena)
+                    bodyDef.create(this.argArena)
             );
-            return JointID.of(jointID);
+            return BodyID.of(this, region, bodyID);
         }
     }
-
-    /// @api b3CreatePrismaticJoint
-    public JointID<JointType.Prismatic> createPrismaticJoint(
-            WorldID worldID,
-            PrismaticJointDef def
-    ) {
-        try (this.argArena) {
-            var jointID = b3CreatePrismaticJoint(
-                    this.returnArena,
-                    worldID(worldID),
-                    def.create(this.scratchQuat, this.argArena)
-            );
-            return JointID.of(jointID);
-        }
-    }
-
-    /// @api b3CreateWeldJoint
-    public JointID<JointType.Weld> createWeldJoint(
-            WorldID worldID,
-            WeldJointDef def
-    ) {
-        try (this.argArena) {
-            var jointID = b3CreateWeldJoint(
-                    this.returnArena,
-                    worldID(worldID),
-                    def.create(this.scratchQuat, this.argArena)
-            );
-            return JointID.of(jointID);
-        }
-    }
-
-    /// @api b3CreateWheelJoint
-    public JointID<JointType.Wheel> createWheelJoint(
-            WorldID worldID,
-            WheelJointDef def
-    ) {
-        try (this.argArena) {
-            var jointID = b3CreateWheelJoint(
-                    this.returnArena,
-                    worldID(worldID),
-                    def.create(this.scratchQuat, this.argArena)
-            );
-            return JointID.of(jointID);
-        }
-    }
-
-    /// @api b3CreateSphericalJoint
-    public JointID<JointType.Spherical> createSphericalJoint(
-            WorldID worldID,
-            SphericalJointDef def
-    ) {
-        try (this.argArena) {
-            var jointID = b3CreateSphericalJoint(
-                    this.returnArena,
-                    worldID(worldID),
-                    def.create(this.scratchQuat, this.argArena)
-            );
-            return JointID.of(jointID);
-        }
-    }
-
-    /// @api b3CreateParallelJoint
-    public JointID<JointType.Parallel> createParallelJoint(
-            WorldID worldID,
-            ParallelJointDef def
-    ) {
-        try (this.argArena) {
-            var jointID = b3CreateParallelJoint(
-                    this.returnArena,
-                    worldID(worldID),
-                    def.create(this.scratchQuat, this.argArena)
-            );
-            return JointID.of(jointID);
-        }
-    }
-
-    /// @api b3CreateDistanceJoint
-    public JointID<JointType.Distance> createDistanceJoint(
-            WorldID worldID,
-            DistanceJointDef def
-    ) {
-        try (this.argArena) {
-            var jointID = b3CreateDistanceJoint(
-                    this.returnArena,
-                    worldID(worldID),
-                    def.create(this.scratchQuat, this.argArena)
-            );
-            return JointID.of(jointID);
-        }
-    }
-
-    /// @api b3CreateMotorJoint
-    public JointID<JointType.Motor> createMotorJoint(
-            WorldID worldID,
-            MotorJointDef def
-    ) {
-        try (this.argArena) {
-            var jointID = b3CreateMotorJoint(
-                    this.returnArena,
-                    worldID(worldID),
-                    def.create(this.scratchQuat, this.argArena)
-            );
-            return JointID.of(jointID);
-        }
-    }
-
-    /// @api b3CreateFilterJoint
-    public JointID<JointType.Filter> createFilterJoint(
-            WorldID worldID,
-            FilterJointDef def
-    ) {
-        try (this.argArena) {
-            var jointID = b3CreateFilterJoint(
-                    this.returnArena,
-                    worldID(worldID),
-                    def.create(this.scratchQuat, this.argArena)
-            );
-            return JointID.of(jointID);
-        }
-    }
-
-
 
     /// @api b3Body_GetPosition
     public Vector3f bodyGetPosition(Vector3f in, BodyID bodyId) {
@@ -1102,17 +1168,10 @@ public final class B3 {
         return PrimitiveMemOps.setVec3(in, vec);
     }
 
-
     /// @api b3Body_GetType
     public BodyType bodyGetType(BodyID bodyId) {
         var type = b3Body_GetType(bodyID(bodyId));
         return BodyType.fromCode(type);
-    }
-
-    /// @api b3Shape_GetBody
-    public BodyID shapeGetBody(ShapeID shapeId) {
-        var body = b3Shape_GetBody(this.returnArena, shapeID(shapeId));
-        return BodyID.of(null, null, body);
     }
 
     /// @api b3Body_GetMass
@@ -1138,6 +1197,9 @@ public final class B3 {
     public void bodyEnableSleep(BodyID bodyId, boolean enable) {
         b3Body_EnableSleep(bodyID(bodyId), enable);
     }
+    //</editor-fold>
+
+    //<editor-fold desc="ID Tests" default-state="collapsed">
 
     /// @api b3Shape_IsValid
     public boolean shapeIsValid(ShapeID shapeId) {
@@ -1159,41 +1221,59 @@ public final class B3 {
         return b3Joint_IsValid(jointID(jointId));
     }
 
-    /// @api b3World_GetBodyEvents
-    public Iterable<BodyMoveEvent> worldGetBodyEvents() {
-        var eventSegment = b3World_GetBodyEvents(this.returnArena, this.worldIDSegment);
-
-        var moveEvents = b3BodyEvents.moveEvents(eventSegment);
-        var moveCount = b3BodyEvents.moveCount(eventSegment);
-
-        return () -> new BodyMoveEvent.Iterator(moveEvents, moveCount);
+    public boolean isNull(BodyID bodyID) {
+        return PrimitiveMemOps.isPackedIDNull(bodyID.packedID());
+    }
+    public boolean isNull(ShapeID shapeID) {
+        return PrimitiveMemOps.isPackedIDNull(shapeID.packedID());
+    }
+    public boolean isNull(JointID<?> jointID) {
+        return PrimitiveMemOps.isPackedIDNull(jointID.packedID());
+    }
+    public boolean isNull(ContactID constraintID) {
+        return PrimitiveMemOps.isPackedIDNull(constraintID.packedID());
+    }
+    public boolean isNull(WorldID worldID) {
+        return PrimitiveMemOps.isPackedWorldIDNull(worldID.packedID());
     }
 
-    /// @api b3World_Step
-    public void worldStep(WorldID worldID, float timeStep, int subStepCount) {
-        b3World_Step(worldID(worldID), timeStep, subStepCount);
+    public boolean isNotNull(BodyID bodyID) {
+        return !isNull(bodyID);
+    }
+    public boolean isNotNull(ShapeID shapeID) {
+        return !isNull(shapeID);
+    }
+    public boolean isNotNull(JointID<?> jointID) {
+        return !isNull(jointID);
+    }
+    public boolean isNotNull(ContactID constraintID) {
+        return !isNull(constraintID);
+    }
+    public boolean isNotNull(WorldID worldID) {
+        return !isNull(worldID);
     }
 
-    /// @api b3World_Draw
-    public void worldDraw(
-            WorldID worldID,
-            DebugDraw debugDraw,
-            @U64 long maskBits
-    ) {
-        b3jshimWorld_Draw(worldID(worldID), debugDraw.segment(), maskBits);
-        debugDraw.invoke();
+    public boolean equals(BodyID id1, BodyID id2) {
+        return Objects.equals(id1, id2);
+    }
+    public boolean equals(ShapeID id1, ShapeID id2) {
+        return Objects.equals(id1, id2);
+    }
+    public boolean equals(JointID<?> id1, JointID<?> id2) {
+        return Objects.equals(id1, id2);
+    }
+    public boolean equals(ContactID id1, ContactID id2) {
+        return Objects.equals(id1, id2);
+    }
+    public boolean equals(WorldID id1, WorldID id2) {
+        return Objects.equals(id1, id2);
     }
 
 
-    /// @api b3GetVersion
-    public Version getVersion() {
-        return Version.of(b3GetVersion(this.returnArena));
-    }
+    //</editor-fold>
 
-    /// @api b3GetLengthUnitsPerMeter
-    public float getLengthUnitsPerMeter() {
-        return b3GetLengthUnitsPerMeter();
-    }
+    //<editor-fold desc="Destructors" default-state="collapsed">
+
 
     /// @api b3DestroyBody
     public void destroyBody(BodyID bodyId) {
@@ -1257,689 +1337,1018 @@ public final class B3 {
         data.state.once();
         b3DestroyHeightField(segment);
     }
+    //</editor-fold>
+
+    //<editor-fold desc="Joints" default-state="collapsed">
 
 
-    // #HERE ParallelJoint
+    /// Convenience method
+    public <T extends JointType> JointID<T> createJoint(
+            WorldID worldID,
+            AbstractJointDef<T> def
+    ) {
+        //noinspection unchecked
+        return (JointID<T>) switch (def) {
+            case DistanceJointDef distance -> createDistanceJoint(worldID, distance);
+            case FilterJointDef filter -> createFilterJoint(worldID, filter);
+            case MotorJointDef motor -> createMotorJoint(worldID, motor);
+            case ParallelJointDef parallel -> createParallelJoint(worldID, parallel);
+            case PrismaticJointDef prismatic -> createPrismaticJoint(worldID, prismatic);
+            case RevoluteJointDef revolute -> createRevoluteJoint(worldID, revolute);
+            case SphericalJointDef spherical -> createSphericalJoint(worldID, spherical);
+            case WeldJointDef weld -> createWeldJoint(worldID, weld);
+            case WheelJointDef wheel -> createWheelJoint(worldID, wheel);
+        };
+    }
+
+    /// @api b3Joint_GetType
+    public JointType jointGetType(JointID<?> jointID) {
+        return jointType(b3Joint_GetType(jointID(jointID)));
+    }
+    /// @api b3Joint_GetBodyA
+    public BodyID jointGetBodyA(JointID<?> jointID) {
+        var bodyID = b3Joint_GetBodyA(this.returnArena, jointID(jointID));
+        return BodyID.of(bodyID);
+    }
+    /// @api b3Joint_GetBodyB
+    public BodyID jointGetBodyB(JointID<?> jointID) {
+        var bodyID = b3Joint_GetBodyB(this.returnArena, jointID(jointID));
+        return BodyID.of(bodyID);
+    }
+    /// @api b3Joint_GetWorld
+    public WorldID jointGetWorld(JointID<?> jointID) {
+        var worldID = b3Joint_GetWorld(this.returnArena, jointID(jointID));
+        return WorldID.of(worldID);
+    }
+    /// @api b3Joint_SetLocalFrameA
+    public void jointSetLocalFrameA(JointID<?> jointID, Matrix4f localFrame) {
+        b3Joint_SetLocalFrameA(jointID(jointID), transform(localFrame));
+    }
+    /// @api b3Joint_GetLocalFrameA
+    public Matrix4f jointGetLocalFrameA(Matrix4f in, JointID<?> jointID) {
+        var localFrame = b3Joint_GetLocalFrameA(this.returnArena, jointID(jointID));
+        return PrimitiveMemOps.setTransform(in, localFrame);
+    }
+    /// @api b3Joint_SetLocalFrameB
+    public void jointSetLocalFrameB(JointID<?> jointID, Matrix4f localFrame) {
+        b3Joint_SetLocalFrameB(jointID(jointID), transform(localFrame));
+    }
+    /// @api b3Joint_GetLocalFrameB
+    public Matrix4f jointGetLocalFrameB(Matrix4f in, JointID<?> jointID) {
+        var localFrame = b3Joint_GetLocalFrameB(this.returnArena, jointID(jointID));
+        return PrimitiveMemOps.setTransform(in, localFrame);
+    }
+    /// @api b3Joint_SetCollideConnected
+    public void jointSetCollideConnected(JointID<?> jointID, boolean shouldCollide) {
+        b3Joint_SetCollideConnected(jointID(jointID), shouldCollide);
+    }
+    /// @api b3Joint_GetCollideConnected
+    public boolean jointGetCollideConnected(JointID<?> jointID) {
+        return b3Joint_GetCollideConnected(jointID(jointID));
+    }
+    /// @api b3Joint_WakeBodies
+    public void jointWakeBodies(JointID<?> jointID) {
+        b3Joint_WakeBodies(jointID(jointID));
+    }
+    /// @api b3Joint_GetConstraintForce
+    public Vector3f jointGetConstraintForce(Vector3f in, JointID<?> jointID) {
+        var force = b3Joint_GetConstraintForce(this.returnArena, jointID(jointID));
+        return PrimitiveMemOps.setVec3(in, force);
+    }
+    /// @api b3Joint_GetConstraintTorque
+    public Vector3f jointGetConstraintTorque(Vector3f in, JointID<?> jointID) {
+        var torque = b3Joint_GetConstraintTorque(this.returnArena, jointID(jointID));
+        return PrimitiveMemOps.setVec3(in, torque);
+    }
+    /// @api b3Joint_GetLinearSeparation
+    public float jointGetLinearSeparation(JointID<?> jointID) {
+        return b3Joint_GetLinearSeparation(jointID(jointID));
+    }
+    /// @api b3Joint_GetAngularSeparation
+    public float jointGetAngularSeparation(JointID<?> jointID) {
+        return b3Joint_GetAngularSeparation(jointID(jointID));
+    }
+    /// @api b3Joint_SetConstraintTuning
+    public void jointSetConstraintTuning(JointID<?> jointID, float hertz, float dampingRatio) {
+        b3Joint_SetConstraintTuning(jointID(jointID), hertz, dampingRatio);
+    }
+    /// @return x = hertz, y = dampingRatio
+    /// @api b3Joint_GetConstraintTuning
+    public Vector2f jointGetConstraintTuning(Vector2f in, JointID<?> jointID) {
+        try (this.argArena) {
+            var hertz = this.argArena.allocate(ValueLayout.JAVA_FLOAT);
+            var dampingRatio = this.argArena.allocate(ValueLayout.JAVA_FLOAT);
+            b3Joint_GetConstraintTuning(jointID(jointID), hertz, dampingRatio);
+            in.x = hertz.get(ValueLayout.JAVA_FLOAT, 0);
+            in.y = dampingRatio.get(ValueLayout.JAVA_FLOAT, 0);
+            return in;
+        }
+    }
+    /// @api b3Joint_SetForceThreshold
+    public void jointSetForceThreshold(JointID<?> jointID, float threshold) {
+        b3Joint_SetForceThreshold(jointID(jointID), threshold);
+    }
+    /// @api b3Joint_GetForceThreshold
+    public float jointGetForceThreshold(JointID<?> jointID) {
+        return b3Joint_GetForceThreshold(jointID(jointID));
+    }
+    /// @api b3Joint_SetTorqueThreshold
+    public void jointSetTorqueThreshold(JointID<?> jointID, float threshold) {
+        b3Joint_SetTorqueThreshold(jointID(jointID), threshold);
+    }
+    /// @api b3Joint_GetTorqueThreshold
+    public float jointGetTorqueThreshold(JointID<?> jointID) {
+        return b3Joint_GetTorqueThreshold(jointID(jointID));
+    }
+
+
+
+    //<editor-fold desc="Filter Joints" default-state="collapsed">
+
+
+    /// @api b3CreateFilterJoint
+    public JointID<JointType.Filter> createFilterJoint(
+            WorldID worldID,
+            FilterJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateFilterJoint(
+                    this.returnArena,
+                    worldID(worldID),
+                    def.create(this.scratchQuat, this.argArena)
+            );
+            return JointID.of(jointID);
+        }
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="Parallel Joints" default-state="collapsed">
+
+
+    /// @api b3CreateParallelJoint
+    public JointID<JointType.Parallel> createParallelJoint(
+            WorldID worldID,
+            ParallelJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateParallelJoint(
+                    this.returnArena,
+                    worldID(worldID),
+                    def.create(this.scratchQuat, this.argArena)
+            );
+            return JointID.of(jointID);
+        }
+    }
+
 
     /// @api b3ParallelJoint_SetSpringHertz
-    public void parallelJointSetSpringHertz(JointID<JointType.Parallel> jointID) {
-
+    public void parallelJointSetSpringHertz(JointID<JointType.Parallel> jointID, float hertz) {
+        b3ParallelJoint_SetSpringHertz(jointID(jointID), hertz);
     }
     /// @api b3ParallelJoint_SetSpringDampingRatio
-    public void parallelJointSetSpringDampingRatio(JointID<JointType.Parallel> jointID) {
-
+    public void parallelJointSetSpringDampingRatio(JointID<JointType.Parallel> jointID, float dampingRatio) {
+        b3ParallelJoint_SetSpringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3ParallelJoint_GetSpringHertz
-    public void parallelJointGetSpringHertz(JointID<JointType.Parallel> jointID) {
-
+    public float parallelJointGetSpringHertz(JointID<JointType.Parallel> jointID) {
+        return b3ParallelJoint_GetSpringHertz(jointID(jointID));
     }
     /// @api b3ParallelJoint_GetSpringDampingRatio
-    public void parallelJointGetSpringDampingRatio(JointID<JointType.Parallel> jointID) {
-
+    public float parallelJointGetSpringDampingRatio(JointID<JointType.Parallel> jointID) {
+        return b3ParallelJoint_GetSpringDampingRatio(jointID(jointID));
     }
     /// @api b3ParallelJoint_SetMaxTorque
-    public void parallelJointSetMaxTorque(JointID<JointType.Parallel> jointID) {
-
+    public void parallelJointSetMaxTorque(JointID<JointType.Parallel> jointID, float force) {
+        b3ParallelJoint_SetMaxTorque(jointID(jointID), force);
     }
     /// @api b3ParallelJoint_GetMaxTorque
-    public void parallelJointGetMaxTorque(JointID<JointType.Parallel> jointID) {
-
+    public float parallelJointGetMaxTorque(JointID<JointType.Parallel> jointID) {
+        return b3ParallelJoint_GetMaxTorque(jointID(jointID));
     }
+    //</editor-fold>
 
-    // #HERE DistanceJoint
+    //<editor-fold desc="Distance Joints" default-state="collapsed">
+
 
     /// @api b3DistanceJoint_SetLength
-    public void distanceJointSetLength(JointID<JointType.Distance> jointID) {
-
+    public void distanceJointSetLength(JointID<JointType.Distance> jointID, float length) {
+        b3DistanceJoint_SetLength(jointID(jointID), length);
     }
     /// @api b3DistanceJoint_GetLength
-    public void distanceJointGetLength(JointID<JointType.Distance> jointID) {
-
+    public float distanceJointGetLength(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_GetLength(jointID(jointID));
     }
     /// @api b3DistanceJoint_EnableSpring
-    public void distanceJointEnableSpring(JointID<JointType.Distance> jointID) {
-
+    public void distanceJointEnableSpring(JointID<JointType.Distance> jointID, boolean enableSpring) {
+        b3DistanceJoint_EnableSpring(jointID(jointID), enableSpring);
     }
     /// @api b3DistanceJoint_IsSpringEnabled
-    public void distanceJointIsSpringEnabled(JointID<JointType.Distance> jointID) {
-
+    public boolean distanceJointIsSpringEnabled(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_IsSpringEnabled(jointID(jointID));
     }
     /// @api b3DistanceJoint_SetSpringForceRange
-    public void distanceJointSetSpringForceRange(JointID<JointType.Distance> jointID) {
-
+    public void distanceJointSetSpringForceRange(JointID<JointType.Distance> jointID, float lowerForce, float upperForce) {
+        b3DistanceJoint_SetSpringForceRange(jointID(jointID), lowerForce, upperForce);
     }
+    /// @return x = lowerForce, y = upperForce
     /// @api b3DistanceJoint_GetSpringForceRange
-    public void distanceJointGetSpringForceRange(JointID<JointType.Distance> jointID) {
-
+    public Vector2f distanceJointGetSpringForceRange(Vector2f in, JointID<JointType.Distance> jointID) {
+        try (this.argArena) {
+            var lowerForce = this.argArena.allocate(ValueLayout.JAVA_FLOAT);
+            var upperForce = this.argArena.allocate(ValueLayout.JAVA_FLOAT);
+            b3DistanceJoint_GetSpringForceRange(jointID(jointID), lowerForce, upperForce);
+            in.x = lowerForce.get(ValueLayout.JAVA_FLOAT, 0);
+            in.y = upperForce.get(ValueLayout.JAVA_FLOAT, 0);
+            return in;
+        }
     }
     /// @api b3DistanceJoint_SetSpringHertz
-    public void distanceJointSetSpringHertz(JointID<JointType.Distance> jointID) {
-
+    public void distanceJointSetSpringHertz(JointID<JointType.Distance> jointID, float hertz) {
+        b3DistanceJoint_SetSpringHertz(jointID(jointID), hertz);
     }
     /// @api b3DistanceJoint_SetSpringDampingRatio
-    public void distanceJointSetSpringDampingRatio(JointID<JointType.Distance> jointID) {
-
+    public void distanceJointSetSpringDampingRatio(JointID<JointType.Distance> jointID, float dampingRatio) {
+        b3DistanceJoint_SetSpringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3DistanceJoint_GetSpringHertz
-    public void distanceJointGetSpringHertz(JointID<JointType.Distance> jointID) {
-
+    public float distanceJointGetSpringHertz(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_GetSpringHertz(jointID(jointID));
     }
     /// @api b3DistanceJoint_GetSpringDampingRatio
-    public void distanceJointGetSpringDampingRatio(JointID<JointType.Distance> jointID) {
-
+    public float distanceJointGetSpringDampingRatio(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_GetSpringDampingRatio(jointID(jointID));
     }
     /// @api b3DistanceJoint_EnableLimit
-    public void distanceJointEnableLimit(JointID<JointType.Distance> jointID) {
-
+    public void distanceJointEnableLimit(JointID<JointType.Distance> jointID, boolean enableLimit) {
+        b3DistanceJoint_EnableLimit(jointID(jointID), enableLimit);
     }
     /// @api b3DistanceJoint_IsLimitEnabled
-    public void distanceJointIsLimitEnabled(JointID<JointType.Distance> jointID) {
-
+    public boolean distanceJointIsLimitEnabled(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_IsLimitEnabled(jointID(jointID));
     }
     /// @api b3DistanceJoint_SetLengthRange
-    public void distanceJointSetLengthRange(JointID<JointType.Distance> jointID) {
-
+    public void distanceJointSetLengthRange(JointID<JointType.Distance> jointID, float minLength, float maxLength) {
+        b3DistanceJoint_SetLengthRange(jointID(jointID), minLength, maxLength);
     }
     /// @api b3DistanceJoint_GetMinLength
-    public void distanceJointGetMinLength(JointID<JointType.Distance> jointID) {
-
+    public float distanceJointGetMinLength(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_GetMinLength(jointID(jointID));
     }
     /// @api b3DistanceJoint_GetMaxLength
-    public void distanceJointGetMaxLength(JointID<JointType.Distance> jointID) {
-
+    public float distanceJointGetMaxLength(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_GetMaxLength(jointID(jointID));
     }
     /// @api b3DistanceJoint_GetCurrentLength
-    public void distanceJointGetCurrentLength(JointID<JointType.Distance> jointID) {
-
+    public float distanceJointGetCurrentLength(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_GetCurrentLength(jointID(jointID));
     }
     /// @api b3DistanceJoint_EnableMotor
-    public void distanceJointEnableMotor(JointID<JointType.Distance> jointID) {
-
+    public void distanceJointEnableMotor(JointID<JointType.Distance> jointID, boolean enableMotor) {
+        b3DistanceJoint_EnableMotor(jointID(jointID), enableMotor);
     }
     /// @api b3DistanceJoint_IsMotorEnabled
-    public void distanceJointIsMotorEnabled(JointID<JointType.Distance> jointID) {
-
+    public boolean distanceJointIsMotorEnabled(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_IsMotorEnabled(jointID(jointID));
     }
     /// @api b3DistanceJoint_SetMotorSpeed
-    public void distanceJointSetMotorSpeed(JointID<JointType.Distance> jointID) {
-
+    public void distanceJointSetMotorSpeed(JointID<JointType.Distance> jointID, float motorSpeed) {
+        b3DistanceJoint_SetMotorSpeed(jointID(jointID), motorSpeed);
     }
     /// @api b3DistanceJoint_GetMotorSpeed
-    public void distanceJointGetMotorSpeed(JointID<JointType.Distance> jointID) {
-
+    public float distanceJointGetMotorSpeed(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_GetMotorSpeed(jointID(jointID));
     }
     /// @api b3DistanceJoint_SetMaxMotorForce
-    public void distanceJointSetMaxMotorForce(JointID<JointType.Distance> jointID) {
-
+    public void distanceJointSetMaxMotorForce(JointID<JointType.Distance> jointID, float force) {
+        b3DistanceJoint_SetMaxMotorForce(jointID(jointID), force);
     }
     /// @api b3DistanceJoint_GetMaxMotorForce
-    public void distanceJointGetMaxMotorForce(JointID<JointType.Distance> jointID) {
-
+    public float distanceJointGetMaxMotorForce(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_GetMaxMotorForce(jointID(jointID));
     }
     /// @api b3DistanceJoint_GetMotorForce
-    public void distanceJointGetMotorForce(JointID<JointType.Distance> jointID) {
+    public float distanceJointGetMotorForce(JointID<JointType.Distance> jointID) {
+        return b3DistanceJoint_GetMotorForce(jointID(jointID));
+    }
+    //</editor-fold>
 
+    //<editor-fold desc="Motor Joints" default-state="collapsed">
+
+
+    /// @api b3CreateDistanceJoint
+    public JointID<JointType.Distance> createDistanceJoint(
+            WorldID worldID,
+            DistanceJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateDistanceJoint(
+                    this.returnArena,
+                    worldID(worldID),
+                    def.create(this.scratchQuat, this.argArena)
+            );
+            return JointID.of(jointID);
+        }
     }
 
-    // #HERE MotorJoint
+
+    /// @api b3CreateMotorJoint
+    public JointID<JointType.Motor> createMotorJoint(
+            WorldID worldID,
+            MotorJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateMotorJoint(
+                    this.returnArena,
+                    worldID(worldID),
+                    def.create(this.scratchQuat, this.argArena)
+            );
+            return JointID.of(jointID);
+        }
+    }
+
 
     /// @api b3MotorJoint_SetLinearVelocity
-    public void motorJointSetLinearVelocity(JointID<JointType.Motor> jointID) {
-
+    public void motorJointSetLinearVelocity(JointID<JointType.Motor> jointID, Vector3f velocity) {
+        b3MotorJoint_SetLinearVelocity(jointID(jointID), vec3(velocity));
     }
     /// @api b3MotorJoint_GetLinearVelocity
-    public void motorJointGetLinearVelocity(JointID<JointType.Motor> jointID) {
-
+    public Vector3f motorJointGetLinearVelocity(Vector3f in, JointID<JointType.Motor> jointID) {
+        var velocity = b3MotorJoint_GetLinearVelocity(this.returnArena, jointID(jointID));
+        return PrimitiveMemOps.setVec3(in, velocity);
     }
     /// @api b3MotorJoint_SetAngularVelocity
-    public void motorJointSetAngularVelocity(JointID<JointType.Motor> jointID) {
-
+    public void motorJointSetAngularVelocity(JointID<JointType.Motor> jointID, Vector3f velocity) {
+        b3MotorJoint_SetAngularVelocity(jointID(jointID), vec3(velocity));
     }
     /// @api b3MotorJoint_GetAngularVelocity
-    public void motorJointGetAngularVelocity(JointID<JointType.Motor> jointID) {
-
+    public Vector3f motorJointGetAngularVelocity(Vector3f in, JointID<JointType.Motor> jointID) {
+        var velocity = b3MotorJoint_GetAngularVelocity(this.returnArena, jointID(jointID));
+        return PrimitiveMemOps.setVec3(in, velocity);
     }
     /// @api b3MotorJoint_SetMaxVelocityForce
-    public void motorJointSetMaxVelocityForce(JointID<JointType.Motor> jointID) {
-
+    public void motorJointSetMaxVelocityForce(JointID<JointType.Motor> jointID, float maxForce) {
+        b3MotorJoint_SetMaxVelocityForce(jointID(jointID), maxForce);
     }
     /// @api b3MotorJoint_GetMaxVelocityForce
-    public void motorJointGetMaxVelocityForce(JointID<JointType.Motor> jointID) {
-
+    public float motorJointGetMaxVelocityForce(JointID<JointType.Motor> jointID) {
+        return b3MotorJoint_GetMaxVelocityForce(jointID(jointID));
     }
     /// @api b3MotorJoint_SetMaxVelocityTorque
-    public void motorJointSetMaxVelocityTorque(JointID<JointType.Motor> jointID) {
-
+    public void motorJointSetMaxVelocityTorque(JointID<JointType.Motor> jointID, float maxTorque) {
+        b3MotorJoint_SetMaxVelocityTorque(jointID(jointID), maxTorque);
     }
     /// @api b3MotorJoint_GetMaxVelocityTorque
-    public void motorJointGetMaxVelocityTorque(JointID<JointType.Motor> jointID) {
-
+    public float motorJointGetMaxVelocityTorque(JointID<JointType.Motor> jointID) {
+        return b3MotorJoint_GetMaxVelocityTorque(jointID(jointID));
     }
     /// @api b3MotorJoint_SetLinearHertz
-    public void motorJointSetLinearHertz(JointID<JointType.Motor> jointID) {
-
+    public void motorJointSetLinearHertz(JointID<JointType.Motor> jointID, float hertz) {
+        b3MotorJoint_SetLinearHertz(jointID(jointID), hertz);
     }
     /// @api b3MotorJoint_GetLinearHertz
-    public void motorJointGetLinearHertz(JointID<JointType.Motor> jointID) {
-
+    public float motorJointGetLinearHertz(JointID<JointType.Motor> jointID) {
+        return b3MotorJoint_GetLinearHertz(jointID(jointID));
     }
     /// @api b3MotorJoint_SetLinearDampingRatio
-    public void motorJointSetLinearDampingRatio(JointID<JointType.Motor> jointID) {
-
+    public void motorJointSetLinearDampingRatio(JointID<JointType.Motor> jointID, float damping) {
+        b3MotorJoint_SetLinearDampingRatio(jointID(jointID), damping);
     }
     /// @api b3MotorJoint_GetLinearDampingRatio
-    public void motorJointGetLinearDampingRatio(JointID<JointType.Motor> jointID) {
-
+    public float motorJointGetLinearDampingRatio(JointID<JointType.Motor> jointID) {
+        return b3MotorJoint_GetLinearDampingRatio(jointID(jointID));
     }
     /// @api b3MotorJoint_SetAngularHertz
-    public void motorJointSetAngularHertz(JointID<JointType.Motor> jointID) {
-
+    public void motorJointSetAngularHertz(JointID<JointType.Motor> jointID, float hertz) {
+        b3MotorJoint_SetAngularHertz(jointID(jointID), hertz);
     }
     /// @api b3MotorJoint_GetAngularHertz
-    public void motorJointGetAngularHertz(JointID<JointType.Motor> jointID) {
-
+    public float motorJointGetAngularHertz(JointID<JointType.Motor> jointID) {
+        return b3MotorJoint_GetAngularHertz(jointID(jointID));
     }
     /// @api b3MotorJoint_SetAngularDampingRatio
-    public void motorJointSetAngularDampingRatio(JointID<JointType.Motor> jointID) {
-
+    public void motorJointSetAngularDampingRatio(JointID<JointType.Motor> jointID, float damping) {
+        b3MotorJoint_SetAngularDampingRatio(jointID(jointID), damping);
     }
     /// @api b3MotorJoint_GetAngularDampingRatio
-    public void motorJointGetAngularDampingRatio(JointID<JointType.Motor> jointID) {
-
+    public float motorJointGetAngularDampingRatio(JointID<JointType.Motor> jointID) {
+        return b3MotorJoint_GetAngularDampingRatio(jointID(jointID));
     }
     /// @api b3MotorJoint_SetMaxSpringForce
-    public void motorJointSetMaxSpringForce(JointID<JointType.Motor> jointID) {
-
+    public void motorJointSetMaxSpringForce(JointID<JointType.Motor> jointID, float maxForce) {
+        b3MotorJoint_SetMaxSpringForce(jointID(jointID), maxForce);
     }
     /// @api b3MotorJoint_GetMaxSpringForce
-    public void motorJointGetMaxSpringForce(JointID<JointType.Motor> jointID) {
-
+    public float motorJointGetMaxSpringForce(JointID<JointType.Motor> jointID) {
+        return b3MotorJoint_GetMaxSpringForce(jointID(jointID));
     }
     /// @api b3MotorJoint_SetMaxSpringTorque
-    public void motorJointSetMaxSpringTorque(JointID<JointType.Motor> jointID) {
-
+    public void motorJointSetMaxSpringTorque(JointID<JointType.Motor> jointID, float maxTorque) {
+        b3MotorJoint_SetMaxSpringTorque(jointID(jointID), maxTorque);
     }
     /// @api b3MotorJoint_GetMaxSpringTorque
-    public void motorJointGetMaxSpringTorque(JointID<JointType.Motor> jointID) {
+    public float motorJointGetMaxSpringTorque(JointID<JointType.Motor> jointID) {
+        return b3MotorJoint_GetMaxSpringTorque(jointID(jointID));
+    }
+    //</editor-fold>
 
+    //<editor-fold desc="Prismatic Joints" default-state="collapsed">
+
+
+    /// @api b3CreatePrismaticJoint
+    public JointID<JointType.Prismatic> createPrismaticJoint(
+            WorldID worldID,
+            PrismaticJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreatePrismaticJoint(
+                    this.returnArena,
+                    worldID(worldID),
+                    def.create(this.scratchQuat, this.argArena)
+            );
+            return JointID.of(jointID);
+        }
     }
 
-    // #HERE PrismaticJoint
 
     /// @api b3PrismaticJoint_EnableSpring
-    public void prismaticJointEnableSpring(JointID<JointType.Prismatic> jointID) {
-
+    public void prismaticJointEnableSpring(JointID<JointType.Prismatic> jointID, boolean enableSpring) {
+        b3PrismaticJoint_EnableSpring(jointID(jointID), enableSpring);
     }
     /// @api b3PrismaticJoint_IsSpringEnabled
-    public void prismaticJointIsSpringEnabled(JointID<JointType.Prismatic> jointID) {
-
+    public boolean prismaticJointIsSpringEnabled(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_IsSpringEnabled(jointID(jointID));
     }
     /// @api b3PrismaticJoint_SetSpringHertz
-    public void prismaticJointSetSpringHertz(JointID<JointType.Prismatic> jointID) {
-
+    public void prismaticJointSetSpringHertz(JointID<JointType.Prismatic> jointID, float hertz) {
+        b3PrismaticJoint_SetSpringHertz(jointID(jointID), hertz);
     }
     /// @api b3PrismaticJoint_GetSpringHertz
-    public void prismaticJointGetSpringHertz(JointID<JointType.Prismatic> jointID) {
-
+    public float prismaticJointGetSpringHertz(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_GetSpringHertz(jointID(jointID));
     }
     /// @api b3PrismaticJoint_SetSpringDampingRatio
-    public void prismaticJointSetSpringDampingRatio(JointID<JointType.Prismatic> jointID) {
-
+    public void prismaticJointSetSpringDampingRatio(JointID<JointType.Prismatic> jointID, float dampingRatio) {
+        b3PrismaticJoint_SetSpringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3PrismaticJoint_GetSpringDampingRatio
-    public void prismaticJointGetSpringDampingRatio(JointID<JointType.Prismatic> jointID) {
-
+    public float prismaticJointGetSpringDampingRatio(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_GetSpringDampingRatio(jointID(jointID));
     }
     /// @api b3PrismaticJoint_SetTargetTranslation
-    public void prismaticJointSetTargetTranslation(JointID<JointType.Prismatic> jointID) {
-
+    public void prismaticJointSetTargetTranslation(JointID<JointType.Prismatic> jointID, float targetTranslation) {
+        b3PrismaticJoint_SetTargetTranslation(jointID(jointID), targetTranslation);
     }
     /// @api b3PrismaticJoint_GetTargetTranslation
-    public void prismaticJointGetTargetTranslation(JointID<JointType.Prismatic> jointID) {
-
+    public float prismaticJointGetTargetTranslation(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_GetTargetTranslation(jointID(jointID));
     }
     /// @api b3PrismaticJoint_EnableLimit
-    public void prismaticJointEnableLimit(JointID<JointType.Prismatic> jointID) {
-
+    public void prismaticJointEnableLimit(JointID<JointType.Prismatic> jointID, boolean enableLimit) {
+        b3PrismaticJoint_EnableLimit(jointID(jointID), enableLimit);
     }
     /// @api b3PrismaticJoint_IsLimitEnabled
-    public void prismaticJointIsLimitEnabled(JointID<JointType.Prismatic> jointID) {
-
+    public boolean prismaticJointIsLimitEnabled(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_IsLimitEnabled(jointID(jointID));
     }
     /// @api b3PrismaticJoint_GetLowerLimit
-    public void prismaticJointGetLowerLimit(JointID<JointType.Prismatic> jointID) {
-
+    public float prismaticJointGetLowerLimit(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_GetLowerLimit(jointID(jointID));
     }
     /// @api b3PrismaticJoint_GetUpperLimit
-    public void prismaticJointGetUpperLimit(JointID<JointType.Prismatic> jointID) {
-
+    public float prismaticJointGetUpperLimit(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_GetUpperLimit(jointID(jointID));
     }
     /// @api b3PrismaticJoint_SetLimits
-    public void prismaticJointSetLimits(JointID<JointType.Prismatic> jointID) {
-
+    public void prismaticJointSetLimits(JointID<JointType.Prismatic> jointID, float lower, float upper) {
+        b3PrismaticJoint_SetLimits(jointID(jointID), lower, upper);
     }
     /// @api b3PrismaticJoint_EnableMotor
-    public void prismaticJointEnableMotor(JointID<JointType.Prismatic> jointID) {
-
+    public void prismaticJointEnableMotor(JointID<JointType.Prismatic> jointID, boolean enableMotor) {
+        b3PrismaticJoint_EnableMotor(jointID(jointID), enableMotor);
     }
     /// @api b3PrismaticJoint_IsMotorEnabled
-    public void prismaticJointIsMotorEnabled(JointID<JointType.Prismatic> jointID) {
-
+    public boolean prismaticJointIsMotorEnabled(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_IsMotorEnabled(jointID(jointID));
     }
     /// @api b3PrismaticJoint_SetMotorSpeed
-    public void prismaticJointSetMotorSpeed(JointID<JointType.Prismatic> jointID) {
-
+    public void prismaticJointSetMotorSpeed(JointID<JointType.Prismatic> jointID, float motorSpeed) {
+        b3PrismaticJoint_SetMotorSpeed(jointID(jointID), motorSpeed);
     }
     /// @api b3PrismaticJoint_GetMotorSpeed
-    public void prismaticJointGetMotorSpeed(JointID<JointType.Prismatic> jointID) {
-
+    public float prismaticJointGetMotorSpeed(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_GetMotorSpeed(jointID(jointID));
     }
     /// @api b3PrismaticJoint_SetMaxMotorForce
-    public void prismaticJointSetMaxMotorForce(JointID<JointType.Prismatic> jointID) {
-
+    public void prismaticJointSetMaxMotorForce(JointID<JointType.Prismatic> jointID, float force) {
+        b3PrismaticJoint_SetMaxMotorForce(jointID(jointID), force);
     }
     /// @api b3PrismaticJoint_GetMaxMotorForce
-    public void prismaticJointGetMaxMotorForce(JointID<JointType.Prismatic> jointID) {
-
+    public float prismaticJointGetMaxMotorForce(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_GetMaxMotorForce(jointID(jointID));
     }
     /// @api b3PrismaticJoint_GetMotorForce
-    public void prismaticJointGetMotorForce(JointID<JointType.Prismatic> jointID) {
-
+    public float prismaticJointGetMotorForce(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_GetMotorForce(jointID(jointID));
     }
     /// @api b3PrismaticJoint_GetTranslation
-    public void prismaticJointGetTranslation(JointID<JointType.Prismatic> jointID) {
-
+    public float prismaticJointGetTranslation(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_GetTranslation(jointID(jointID));
     }
     /// @api b3PrismaticJoint_GetSpeed
-    public void prismaticJointGetSpeed(JointID<JointType.Prismatic> jointID) {
+    public float prismaticJointGetSpeed(JointID<JointType.Prismatic> jointID) {
+        return b3PrismaticJoint_GetSpeed(jointID(jointID));
+    }
+    //</editor-fold>
 
+    //<editor-fold desc="Revolute Joints" default-state="collapsed">
+
+
+    /// @api b3CreateRevoluteJoint
+    public JointID<JointType.Revolute> createRevoluteJoint(
+            WorldID worldID,
+            RevoluteJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateRevoluteJoint(
+                    this.returnArena,
+                    worldID(worldID),
+                    def.create(this.scratchQuat, this.argArena)
+            );
+            return JointID.of(jointID);
+        }
     }
 
-    // #HERE RevoluteJoint
 
     /// @api b3RevoluteJoint_EnableSpring
-    public void revoluteJointEnableSpring(JointID<JointType.Revolute> jointID) {
-
+    public void revoluteJointEnableSpring(JointID<JointType.Revolute> jointID, boolean enableSpring) {
+        b3RevoluteJoint_EnableSpring(jointID(jointID), enableSpring);
     }
     /// @api b3RevoluteJoint_IsSpringEnabled
-    public void revoluteJointIsSpringEnabled(JointID<JointType.Revolute> jointID) {
-
+    public boolean revoluteJointIsSpringEnabled(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_IsSpringEnabled(jointID(jointID));
     }
     /// @api b3RevoluteJoint_SetSpringHertz
-    public void revoluteJointSetSpringHertz(JointID<JointType.Revolute> jointID) {
-
+    public void revoluteJointSetSpringHertz(JointID<JointType.Revolute> jointID, float hertz) {
+        b3RevoluteJoint_SetSpringHertz(jointID(jointID), hertz);
     }
     /// @api b3RevoluteJoint_GetSpringHertz
-    public void revoluteJointGetSpringHertz(JointID<JointType.Revolute> jointID) {
-
+    public float revoluteJointGetSpringHertz(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_GetSpringHertz(jointID(jointID));
     }
     /// @api b3RevoluteJoint_SetSpringDampingRatio
-    public void revoluteJointSetSpringDampingRatio(JointID<JointType.Revolute> jointID) {
-
+    public void revoluteJointSetSpringDampingRatio(JointID<JointType.Revolute> jointID, float dampingRatio) {
+        b3RevoluteJoint_SetSpringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3RevoluteJoint_GetSpringDampingRatio
-    public void revoluteJointGetSpringDampingRatio(JointID<JointType.Revolute> jointID) {
-
+    public float revoluteJointGetSpringDampingRatio(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_GetSpringDampingRatio(jointID(jointID));
     }
     /// @api b3RevoluteJoint_SetTargetAngle
-    public void revoluteJointSetTargetAngle(JointID<JointType.Revolute> jointID) {
-
+    public void revoluteJointSetTargetAngle(JointID<JointType.Revolute> jointID, float targetRadians) {
+        b3RevoluteJoint_SetTargetAngle(jointID(jointID), targetRadians);
     }
     /// @api b3RevoluteJoint_GetTargetAngle
-    public void revoluteJointGetTargetAngle(JointID<JointType.Revolute> jointID) {
-
+    public float revoluteJointGetTargetAngle(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_GetTargetAngle(jointID(jointID));
     }
     /// @api b3RevoluteJoint_GetAngle
-    public void revoluteJointGetAngle(JointID<JointType.Revolute> jointID) {
-
+    public float revoluteJointGetAngle(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_GetAngle(jointID(jointID));
     }
     /// @api b3RevoluteJoint_EnableLimit
-    public void revoluteJointEnableLimit(JointID<JointType.Revolute> jointID) {
-
+    public void revoluteJointEnableLimit(JointID<JointType.Revolute> jointID, boolean enableLimit) {
+        b3RevoluteJoint_EnableLimit(jointID(jointID), enableLimit);
     }
     /// @api b3RevoluteJoint_IsLimitEnabled
-    public void revoluteJointIsLimitEnabled(JointID<JointType.Revolute> jointID) {
-
+    public boolean revoluteJointIsLimitEnabled(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_IsLimitEnabled(jointID(jointID));
     }
     /// @api b3RevoluteJoint_GetLowerLimit
-    public void revoluteJointGetLowerLimit(JointID<JointType.Revolute> jointID) {
-
+    public float revoluteJointGetLowerLimit(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_GetLowerLimit(jointID(jointID));
     }
     /// @api b3RevoluteJoint_GetUpperLimit
-    public void revoluteJointGetUpperLimit(JointID<JointType.Revolute> jointID) {
-
+    public float revoluteJointGetUpperLimit(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_GetUpperLimit(jointID(jointID));
     }
     /// @api b3RevoluteJoint_SetLimits
-    public void revoluteJointSetLimits(JointID<JointType.Revolute> jointID) {
-
+    public void revoluteJointSetLimits(JointID<JointType.Revolute> jointID, float lowerLimitRadians, float upperLimitRadians) {
+        b3RevoluteJoint_SetLimits(jointID(jointID), lowerLimitRadians, upperLimitRadians);
     }
     /// @api b3RevoluteJoint_EnableMotor
-    public void revoluteJointEnableMotor(JointID<JointType.Revolute> jointID) {
-
+    public void revoluteJointEnableMotor(JointID<JointType.Revolute> jointID, boolean enableMotor) {
+        b3RevoluteJoint_EnableMotor(jointID(jointID), enableMotor);
     }
     /// @api b3RevoluteJoint_IsMotorEnabled
-    public void revoluteJointIsMotorEnabled(JointID<JointType.Revolute> jointID) {
-
+    public boolean revoluteJointIsMotorEnabled(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_IsMotorEnabled(jointID(jointID));
     }
     /// @api b3RevoluteJoint_SetMotorSpeed
-    public void revoluteJointSetMotorSpeed(JointID<JointType.Revolute> jointID) {
-
+    public void revoluteJointSetMotorSpeed(JointID<JointType.Revolute> jointID, float motorSpeed) {
+        b3RevoluteJoint_SetMotorSpeed(jointID(jointID), motorSpeed);
     }
     /// @api b3RevoluteJoint_GetMotorSpeed
-    public void revoluteJointGetMotorSpeed(JointID<JointType.Revolute> jointID) {
-
+    public float revoluteJointGetMotorSpeed(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_GetMotorSpeed(jointID(jointID));
     }
     /// @api b3RevoluteJoint_GetMotorTorque
-    public void revoluteJointGetMotorTorque(JointID<JointType.Revolute> jointID) {
-
+    public float revoluteJointGetMotorTorque(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_GetMotorTorque(jointID(jointID));
     }
     /// @api b3RevoluteJoint_SetMaxMotorTorque
-    public void revoluteJointSetMaxMotorTorque(JointID<JointType.Revolute> jointID) {
-
+    public void revoluteJointSetMaxMotorTorque(JointID<JointType.Revolute> jointID, float torque) {
+        b3RevoluteJoint_SetMaxMotorTorque(jointID(jointID), torque);
     }
     /// @api b3RevoluteJoint_GetMaxMotorTorque
-    public void revoluteJointGetMaxMotorTorque(JointID<JointType.Revolute> jointID) {
+    public float revoluteJointGetMaxMotorTorque(JointID<JointType.Revolute> jointID) {
+        return b3RevoluteJoint_GetMaxMotorTorque(jointID(jointID));
+    }
+    //</editor-fold>
 
+    //<editor-fold desc="Spherical Joints" default-state="collapsed">
+
+
+    /// @api b3CreateSphericalJoint
+    public JointID<JointType.Spherical> createSphericalJoint(
+            WorldID worldID,
+            SphericalJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateSphericalJoint(
+                    this.returnArena,
+                    worldID(worldID),
+                    def.create(this.scratchQuat, this.argArena)
+            );
+            return JointID.of(jointID);
+        }
     }
 
-
-    // #HERE SphericalJoints
 
     /// @api b3SphericalJoint_EnableConeLimit
-    public void sphericalJoint_EnableConeLimit(JointID<JointType.Spherical> jointID) {
-
+    public void sphericalJoint_EnableConeLimit(JointID<JointType.Spherical> jointID, boolean enableLimit) {
+        b3SphericalJoint_EnableConeLimit(jointID(jointID), enableLimit);
     }
     /// @api b3SphericalJoint_IsConeLimitEnabled
-    public void sphericalJoint_IsConeLimitEnabled(JointID<JointType.Spherical> jointID) {
-
+    public boolean sphericalJoint_IsConeLimitEnabled(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_IsConeLimitEnabled(jointID(jointID));
     }
     /// @api b3SphericalJoint_GetConeLimit
-    public void sphericalJoint_GetConeLimit(JointID<JointType.Spherical> jointID) {
-
+    public float sphericalJoint_GetConeLimit(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_GetConeLimit(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetConeLimit
-    public void sphericalJoint_SetConeLimit(JointID<JointType.Spherical> jointID) {
-
+    public void sphericalJoint_SetConeLimit(JointID<JointType.Spherical> jointID, float angleRadians) {
+        b3SphericalJoint_SetConeLimit(jointID(jointID), angleRadians);
     }
     /// @api b3SphericalJoint_GetConeAngle
-    public void sphericalJoint_GetConeAngle(JointID<JointType.Spherical> jointID) {
-
+    public float sphericalJoint_GetConeAngle(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_GetConeAngle(jointID(jointID));
     }
     /// @api b3SphericalJoint_EnableTwistLimit
-    public void sphericalJoint_EnableTwistLimit(JointID<JointType.Spherical> jointID) {
-
+    public void sphericalJoint_EnableTwistLimit(JointID<JointType.Spherical> jointID, boolean enableLimit) {
+        b3SphericalJoint_EnableTwistLimit(jointID(jointID), enableLimit);
     }
     /// @api b3SphericalJoint_IsTwistLimitEnabled
-    public void sphericalJoint_IsTwistLimitEnabled(JointID<JointType.Spherical> jointID) {
-
+    public boolean sphericalJoint_IsTwistLimitEnabled(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_IsTwistLimitEnabled(jointID(jointID));
     }
     /// @api b3SphericalJoint_GetLowerTwistLimit
-    public void sphericalJoint_GetLowerTwistLimit(JointID<JointType.Spherical> jointID) {
-
+    public float sphericalJoint_GetLowerTwistLimit(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_GetLowerTwistLimit(jointID(jointID));
     }
     /// @api b3SphericalJoint_GetUpperTwistLimit
-    public void sphericalJoint_GetUpperTwistLimit(JointID<JointType.Spherical> jointID) {
-
+    public float sphericalJoint_GetUpperTwistLimit(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_GetUpperTwistLimit(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetTwistLimits
-    public void sphericalJoint_SetTwistLimits(JointID<JointType.Spherical> jointID) {
-
+    public void sphericalJoint_SetTwistLimits(JointID<JointType.Spherical> jointID, float lowerLimitRadians, float upperLimitRadians) {
+        b3SphericalJoint_SetTwistLimits(jointID(jointID), lowerLimitRadians, upperLimitRadians);
     }
     /// @api b3SphericalJoint_GetTwistAngle
-    public void sphericalJoint_GetTwistAngle(JointID<JointType.Spherical> jointID) {
-
+    public float sphericalJoint_GetTwistAngle(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_GetTwistAngle(jointID(jointID));
     }
     /// @api b3SphericalJoint_EnableSpring
-    public void sphericalJoint_EnableSpring(JointID<JointType.Spherical> jointID) {
-
+    public void sphericalJoint_EnableSpring(JointID<JointType.Spherical> jointID, boolean enableSpring) {
+        b3SphericalJoint_EnableSpring(jointID(jointID), enableSpring);
     }
     /// @api b3SphericalJoint_IsSpringEnabled
-    public void sphericalJoint_IsSpringEnabled(JointID<JointType.Spherical> jointID) {
-
+    public boolean sphericalJoint_IsSpringEnabled(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_IsSpringEnabled(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetSpringHertz
-    public void sphericalJoint_SetSpringHertz(JointID<JointType.Spherical> jointID) {
-
+    public void sphericalJoint_SetSpringHertz(JointID<JointType.Spherical> jointID, float hertz) {
+        b3SphericalJoint_SetSpringHertz(jointID(jointID), hertz);
     }
     /// @api b3SphericalJoint_GetSpringHertz
-    public void sphericalJoint_GetSpringHertz(JointID<JointType.Spherical> jointID) {
-
+    public float sphericalJoint_GetSpringHertz(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_GetSpringHertz(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetSpringDampingRatio
-    public void sphericalJoint_SetSpringDampingRatio(JointID<JointType.Spherical> jointID) {
-
+    public void sphericalJoint_SetSpringDampingRatio(JointID<JointType.Spherical> jointID, float dampingRatio) {
+        b3SphericalJoint_SetSpringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3SphericalJoint_GetSpringDampingRatio
-    public void sphericalJoint_GetSpringDampingRatio(JointID<JointType.Spherical> jointID) {
-
+    public float sphericalJoint_GetSpringDampingRatio(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_GetSpringDampingRatio(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetTargetRotation
-    public void sphericalJoint_SetTargetRotation(JointID<JointType.Spherical> jointID) {
-
+    public void sphericalJoint_SetTargetRotation(JointID<JointType.Spherical> jointID, Quaternionf targetRotation) {
+        b3SphericalJoint_SetTargetRotation(jointID(jointID), quat(targetRotation));
     }
     /// @api b3SphericalJoint_GetTargetRotation
-    public void sphericalJoint_GetTargetRotation(JointID<JointType.Spherical> jointID) {
-
+    public Quaternionf sphericalJoint_GetTargetRotation(Quaternionf in, JointID<JointType.Spherical> jointID) {
+        var rotation = b3SphericalJoint_GetTargetRotation(this.returnArena, jointID(jointID));
+        return PrimitiveMemOps.setQuat(in, rotation);
     }
     /// @api b3SphericalJoint_EnableMotor
-    public void sphericalJoint_EnableMotor(JointID<JointType.Spherical> jointID) {
-
+    public void sphericalJoint_EnableMotor(JointID<JointType.Spherical> jointID, boolean enableMotor) {
+        b3SphericalJoint_EnableMotor(jointID(jointID), enableMotor);
     }
     /// @api b3SphericalJoint_IsMotorEnabled
-    public void sphericalJoint_IsMotorEnabled(JointID<JointType.Spherical> jointID) {
-
+    public boolean sphericalJoint_IsMotorEnabled(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_IsMotorEnabled(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetMotorVelocity
-    public void sphericalJoint_SetMotorVelocity(JointID<JointType.Spherical> jointID) {
-
+    public void sphericalJoint_SetMotorVelocity(JointID<JointType.Spherical> jointID, Vector3f motorVelocity) {
+        b3SphericalJoint_SetMotorVelocity(jointID(jointID), vec3(motorVelocity));
     }
     /// @api b3SphericalJoint_GetMotorVelocity
-    public void sphericalJoint_GetMotorVelocity(JointID<JointType.Spherical> jointID) {
-
+    public Vector3f sphericalJoint_GetMotorVelocity(Vector3f in, JointID<JointType.Spherical> jointID) {
+        var velocity = b3SphericalJoint_GetMotorVelocity(this.returnArena, jointID(jointID));
+        return PrimitiveMemOps.setVec3(in, velocity);
     }
     /// @api b3SphericalJoint_GetMotorTorque
-    public void sphericalJoint_GetMotorTorque(JointID<JointType.Spherical> jointID) {
-
+    public Vector3f sphericalJoint_GetMotorTorque(Vector3f in, JointID<JointType.Spherical> jointID) {
+        var torque = b3SphericalJoint_GetMotorTorque(this.returnArena, jointID(jointID));
+        return PrimitiveMemOps.setVec3(in, torque);
     }
     /// @api b3SphericalJoint_SetMaxMotorTorque
-    public void sphericalJoint_SetMaxMotorTorque(JointID<JointType.Spherical> jointID) {
-
+    public void sphericalJoint_SetMaxMotorTorque(JointID<JointType.Spherical> jointID, float torque) {
+        b3SphericalJoint_SetMaxMotorTorque(jointID(jointID), torque);
     }
     /// @api b3SphericalJoint_GetMaxMotorTorque
-    public void sphericalJoint_GetMaxMotorTorque(JointID<JointType.Spherical> jointID) {
+    public float sphericalJoint_GetMaxMotorTorque(JointID<JointType.Spherical> jointID) {
+        return b3SphericalJoint_GetMaxMotorTorque(jointID(jointID));
+    }
+    //</editor-fold>
 
+    //<editor-fold desc="Weld Joints" default-state="collapsed">
+
+
+    /// @api b3CreateWeldJoint
+    public JointID<JointType.Weld> createWeldJoint(
+            WorldID worldID,
+            WeldJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateWeldJoint(
+                    this.returnArena,
+                    worldID(worldID),
+                    def.create(this.scratchQuat, this.argArena)
+            );
+            return JointID.of(jointID);
+        }
     }
 
-    // #HERE WeldJoint
 
     /// @api b3WeldJoint_SetLinearHertz
-    public void weldJointSetLinearHertz(JointID<JointType.Weld> jointID) {
-
+    public void weldJointSetLinearHertz(JointID<JointType.Weld> jointID, float hertz) {
+        b3WeldJoint_SetLinearHertz(jointID(jointID), hertz);
     }
     /// @api b3WeldJoint_GetLinearHertz
-    public void weldJointGetLinearHertz(JointID<JointType.Weld> jointID) {
-
+    public float weldJointGetLinearHertz(JointID<JointType.Weld> jointID) {
+        return b3WeldJoint_GetLinearHertz(jointID(jointID));
     }
     /// @api b3WeldJoint_SetLinearDampingRatio
-    public void weldJointSetLinearDampingRatio(JointID<JointType.Weld> jointID) {
-
+    public void weldJointSetLinearDampingRatio(JointID<JointType.Weld> jointID, float dampingRatio) {
+        b3WeldJoint_SetLinearDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3WeldJoint_GetLinearDampingRatio
-    public void weldJointGetLinearDampingRatio(JointID<JointType.Weld> jointID) {
-
+    public float weldJointGetLinearDampingRatio(JointID<JointType.Weld> jointID) {
+        return b3WeldJoint_GetLinearDampingRatio(jointID(jointID));
     }
     /// @api b3WeldJoint_SetAngularHertz
-    public void weldJointSetAngularHertz(JointID<JointType.Weld> jointID) {
-
+    public void weldJointSetAngularHertz(JointID<JointType.Weld> jointID, float hertz) {
+        b3WeldJoint_SetAngularHertz(jointID(jointID), hertz);
     }
     /// @api b3WeldJoint_GetAngularHertz
-    public void weldJointGetAngularHertz(JointID<JointType.Weld> jointID) {
-
+    public float weldJointGetAngularHertz(JointID<JointType.Weld> jointID) {
+        return b3WeldJoint_GetAngularHertz(jointID(jointID));
     }
     /// @api b3WeldJoint_SetAngularDampingRatio
-    public void weldJointSetAngularDampingRatio(JointID<JointType.Weld> jointID) {
-
+    public void weldJointSetAngularDampingRatio(JointID<JointType.Weld> jointID, float dampingRatio) {
+        b3WeldJoint_SetAngularDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3WeldJoint_GetAngularDampingRatio
-    public void weldJointGetAngularDampingRatio(JointID<JointType.Weld> jointID) {
+    public float weldJointGetAngularDampingRatio(JointID<JointType.Weld> jointID) {
+        return b3WeldJoint_GetAngularDampingRatio(jointID(jointID));
+    }
+    //</editor-fold>
 
+    //<editor-fold desc="Wheel Joints" default-state="collapsed">
+
+
+    /// @api b3CreateWheelJoint
+    public JointID<JointType.Wheel> createWheelJoint(
+            WorldID worldID,
+            WheelJointDef def
+    ) {
+        try (this.argArena) {
+            var jointID = b3CreateWheelJoint(
+                    this.returnArena,
+                    worldID(worldID),
+                    def.create(this.scratchQuat, this.argArena)
+            );
+            return JointID.of(jointID);
+        }
     }
 
-    // #HERE WheelJoint
 
     /// @api b3WheelJoint_EnableSuspension
-    public void wheelJointEnableSuspension(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointEnableSuspension(JointID<JointType.Wheel> jointID, boolean flag) {
+        b3WheelJoint_EnableSuspension(jointID(jointID), flag);
     }
     /// @api b3WheelJoint_IsSuspensionEnabled
-    public void wheelJointIsSuspensionEnabled(JointID<JointType.Wheel> jointID) {
-
+    public boolean wheelJointIsSuspensionEnabled(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_IsSuspensionEnabled(jointID(jointID));
     }
     /// @api b3WheelJoint_SetSuspensionHertz
-    public void wheelJointSetSuspensionHertz(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointSetSuspensionHertz(JointID<JointType.Wheel> jointID, float hertz) {
+        b3WheelJoint_SetSuspensionHertz(jointID(jointID), hertz);
     }
     /// @api b3WheelJoint_GetSuspensionHertz
-    public void wheelJointGetSuspensionHertz(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetSuspensionHertz(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetSuspensionHertz(jointID(jointID));
     }
     /// @api b3WheelJoint_SetSuspensionDampingRatio
-    public void wheelJointSetSuspensionDampingRatio(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointSetSuspensionDampingRatio(JointID<JointType.Wheel> jointID, float dampingRatio) {
+        b3WheelJoint_SetSuspensionDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3WheelJoint_GetSuspensionDampingRatio
-    public void wheelJointGetSuspensionDampingRatio(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetSuspensionDampingRatio(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetSuspensionDampingRatio(jointID(jointID));
     }
     /// @api b3WheelJoint_EnableSuspensionLimit
-    public void wheelJointEnableSuspensionLimit(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointEnableSuspensionLimit(JointID<JointType.Wheel> jointID, boolean flag) {
+        b3WheelJoint_EnableSuspensionLimit(jointID(jointID), flag);
     }
     /// @api b3WheelJoint_IsSuspensionLimitEnabled
-    public void wheelJointIsSuspensionLimitEnabled(JointID<JointType.Wheel> jointID) {
-
+    public boolean wheelJointIsSuspensionLimitEnabled(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_IsSuspensionLimitEnabled(jointID(jointID));
     }
     /// @api b3WheelJoint_GetLowerSuspensionLimit
-    public void wheelJointGetLowerSuspensionLimit(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetLowerSuspensionLimit(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetLowerSuspensionLimit(jointID(jointID));
     }
     /// @api b3WheelJoint_GetUpperSuspensionLimit
-    public void wheelJointGetUpperSuspensionLimit(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetUpperSuspensionLimit(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetUpperSuspensionLimit(jointID(jointID));
     }
     /// @api b3WheelJoint_SetSuspensionLimits
-    public void wheelJointSetSuspensionLimits(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointSetSuspensionLimits(JointID<JointType.Wheel> jointID, float lower, float upper) {
+        b3WheelJoint_SetSuspensionLimits(jointID(jointID), lower, upper);
     }
     /// @api b3WheelJoint_EnableSpinMotor
-    public void wheelJointEnableSpinMotor(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointEnableSpinMotor(JointID<JointType.Wheel> jointID, boolean flag) {
+        b3WheelJoint_EnableSpinMotor(jointID(jointID), flag);
     }
     /// @api b3WheelJoint_IsSpinMotorEnabled
-    public void wheelJointIsSpinMotorEnabled(JointID<JointType.Wheel> jointID) {
-
+    public boolean wheelJointIsSpinMotorEnabled(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_IsSpinMotorEnabled(jointID(jointID));
     }
     /// @api b3WheelJoint_SetSpinMotorSpeed
-    public void wheelJointSetSpinMotorSpeed(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointSetSpinMotorSpeed(JointID<JointType.Wheel> jointID, float speed) {
+        b3WheelJoint_SetSpinMotorSpeed(jointID(jointID), speed);
     }
     /// @api b3WheelJoint_GetSpinMotorSpeed
-    public void wheelJointGetSpinMotorSpeed(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetSpinMotorSpeed(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetSpinMotorSpeed(jointID(jointID));
     }
     /// @api b3WheelJoint_SetMaxSpinTorque
-    public void wheelJointSetMaxSpinTorque(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointSetMaxSpinTorque(JointID<JointType.Wheel> jointID, float torque) {
+        b3WheelJoint_SetMaxSpinTorque(jointID(jointID), torque);
     }
     /// @api b3WheelJoint_GetMaxSpinTorque
-    public void wheelJointGetMaxSpinTorque(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetMaxSpinTorque(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetMaxSpinTorque(jointID(jointID));
     }
     /// @api b3WheelJoint_GetSpinSpeed
-    public void wheelJointGetSpinSpeed(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetSpinSpeed(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetSpinSpeed(jointID(jointID));
     }
     /// @api b3WheelJoint_GetSpinTorque
-    public void wheelJointGetSpinTorque(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetSpinTorque(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetSpinTorque(jointID(jointID));
     }
     /// @api b3WheelJoint_EnableSteering
-    public void wheelJointEnableSteering(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointEnableSteering(JointID<JointType.Wheel> jointID, boolean flag) {
+        b3WheelJoint_EnableSteering(jointID(jointID), flag);
     }
     /// @api b3WheelJoint_IsSteeringEnabled
-    public void wheelJointIsSteeringEnabled(JointID<JointType.Wheel> jointID) {
-
+    public boolean wheelJointIsSteeringEnabled(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_IsSteeringEnabled(jointID(jointID));
     }
     /// @api b3WheelJoint_SetSteeringHertz
-    public void wheelJointSetSteeringHertz(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointSetSteeringHertz(JointID<JointType.Wheel> jointID, float hertz) {
+        b3WheelJoint_SetSteeringHertz(jointID(jointID), hertz);
     }
     /// @api b3WheelJoint_GetSteeringHertz
-    public void wheelJointGetSteeringHertz(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetSteeringHertz(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetSteeringHertz(jointID(jointID));
     }
     /// @api b3WheelJoint_SetSteeringDampingRatio
-    public void wheelJointSetSteeringDampingRatio(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointSetSteeringDampingRatio(JointID<JointType.Wheel> jointID, float dampingRatio) {
+        b3WheelJoint_SetSteeringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3WheelJoint_GetSteeringDampingRatio
-    public void wheelJointGetSteeringDampingRatio(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetSteeringDampingRatio(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetSteeringDampingRatio(jointID(jointID));
     }
     /// @api b3WheelJoint_SetMaxSteeringTorque
-    public void wheelJointSetMaxSteeringTorque(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointSetMaxSteeringTorque(JointID<JointType.Wheel> jointID, float torque) {
+        b3WheelJoint_SetMaxSteeringTorque(jointID(jointID), torque);
     }
     /// @api b3WheelJoint_GetMaxSteeringTorque
-    public void wheelJointGetMaxSteeringTorque(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetMaxSteeringTorque(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetMaxSteeringTorque(jointID(jointID));
     }
     /// @api b3WheelJoint_EnableSteeringLimit
-    public void wheelJointEnableSteeringLimit(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointEnableSteeringLimit(JointID<JointType.Wheel> jointID, boolean flag) {
+        b3WheelJoint_EnableSteeringLimit(jointID(jointID), flag);
     }
     /// @api b3WheelJoint_IsSteeringLimitEnabled
-    public void wheelJointIsSteeringLimitEnabled(JointID<JointType.Wheel> jointID) {
-
+    public boolean wheelJointIsSteeringLimitEnabled(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_IsSteeringLimitEnabled(jointID(jointID));
     }
     /// @api b3WheelJoint_GetLowerSteeringLimit
-    public void wheelJointGetLowerSteeringLimit(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetLowerSteeringLimit(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetLowerSteeringLimit(jointID(jointID));
     }
     /// @api b3WheelJoint_GetUpperSteeringLimit
-    public void wheelJointGetUpperSteeringLimit(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetUpperSteeringLimit(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetUpperSteeringLimit(jointID(jointID));
     }
     /// @api b3WheelJoint_SetSteeringLimits
-    public void wheelJointSetSteeringLimits(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointSetSteeringLimits(JointID<JointType.Wheel> jointID, float lowerRadians, float upperRadians) {
+        b3WheelJoint_SetSteeringLimits(jointID(jointID), lowerRadians, upperRadians);
     }
     /// @api b3WheelJoint_SetTargetSteeringAngle
-    public void wheelJointSetTargetSteeringAngle(JointID<JointType.Wheel> jointID) {
-
+    public void wheelJointSetTargetSteeringAngle(JointID<JointType.Wheel> jointID, float radians) {
+        b3WheelJoint_SetTargetSteeringAngle(jointID(jointID), radians);
     }
     /// @api b3WheelJoint_GetTargetSteeringAngle
-    public void wheelJointGetTargetSteeringAngle(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetTargetSteeringAngle(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetTargetSteeringAngle(jointID(jointID));
     }
     /// @api b3WheelJoint_GetSteeringAngle
-    public void wheelJointGetSteeringAngle(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetSteeringAngle(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetSteeringAngle(jointID(jointID));
     }
     /// @api b3WheelJoint_GetSteeringTorque
-    public void wheelJointGetSteeringTorque(JointID<JointType.Wheel> jointID) {
-
+    public float wheelJointGetSteeringTorque(JointID<JointType.Wheel> jointID) {
+        return b3WheelJoint_GetSteeringTorque(jointID(jointID));
     }
+    //</editor-fold>
+
+    //</editor-fold>
 
 
+    //<editor-fold desc="Internal" default-state="collapsed">
 
 
+    static final int SECRET_COOKIE = 1152023; // sorry, i had to take it
+
+    private final Arena scratchArena = Arena.ofAuto();
+
+    /// 4 KB for return values. Should definitely be enough for all return types
+    private final ConstAllocator returnArena = new ConstAllocator(this.scratchArena,   4 * 1024);
+
+    /// 128 KB for arguments. Does not need to be this big 99% of the time,
+    /// but [Internal#ensureOffHeap] may be called to copy data to off-heap memory.
+    /// The [StackAllocator] falls back to a confined arena if it runs out of space
+    private final StackAllocator argArena    = new StackAllocator(this.scratchArena, 128 * 1024);
+
+    private final MemorySegment worldIDSegment   = b3WorldId    .allocate(this.scratchArena);
+    private final MemorySegment bodyIDSegment    = b3BodyId     .allocate(this.scratchArena);
+    private final MemorySegment contactIDSegment = b3ContactId  .allocate(this.scratchArena);
+    private final MemorySegment shapeIDSegment   = b3ShapeId    .allocate(this.scratchArena);
+    private final MemorySegment jointIDSegment   = b3JointId    .allocate(this.scratchArena);
+    private final MemorySegment vec3Segment      = b3Vec3       .allocate(this.scratchArena);
+    private final MemorySegment quatSegment      = b3Quat       .allocate(this.scratchArena);
+    private final MemorySegment vec3Segment2     = b3Vec3       .allocate(this.scratchArena);
+    private final MemorySegment transformSegment = b3Transform  .allocate(this.scratchArena);
+    private final MemorySegment aabbSegment      = b3AABB       .allocate(this.scratchArena);
+
+    private final Quaternionf          scratchQuat        = new Quaternionf();
+    private final SimplexCache         emptyDistanceCache = new SimplexCache();
+    private final ScratchCastResultFcn scratchCastFn      = new ScratchCastResultFcn(this.scratchArena);
+    private final ScratchOverlapAABB   scratchOverlapAABB = new ScratchOverlapAABB(this.scratchArena);
 
 
+    //<editor-fold desc="Destructors without reference" default-state="collapsed">
 
 
-    /// @api b3DestroyWorld
     void destroyWorld(long packedID) {
         var segment = worldID(packedID);
         if (!b3World_IsValid(segment)) {
@@ -1951,22 +2360,18 @@ public final class B3 {
         b3DestroyWorld(segment);
     }
 
-    /// @api b3DestroyHull
     void destroyHull(MemorySegment segment) {
         b3DestroyHull(segment);
     }
 
-    /// @api b3DestroyMesh
     void destroyMesh(MemorySegment segment) {
         b3DestroyMesh(segment);
     }
 
-    /// @api b3DestroyHeightField
     void destroyHeightField(MemorySegment segment) {
         b3DestroyHeightField(segment);
     }
 
-    /// @api b3DestroyBody
     void destroyBody(long packedID) {
         var segment = bodyID(packedID);
         if (!b3Body_IsValid(segment)) {
@@ -1976,12 +2381,9 @@ public final class B3 {
         }
         b3DestroyBody(segment);
     }
+    //</editor-fold>
 
-    /// @api b3GetLengthUnitsPerMeter
-    static float lengthUnitsPerMeter() {
-        return b3GetLengthUnitsPerMeter();
-    }
-
+    //<editor-fold desc="Scratch Writes" default-state="collapsed">
 
 
     private MemorySegment worldID(WorldID worldID) {
@@ -2015,6 +2417,20 @@ public final class B3 {
         PrimitiveMemOps.putPackedID(this.jointIDSegment, packedID);
         return this.jointIDSegment;
     }
+    private static JointType jointType(int type) {
+        return switch (type) {
+            case b3_parallelJoint -> JointType.PARALLEL;
+            case b3_distanceJoint -> JointType.DISTANCE;
+            case b3_filterJoint -> JointType.FILTER;
+            case b3_motorJoint -> JointType.MOTOR;
+            case b3_prismaticJoint -> JointType.PRISMATIC;
+            case b3_revoluteJoint -> JointType.REVOLUTE;
+            case b3_sphericalJoint -> JointType.SPHERICAL;
+            case b3_weldJoint -> JointType.WELD;
+            case b3_wheelJoint -> JointType.WHEEL;
+            default -> throw new IllegalArgumentException("Unknown joint type: " + type);
+        };
+    }
     private MemorySegment transform(Matrix4f transform) {
         PrimitiveMemOps.putTransform(this.transformSegment, this.scratchQuat, transform);
         return this.transformSegment;
@@ -2035,5 +2451,8 @@ public final class B3 {
         aabb.put(this.aabbSegment);
         return this.aabbSegment;
     }
+    //</editor-fold>
+
+    //</editor-fold>
 
 }

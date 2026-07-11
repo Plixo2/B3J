@@ -38,7 +38,7 @@ public class BodyDef {
     public BodyDef() {
         this.type = BodyType.STATIC;
 
-        this.sleepThreshold = 0.05f * B3.lengthUnitsPerMeter();
+        this.sleepThreshold = 0.05f * B3.getLengthUnitsPerMeter();
         this.gravityScale = 1.0f;
         this.enableSleep = true;
         this.isAwake = true;

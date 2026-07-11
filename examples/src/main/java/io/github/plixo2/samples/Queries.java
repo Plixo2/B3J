@@ -3,8 +3,7 @@ package io.github.plixo2.samples;
 import io.github.plixo2.Example;
 import io.github.plixo2.box3d.BodyType;
 import io.github.plixo2.box3d.WorldDef;
-import io.github.plixo2.box3d.threads.BuildInScheduler;
-import io.github.plixo2.box3d.threads.ExecutorTaskPool;
+import io.github.plixo2.box3d.tasks.BuildInScheduler;
 import io.github.plixo2.framework.MeshFactory;
 import org.joml.Vector3f;
 
@@ -14,7 +13,7 @@ public class Queries extends Example {
     @Override
     public void init(MeshFactory debugShapes) {
         var worldDef = new WorldDef();
-        worldDef.debugShapeCollection(debugShapes);
+        worldDef.debugShapes(debugShapes);
 
         if (this.threaded) {
             worldDef.taskPool(new BuildInScheduler());

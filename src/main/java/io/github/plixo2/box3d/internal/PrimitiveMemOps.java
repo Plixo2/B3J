@@ -178,7 +178,9 @@ public final class PrimitiveMemOps {
     public static int getGenerationFromPacked(long packed) {
         return (int) ((packed >> 48) & 0xFFFFL);
     }
-
+    public static boolean isPackedIDNull(long packed) {
+        return getIndexFromPacked(packed) == 0;
+    }
 
     public static long packWorldID(MemorySegment segment) {
         return packWorldID(segment, 0);
@@ -190,7 +192,6 @@ public final class PrimitiveMemOps {
         var asInt = (int) worldID;
         segment.set(ValueLayout.JAVA_INT, 0, asInt);
     }
-
     public static int getWorldIDIndexFromPackedID(long packedID) {
         packedID = packedID & 0xFFFFFFFFL;
         return (int) (packedID & 0xFFFFL);
@@ -199,5 +200,9 @@ public final class PrimitiveMemOps {
         packedID = packedID & 0xFFFFFFFFL;
         return (int) ((packedID >> 16) & 0xFFFFL);
     }
+    public static boolean isPackedWorldIDNull(long packed) {
+        return getWorldIDIndexFromPackedID(packed) == 0;
+    }
+
 
 }

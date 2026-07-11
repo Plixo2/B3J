@@ -16,6 +16,11 @@ public class TreeStats {
 
     }
 
+    public TreeStats(TreeStats other) {
+        this.leafVisits = other.leafVisits;
+        this.nodeVisits = other.nodeVisits;
+    }
+
     void set(MemorySegment segment) {
         this.leafVisits = b3TreeStats.leafVisits(segment);
         this.nodeVisits = b3TreeStats.nodeVisits(segment);

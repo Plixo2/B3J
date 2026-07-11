@@ -1,6 +1,7 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.MemoryIterator;
+import lombok.Getter;
 import org.box2d.box3d.b3Simplex;
 import org.box2d.box3d.b3SimplexVertex;
 import org.jetbrains.annotations.NotNull;
@@ -13,6 +14,8 @@ import java.util.Iterator;
 public class Simplexes implements Iterable<Simplexes.Simplex> {
 
     final MemorySegment segment;
+
+    @Getter
     final int capacity;
 
     private final SimplexVertex reference = new SimplexVertex();
@@ -34,14 +37,14 @@ public class Simplexes implements Iterable<Simplexes.Simplex> {
 
     @Override
     public @NotNull Iterator<Simplex> iterator() {
-        var capacity = Simplexes.this.capacity;
 
         return new Iterator<>() {
             int index = 0;
+            private final int capacity = Simplexes.this.capacity;
 
             @Override
             public boolean hasNext() {
-                return this.index < capacity;
+                return this.index < this.capacity;
             }
 
             @Override

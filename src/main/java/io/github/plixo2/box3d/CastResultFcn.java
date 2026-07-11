@@ -3,7 +3,7 @@ package io.github.plixo2.box3d;
 import io.github.plixo2.box3d.internal.U64;
 import org.joml.Vector3f;
 
-public interface CastResult {
+public interface CastResultFcn {
 
     float onHit(
             ShapeID shapeId,

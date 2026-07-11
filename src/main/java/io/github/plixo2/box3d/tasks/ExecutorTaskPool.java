@@ -1,4 +1,6 @@
-package io.github.plixo2.box3d.threads;
+package io.github.plixo2.box3d.tasks;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -9,7 +11,9 @@ public class ExecutorTaskPool extends CustomTaskScheduler<Future<?>> {
     private final ExecutorService executor;
 
     public ExecutorTaskPool() {
+        // leave one for awaiting, task stealing is not implemented
         var cores = Math.max(Runtime.getRuntime().availableProcessors() - 1, 1);
+
         var factory = Thread.ofPlatform().daemon(true).name("box3d-worker-", 0).factory();
         this(cores, Executors.newFixedThreadPool(cores, factory));
     }
@@ -20,11 +24,14 @@ public class ExecutorTaskPool extends CustomTaskScheduler<Future<?>> {
         this.executor = executor;
     }
 
+    /// {@inheritDoc}
     @Override
-    public Future<?> enqueue(Runnable runnable) {
+    public @Nullable Future<?> enqueue(Runnable runnable) {
         return this.executor.submit(runnable);
     }
 
+    /// {@inheritDoc}
+    // TODO implement work stealing
     @Override
     public void finish(Future<?> task) {
         try {

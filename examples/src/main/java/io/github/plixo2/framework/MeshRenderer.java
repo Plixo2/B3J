@@ -3,6 +3,8 @@ package io.github.plixo2.framework;
 import io.github.plixo2.abstraction.Capabilities;
 import io.github.plixo2.abstraction.Color;
 import io.github.plixo2.abstraction.Shader;
+import io.github.plixo2.box3d.UserData;
+import lombok.Getter;
 import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -15,6 +17,9 @@ import java.util.List;
 
 public class MeshRenderer {
     private final List<MultiMesh> buffers = new ArrayList<>();
+
+    @Getter
+    private final UserData.OfShape<MultiMesh.MeshRecord> userShapes = new UserData.OfShape<>();
 
     private final Shader shader;
     private final Shader.Uniform<Matrix4f> u_projView;
@@ -58,6 +63,7 @@ public class MeshRenderer {
     void free() {
         this.buffers.forEach(MultiMesh::free);
         this.buffers.clear();
+        this.userShapes.clear();
     }
 
     MultiMesh.MeshRecord place(MeshCreator.MeshArgs mesh, @Nullable Color customColor) {

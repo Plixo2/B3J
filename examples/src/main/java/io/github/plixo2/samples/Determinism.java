@@ -3,7 +3,7 @@ package io.github.plixo2.samples;
 import io.github.plixo2.Example;
 import io.github.plixo2.abstraction.Color;
 import io.github.plixo2.box3d.*;
-import io.github.plixo2.box3d.threads.BuildInScheduler;
+import io.github.plixo2.box3d.tasks.BuildInScheduler;
 import io.github.plixo2.framework.MeshFactory;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
@@ -12,7 +12,6 @@ import org.joml.Random;
 import org.joml.Vector3f;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -42,7 +41,7 @@ public class Determinism extends Example {
         this.saved = false;
 
         var worldDef = new WorldDef();
-        worldDef.debugShapeCollection(debugShapes);
+        worldDef.debugShapes(debugShapes);
 
         if (this.threaded) {
             worldDef.taskPool(new BuildInScheduler());
@@ -77,7 +76,6 @@ public class Determinism extends Example {
                 new Vector3f(30, 30, 1),
                 new Vector3f(0, 10, 15.5f)
         );
-
 
         var size = SIZE;
         var count = 8000;

@@ -1,11 +1,18 @@
 package io.github.plixo2.box3d.internal;
 
 
+import io.github.plixo2.box3d.AssertFcn;
+import lombok.Lombok;
+import lombok.SneakyThrows;
+import org.box2d.box3d.b3AssertFcn;
+import org.box2d.box3d.box3d_h;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
+import java.util.Objects;
 
 public final class Internal {
     public static final long U64_MAX = -1L;
@@ -123,6 +130,43 @@ public final class Internal {
     }
 
 
+    public static void setAssertFcn() {
+        setAssertFcn((condition, fileName, lineNumber) -> {
+            throw new AssertionError(assertionError(condition, fileName, lineNumber));
+        });
+    }
 
+    public static void setAssertFcn(AssertFcn fcn) {
+        class Holder {
+            private final static Object lock = new Object();
+
+            private static @Nullable b3AssertFcn.Function fcn;
+            private static @Nullable MemorySegment assertFcnSegment;
+        }
+        Objects.requireNonNull(fcn, "fcn");
+        synchronized (Holder.lock) {
+            Holder.fcn = (condition, fileName, lineNumber) -> {
+                var conditionString = condition.getString(0);
+                var fileString = fileName.getString(0);
+                try {
+                    fcn.onFailure(conditionString, fileString, lineNumber);
+                } catch (Exception e) {
+                    unhandledCallbackException(e);
+                }
+                throw new AssertionError(assertionError(conditionString, fileString, lineNumber));
+            };
+            Holder.assertFcnSegment = b3AssertFcn.allocate(Holder.fcn, Arena.ofAuto());
+            box3d_h.b3SetAssertFcn(Holder.assertFcnSegment);
+        }
+    }
+
+    private static String assertionError(String condition, String fileName, int lineNumber) {
+        return "[B3J] Assertion failed: " + condition + " at " + fileName + ":" + lineNumber;
+    }
+
+    public static void unhandledCallbackException(Exception e) {
+        System.err.println("[B3J] Unhandled exception in callback:");
+        e.printStackTrace(System.err);
+    }
 
 }

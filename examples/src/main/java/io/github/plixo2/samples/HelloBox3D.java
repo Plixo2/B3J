@@ -1,8 +1,6 @@
 package io.github.plixo2.samples;
 
 import io.github.plixo2.box3d.*;
-import io.github.plixo2.box3d.threads.ExecutorTaskPool;
-import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -10,7 +8,6 @@ import static io.github.plixo2.box3d.region.Region.global;
 import static io.github.plixo2.box3d.region.Region.ofConfined;
 
 public class HelloBox3D {
-
 
     void main() {
 

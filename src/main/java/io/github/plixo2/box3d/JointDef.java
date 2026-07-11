@@ -38,7 +38,7 @@ public class JointDef {
         this.torqueThreshold = Float.MAX_VALUE;
         this.constraintHertz = 60.0f;
         this.constraintDampingRatio = 2.0f;
-        this.drawScale = B3.lengthUnitsPerMeter();
+        this.drawScale = B3.getLengthUnitsPerMeter();
     }
 
     public JointDef(JointDef other) {

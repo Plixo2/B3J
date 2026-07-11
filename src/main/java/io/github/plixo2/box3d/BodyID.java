@@ -53,25 +53,35 @@ public final class BodyID {
         return toString(this.packedID);
     }
 
-    static BodyID of(
-            @Nullable B3 instance,
-            @Nullable Region region,
-            MemorySegment segment
-    ) {
-        return of(instance, region, segment, 0);
-    }
 
     static BodyID of(
-            @Nullable B3 instance,
-            @Nullable Region region,
-            MemorySegment segment,
-            long offset
+            B3 instance,
+            Region region,
+            MemorySegment segment
     ) {
-        var identifier = PrimitiveMemOps.packID(segment, offset);
+        var identifier = PrimitiveMemOps.packID(segment);
 
         return new BodyID(
                 instance,
                 region,
+                identifier
+        );
+    }
+    static BodyID of(
+            MemorySegment segment
+    ) {
+        return of(segment, 0);
+    }
+
+
+    static BodyID of(
+            MemorySegment segment,
+            long offset
+    ) {
+        var identifier = PrimitiveMemOps.packID(segment, offset);
+        return new BodyID(
+                null,
+                null,
                 identifier
         );
     }

@@ -38,7 +38,7 @@ public class BodyMoveEvent {
         var fellAsleepOffset = offset + b3BodyMoveEvent.fellAsleep$offset();
 
         PrimitiveMemOps.setTransform(this.transform, segment,  transformOffset);
-        this.bodyID = BodyID.of(null, null, segment, bodyIDOffset);
+        this.bodyID = BodyID.of(segment, bodyIDOffset);
         this.fellAsleep = segment.get(ValueLayout.JAVA_BOOLEAN, fellAsleepOffset);
         return this;
     }

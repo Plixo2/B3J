@@ -5,7 +5,7 @@ import de.javagl.obj.ObjReader;
 import de.javagl.obj.ObjUtils;
 import io.github.plixo2.Example;
 import io.github.plixo2.box3d.*;
-import io.github.plixo2.box3d.threads.BuildInScheduler;
+import io.github.plixo2.box3d.tasks.BuildInScheduler;
 import io.github.plixo2.framework.MeshFactory;
 import lombok.val;
 import org.joml.Random;
@@ -22,7 +22,7 @@ public class TriangleMesh extends Example {
         initialCameraPosition(0, 15, 50);
 
         var worldDef = new WorldDef();
-        worldDef.debugShapeCollection(debugShapes);
+        worldDef.debugShapes(debugShapes);
 
         if (this.threaded) {
             worldDef.taskPool(new BuildInScheduler());

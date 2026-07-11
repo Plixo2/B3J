@@ -4,7 +4,7 @@ import io.github.plixo2.Example;
 import io.github.plixo2.abstraction.Color;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.internal.U64;
-import io.github.plixo2.box3d.threads.BuildInScheduler;
+import io.github.plixo2.box3d.tasks.BuildInScheduler;
 import io.github.plixo2.framework.DrawConfig;
 import io.github.plixo2.framework.MeshFactory;
 import io.github.plixo2.framework.TextRenderer;
@@ -34,7 +34,7 @@ public class Joints extends Example {
         initialCameraPosition(-10, 5, 0);
 
         var worldDef = new WorldDef();
-        worldDef.debugShapeCollection(debugShapes);
+        worldDef.debugShapes(debugShapes);
 
         if (this.threaded) {
             worldDef.taskPool(new BuildInScheduler());
@@ -74,7 +74,6 @@ public class Joints extends Example {
         text.putString("Parallel joint" , 0, 0, 2 + 10 , Color.WHITE);
         text.putString("Filter joint"   , 0, 0, 2 + 15 , Color.WHITE);
         text.putString("Wheel joint"    , 0, 0, 2 + 20 , Color.WHITE);
-
     }
 
     //<editor-fold defaultstate="collapsed" desc="Filter Joint">
@@ -94,7 +93,7 @@ public class Joints extends Example {
         this.b3.bodySetTransform(boxB, position, rotationB);
 
         var jointDef = new FilterJointDef(boxA, boxB);
-        var _ = this.b3.createFilterJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
     }
     //</editor-fold>
 
@@ -121,7 +120,7 @@ public class Joints extends Example {
         jointDef.dampingRatio(dampingRatio);
         jointDef.maxTorque(maxTorque);
 
-        var _ = this.b3.createParallelJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
     }
     //</editor-fold>
 
@@ -161,7 +160,7 @@ public class Joints extends Example {
 
         configure.accept(jointDef);
 
-        var _ = this.b3.createSphericalJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
     }
     //</editor-fold>
 
@@ -242,10 +241,10 @@ public class Joints extends Example {
         jointDef.targetSteeringAngle(steeringAngle);
         jointDef.maxSteeringTorque(200.0f);
 
-        var _ = this.b3.createWheelJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
 
         var filterDef = new FilterJointDef(chassis, wheel);
-        var _ = this.b3.createFilterJoint(this.worldID, filterDef);
+        var _ = this.b3.createJoint(this.worldID, filterDef);
     }
     private BodyID createWheelBody(Vector3f position, float friction, int carGroup) {
         var bodyDef = new BodyDef();
@@ -292,7 +291,7 @@ public class Joints extends Example {
         jointDef.angularVelocity().set(0.0f, 3.0f, 0.0f);
         jointDef.maxVelocityTorque(12.0f);
 
-        var _ = this.b3.createMotorJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
     }
     private void createSpringMotor(Vector3f position) {
         var controller = createMotorController(position);
@@ -312,7 +311,7 @@ public class Joints extends Example {
         jointDef.angularDampingRatio(0.7f);
         jointDef.maxSpringTorque(20.0f);
 
-        var _ = this.b3.createMotorJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
     }
     private void createFollowerMotor(Vector3f position) {
         var radius = 2.0f;
@@ -337,7 +336,7 @@ public class Joints extends Example {
         jointDef.angularVelocity().set(0.0f, 2.0f, 0.0f);
         jointDef.maxVelocityTorque(8.0f);
 
-        var _ = this.b3.createMotorJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
     }
     private BodyID createMotorController(Vector3f position) {
         return createMotorController(position, BodyType.STATIC);
@@ -378,7 +377,7 @@ public class Joints extends Example {
             jointDef.linearDampingRatio(damp);
             jointDef.angularDampingRatio(damp);
 
-            var _ = this.b3.createWeldJoint(this.worldID, jointDef);
+            var _ = this.b3.createJoint(this.worldID, jointDef);
 
             previous = segment;
         }
@@ -403,7 +402,7 @@ public class Joints extends Example {
         jointDef.linearDampingRatio(damp);
         jointDef.angularDampingRatio(damp);
 
-        var _ = this.b3.createWeldJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
     }
     //</editor-fold>
 
@@ -462,7 +461,7 @@ public class Joints extends Example {
 
         configure.accept(jointDef);
 
-        var _ = this.b3.createPrismaticJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
 
         return slider;
     }
@@ -514,7 +513,7 @@ public class Joints extends Example {
         configure.accept(jointDef);
 
 
-        var _ = this.b3.createDistanceJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
 
     }
     //</editor-fold>
@@ -572,7 +571,7 @@ public class Joints extends Example {
         }
 
         // is destroyed when any body is destroyed
-        var _ = this.b3.createRevoluteJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
     }
     private void spawnFalling(Vector3f position) {
 
@@ -594,7 +593,7 @@ public class Joints extends Example {
         jointDef.base().localFrameB().translation(localB);
 
         // is destroyed when any body is destroyed
-        var _ = this.b3.createRevoluteJoint(this.worldID, jointDef);
+        var _ = this.b3.createJoint(this.worldID, jointDef);
 
         var _ = spawnSphere(BodyType.STATIC, 0.2f, new Vector3f(0, 5, -0.1f).add(position));
     }

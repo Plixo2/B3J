@@ -1,6 +1,6 @@
 package io.github.plixo2.box3d.internal;
 
-import io.github.plixo2.box3d.OverlapResult;
+import io.github.plixo2.box3d.OverlapResultFcn;
 import io.github.plixo2.box3d.ShapeID;
 import org.box2d.box3d.b3ShapeId;
 
@@ -23,7 +23,7 @@ public final class ScratchOverlapAABB {
             MemorySegment worldID,
             MemorySegment aabb,
             MemorySegment queryFilter,
-            OverlapResult fcn
+            OverlapResultFcn fcn
     ) {
         var stats = b3jshimWorld_OverlapAABB(
                 returnArena,

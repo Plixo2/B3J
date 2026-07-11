@@ -20,6 +20,12 @@ public class Filter {
         this.groupIndex = 0;
     }
 
+    public Filter(Filter other) {
+        this.categoryBits = other.categoryBits;
+        this.maskBits = other.maskBits;
+        this.groupIndex = other.groupIndex;
+    }
+
     void put(MemorySegment segment) {
         b3Filter.categoryBits(segment, this.categoryBits);
         b3Filter.maskBits(segment, this.maskBits);

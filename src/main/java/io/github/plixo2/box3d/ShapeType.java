@@ -21,7 +21,6 @@ public enum ShapeType {
         return this.ordinal();
     }
 
-
     public sealed interface Shape
             permits
                 Capsule,

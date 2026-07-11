@@ -29,7 +29,7 @@ const vec3 lightDir = normalize(vec3(0.6, 1.0, 0.85));
 const float gridSize = 1.0;
 const float lineWidth = 0.001;
 const float lineSmoothness = 0.02;
-const float gridDarkness = 0.95;
+const float gridAlbedo = 0.95;
 
 vec3 applyLocalGrid(vec3 color)
 {
@@ -40,7 +40,7 @@ vec3 applyLocalGrid(vec3 color)
     vec3 lines = 1.0 - smoothstep(width, width + smoothWidth, cell);
     float grid = max(max(lines.x, lines.y), lines.z);
 
-    return mix(color, color * gridDarkness, grid);
+    return mix(color, color * gridAlbedo, grid);
 }
 
 void main()

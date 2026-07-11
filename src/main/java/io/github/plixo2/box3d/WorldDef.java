@@ -5,40 +5,42 @@ import java.lang.foreign.SegmentAllocator;
 
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.internal.AllocatedPool;
-import io.github.plixo2.box3d.threads.BuildInScheduler;
-import io.github.plixo2.box3d.threads.CustomTaskScheduler;
-import io.github.plixo2.box3d.threads.TaskScheduler;
+import io.github.plixo2.box3d.tasks.BuildInScheduler;
+import io.github.plixo2.box3d.tasks.CustomTaskScheduler;
+import io.github.plixo2.box3d.tasks.TaskScheduler;
 import lombok.Getter;
 import lombok.Setter;
 import org.box2d.box3d.b3WorldDef;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
-// https://github.com/erincatto/box3d/blob/29bf523ce7bc4590aba9f17c9db791cdc5c4397e/src/types.c#L11
 @Getter
 @Setter
 public class WorldDef {
 
-    Vector3f gravity;
-    float hitEventThreshold;
-    float restitutionThreshold;
-    float contactSpeed;
-    float contactHertz;
-    float contactDampingRatio;
-    float maximumLinearSpeed;
-    @Nullable Object frictionCallback;
-    @Nullable Object restitutionCallback;
-    boolean enableSleep;
-    boolean enableContinuous;
-    @Nullable TaskScheduler taskPool;
-    @Nullable DebugShapeCallbacks<?> debugShapeCollection;
-    @Nullable Object userDebugShapeContext;
-    Capacity capacity = new Capacity();
+    private Vector3f gravity;
+    private float hitEventThreshold;
+    private float restitutionThreshold;
+    private float contactSpeed;
+    private float contactHertz;
+    private float contactDampingRatio;
+    private float maximumLinearSpeed;
+    private @Nullable Object frictionCallback;
+    private @Nullable Object restitutionCallback;
+    private boolean enableSleep;
+    private boolean enableContinuous;
+    private @Nullable TaskScheduler taskPool;
+
+    /// both `createDebugShape` and `destroyDebugShape`
+    private @Nullable DebugShapeCallbacks<?> debugShapes;
+
+    private @Nullable Object userDebugShapeContext;
+    private Capacity capacity = new Capacity();
 
 
     /// @api b3DefaultWorldDef
     public WorldDef() {
-        float lengthUnits = B3.lengthUnitsPerMeter();
+        float lengthUnits = B3.getLengthUnitsPerMeter();
 
         this.gravity = new Vector3f();
         this.gravity.x = 0.0f;
@@ -80,8 +82,8 @@ public class WorldDef {
         var createDebugShape = MemorySegment.NULL;
         var destroyDebugShape = MemorySegment.NULL;
 
-        if (this.debugShapeCollection != null) {
-            shapes = new DebugShapeCallbacks.Allocated(this.debugShapeCollection);
+        if (this.debugShapes != null) {
+            shapes = new DebugShapeCallbacks.Allocated(this.debugShapes);
             createDebugShape = shapes.creation;
             destroyDebugShape = shapes.deletion;
         }

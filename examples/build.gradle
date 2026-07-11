@@ -23,7 +23,7 @@ repositories {
 }
 
 application {
-    mainClass = 'io.github.plixo2.samples.HelloFloor'
+    mainClass = 'io.github.plixo2.CLIEntry'
 }
 
 
@@ -66,6 +66,7 @@ dependencies {
 
 
 tasks.withType(JavaExec).configureEach {
+    standardInput = System.in
     jvmArgs += [
             "--enable-native-access=ALL-UNNAMED",
             "-XX:+UseZGC"

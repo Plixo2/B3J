@@ -16,30 +16,26 @@ import static io.github.plixo2.box3d.internal.Internal.assertU32;
 @Setter
 public class SurfaceMaterial {
 
-    float friction;
-    float restitution;
-    float rollingResistance;
-    Vector3f tangentVelocity = new Vector3f();
-    @U64 long userMaterialId;
-    @U32 long customColor;
+    private float friction;
+    private float restitution;
+    private float rollingResistance;
+    private Vector3f tangentVelocity = new Vector3f();
+    private @U64 long userMaterialId;
+    private int customColor;
 
     /// @api b3DefaultSurfaceMaterial
     public SurfaceMaterial() {
         this.friction = 0.6f;
     }
 
-    public @U64 long userMaterialId() {
-        return this.userMaterialId;
+    public SurfaceMaterial(SurfaceMaterial other) {
+        this.friction = other.friction;
+        this.restitution = other.restitution;
+        this.rollingResistance = other.rollingResistance;
+        this.tangentVelocity.set(other.tangentVelocity);
+        this.userMaterialId = other.userMaterialId;
+        this.customColor = other.customColor;
     }
-
-    public @U32 long customColor() {
-        return this.customColor;
-    }
-    public void customColor(@U32 long customColor) {
-        assertU32(customColor, "customColor");
-        this.customColor = customColor;
-    }
-
 
     void put(MemorySegment segment) {
         b3SurfaceMaterial.friction(segment, this.friction);
@@ -47,7 +43,7 @@ public class SurfaceMaterial {
         b3SurfaceMaterial.rollingResistance(segment, this.rollingResistance);
         PrimitiveMemOps.putVec3(b3SurfaceMaterial.tangentVelocity(segment), this.tangentVelocity);
         b3SurfaceMaterial.userMaterialId(segment, this.userMaterialId);
-        b3SurfaceMaterial.customColor(segment, assertU32(this.customColor, "customColor"));
+        b3SurfaceMaterial.customColor(segment, this.customColor);
     }
 
 }

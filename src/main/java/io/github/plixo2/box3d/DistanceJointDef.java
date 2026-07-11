@@ -34,7 +34,7 @@ public final class DistanceJointDef extends AbstractJointDef<JointType.Distance>
         this.lowerSpringForce = -Float.MAX_VALUE;
         this.upperSpringForce = Float.MAX_VALUE;
         this.length = 1.0f;
-        this.maxLength = 1.0e5f * B3.lengthUnitsPerMeter();
+        this.maxLength = 1.0e5f * B3.getLengthUnitsPerMeter();
     }
 
     MemorySegment create(Quaternionf tempQuat, SegmentAllocator arena) {

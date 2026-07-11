@@ -2,8 +2,9 @@ package io.github.plixo2.framework;
 
 
 import io.github.plixo2.box3d.AABB;
-import io.github.plixo2.box3d.DebugDrawCallbacks;
+import io.github.plixo2.box3d.DebugDrawFcn;
 import lombok.RequiredArgsConstructor;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -11,7 +12,7 @@ import java.lang.foreign.MemorySegment;
 
 
 @RequiredArgsConstructor
-public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
+public class SceneDrawing implements DebugDrawFcn<MultiMesh.MeshRecord> {
 
     private static final int CIRCLE_SEGMENTS = 32;
     private static final float[] circ_sin;
@@ -37,10 +38,13 @@ public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
     private final Vector3f v2 = new Vector3f();
 
     @Override
-    public boolean drawShape(MultiMesh.MeshRecord shape, Matrix4f transform, int color) {
-
-        var customColor = shape.customColor();
-        shape.putDraw(
+    public boolean drawShapeFcn(@Nullable MultiMesh.MeshRecord userShape, Matrix4f transform, int color) {
+        if (userShape == null) {
+            System.err.println("Invalid userShape");
+            return true;
+        }
+        var customColor = userShape.customColor();
+        userShape.putDraw(
                 transform,
                 transform.normal(this.normal),
                 customColor != null ? customColor.argb() : color
@@ -51,7 +55,7 @@ public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
 
 
     @Override
-    public void drawSegment(Vector3f p1, Vector3f p2, int color) {
+    public void drawSegmentFcn(Vector3f p1, Vector3f p2, int color) {
         addLine(
                 p1.x, p1.y, p1.z,
                 p2.x, p2.y, p2.z,
@@ -60,7 +64,7 @@ public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
     }
 
     @Override
-    public void drawTransform(Matrix4f transform) {
+    public void drawTransformFcn(Matrix4f transform) {
         var x = transform.m30();
         var y = transform.m31();
         var z = transform.m32();
@@ -90,7 +94,7 @@ public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
 
 
     @Override
-    public void drawPoint(Vector3f p, float size, int color) {
+    public void drawPointFcn(Vector3f p, float size, int color) {
         color = makeColorCode(color, 1.0f);
 
         var s = 0.1f;
@@ -100,14 +104,14 @@ public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
     }
 
     @Override
-    public void drawSphere(Vector3f p, float radius, int color, float alpha) {
+    public void drawSphereFcn(Vector3f p, float radius, int color, float alpha) {
         color = makeColorCode(color, alpha);
         drawSphereLines(p.x, p.y, p.z, radius, color);
     }
 
 
     @Override
-    public void drawCapsule(Vector3f p1, Vector3f p2, float radius, int color, float alpha) {
+    public void drawCapsuleFcn(Vector3f p1, Vector3f p2, float radius, int color, float alpha) {
         color = makeColorCode(color, alpha);
 
         var ax = p2.x - p1.x;
@@ -158,7 +162,7 @@ public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
 
 
     @Override
-    public void drawBounds(AABB aabb, int color) {
+    public void drawBoundsFcn(AABB aabb, int color) {
         color = makeColorCode(color, 1.0f);
 
         var minX = aabb.lowerBound.x;
@@ -172,7 +176,7 @@ public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
     }
 
     @Override
-    public void drawBox(Vector3f extend, Matrix4f transform, int color) {
+    public void drawBoxFcn(Vector3f extend, Matrix4f transform, int color) {
         color = makeColorCode(color, 1.0f);
 
         var x = extend.x;
@@ -196,7 +200,7 @@ public class SceneDrawing implements DebugDrawCallbacks<MultiMesh.MeshRecord> {
     }
 
     @Override
-    public void drawString(Vector3f p, MemorySegment string, long byteOffset, int color) {
+    public void drawStringFcn(Vector3f p, MemorySegment string, long byteOffset, int color) {
 
         this.text3D.putString(
                 string,

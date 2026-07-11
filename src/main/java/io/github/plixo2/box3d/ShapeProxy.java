@@ -6,11 +6,15 @@ import org.box2d.box3d.b3Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
+import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
 import java.nio.FloatBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.Objects;
 
 public class ShapeProxy {

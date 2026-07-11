@@ -1,10 +1,12 @@
-package io.github.plixo2.box3d.threads;
+package io.github.plixo2.box3d.tasks;
+
+import io.github.plixo2.box3d.B3;
 
 public record BuildInScheduler(int workerCount) implements TaskScheduler {
 
     public BuildInScheduler {
-        if (workerCount < 1) {
-            throw new IllegalArgumentException("workerCount must be at least 1");
+        if (workerCount < 1 || workerCount > B3.MAX_WORKERS) {
+            throw new IllegalArgumentException("workerCount must be between 1 and " + B3.MAX_WORKERS);
         }
     }
 

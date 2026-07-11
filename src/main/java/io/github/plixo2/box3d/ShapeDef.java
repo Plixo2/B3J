@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.box2d.box3d.b3ShapeDef;
 import org.box2d.box3d.b3SurfaceMaterial;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
@@ -15,23 +14,23 @@ import java.lang.foreign.SegmentAllocator;
 @Setter
 public class ShapeDef {
 
-    SurfaceMaterial[] materials = new SurfaceMaterial[0];
-    SurfaceMaterial baseMaterial;
-    float density;
-    float explosionScale;
-    Filter filter;
-    boolean enableCustomFiltering;
-    boolean isSensor;
-    boolean enableSensorEvents;
-    boolean enableContactEvents;
-    boolean enableHitEvents;
-    boolean enablePreSolveEvents;
-    boolean invokeContactCreation;
-    boolean updateBodyMass;
+    private SurfaceMaterial[] materials = new SurfaceMaterial[0];
+    private SurfaceMaterial baseMaterial;
+    private float density;
+    private float explosionScale;
+    private Filter filter;
+    private boolean enableCustomFiltering;
+    private boolean isSensor;
+    private boolean enableSensorEvents;
+    private boolean enableContactEvents;
+    private boolean enableHitEvents;
+    private boolean enablePreSolveEvents;
+    private boolean invokeContactCreation;
+    private boolean updateBodyMass;
 
     /// @api b3DefaultShapeDef
     public ShapeDef() {
-        float lengthUnits = B3.lengthUnitsPerMeter();
+        float lengthUnits = B3.getLengthUnitsPerMeter();
 
         this.baseMaterial = new SurfaceMaterial();
         // density of water
@@ -44,10 +43,10 @@ public class ShapeDef {
 
     public ShapeDef(ShapeDef other) {
         this.materials = other.materials;
-        this.baseMaterial = other.baseMaterial;
+        this.baseMaterial = new SurfaceMaterial(other.baseMaterial);
         this.density = other.density;
         this.explosionScale = other.explosionScale;
-        this.filter = other.filter;
+        this.filter = new Filter(other.filter);
         this.enableCustomFiltering = other.enableCustomFiltering;
         this.isSensor = other.isSensor;
         this.enableSensorEvents = other.enableSensorEvents;

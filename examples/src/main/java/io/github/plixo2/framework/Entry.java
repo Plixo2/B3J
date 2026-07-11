@@ -223,14 +223,12 @@ public class Entry implements AutoCloseable {
         this.example.customColors.clear();
         var meshFactory = new MeshFactory(this.meshRenderer, this.example.customColors);
 
-
         this.example.init(meshFactory);
         if (this.example.worldID == null) {
             throw new IllegalStateException("Example did not set Example.worldID in init() method");
         }
 
-
-        this.debugDraw = new DebugDraw(meshFactory, this.sceneRendering);
+        this.debugDraw = new DebugDraw(this.meshRenderer.userShapes(), this.sceneRendering);
         this.example.drawConfig.reset();
 
         var size = Float.MAX_VALUE / 4;

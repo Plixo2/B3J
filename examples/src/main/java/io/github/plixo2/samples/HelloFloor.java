@@ -1,10 +1,9 @@
 package io.github.plixo2.samples;
 
 import io.github.plixo2.Example;
-import io.github.plixo2.box3d.threads.BuildInScheduler;
+import io.github.plixo2.box3d.tasks.BuildInScheduler;
 import io.github.plixo2.framework.MeshFactory;
 import io.github.plixo2.box3d.*;
-import io.github.plixo2.box3d.threads.ExecutorTaskPool;
 import lombok.Getter;
 import org.joml.Vector3f;
 
@@ -17,7 +16,7 @@ public class HelloFloor extends Example {
         initialCameraPosition(0, 15, 10);
 
         var worldDef = new WorldDef();
-        worldDef.debugShapeCollection(debugShapes);
+        worldDef.debugShapes(debugShapes);
 
         if (this.threaded) {
             worldDef.taskPool(new BuildInScheduler());

@@ -2,7 +2,7 @@ package io.github.plixo2.samples;
 
 import io.github.plixo2.Example;
 import io.github.plixo2.box3d.*;
-import io.github.plixo2.box3d.threads.BuildInScheduler;
+import io.github.plixo2.box3d.tasks.BuildInScheduler;
 import io.github.plixo2.framework.MeshFactory;
 import org.joml.Random;
 import org.joml.SimplexNoise;
@@ -17,7 +17,7 @@ public class HeightField extends Example {
         initialCameraPosition(0, 15, 40);
 
         var worldDef = new WorldDef();
-        worldDef.debugShapeCollection(debugShapes);
+        worldDef.debugShapes(debugShapes);
 
         if (this.threaded) {
             worldDef.taskPool(new BuildInScheduler());
@@ -53,7 +53,7 @@ public class HeightField extends Example {
                         0.0f, 1.0f, 0.0f
                 );
 
-                var capsuleBodyID = spawnCapsule(
+                var _ = spawnCapsule(
                         BodyType.DYNAMIC,
                         new Vector3f(rx - 1, 25 + ry, rz), capsule
                 );
@@ -64,8 +64,8 @@ public class HeightField extends Example {
                      BodyType.DYNAMIC,
                      new Vector3f(rx, 18 + ry, rz - 2),
                      0.5f + rd.nextFloat(),
-                     rd.nextFloat() * 0.5f,
-                     0.5f + rd.nextFloat() * 0.5f,
+                     rd.nextFloat() * 0.5f + 0.1f,
+                     0.6f + rd.nextFloat() * 0.5f,
                      8 + rd.nextInt(12)
                 );
             }

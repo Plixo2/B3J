@@ -13,6 +13,11 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
+/// See [DebugDrawFcn] for the functions.
+/// Create this object once at store it,
+/// as this object can be expensive to create
+///
+/// @see DebugDrawFcn
 public class DebugDraw {
 
     public AABB drawingBounds;
@@ -40,10 +45,10 @@ public class DebugDraw {
 
     /// @api b3DefaultDebugDraw
     public <T> DebugDraw(
-            DebugShapeCallbacks<T> shapes,
-            DebugDrawCallbacks<T> functions
+            UserData.OfShape<T> userShapes,
+            DebugDrawFcn<T> functions
     ) {
-        float h = 100.0f * B3.lengthUnitsPerMeter();
+        float h = 100.0f * B3.getLengthUnitsPerMeter();
 
         this.drawingBounds = new AABB();
         this.drawingBounds.lowerBound.set(-h);
@@ -53,7 +58,7 @@ public class DebugDraw {
         this.jointScale = 1f;
 
         this.shimDebugDrawSegment = alloc(Arena.ofAuto());
-        this.callbacks = new Callbacks<>(this.shimDebugDrawSegment, functions, shapes);
+        this.callbacks = new Callbacks<>(this.shimDebugDrawSegment, functions, userShapes);
     }
 
     MemorySegment segment() {
@@ -99,8 +104,8 @@ public class DebugDraw {
 
     private static final class Callbacks<T> {
 
-        private final DebugDrawCallbacks<T> functions;
-        private final DebugShapeCallbacks<T> shapes;
+        private final DebugDrawFcn<T> functions;
+        private final UserData.OfShape<T> userShapes;
 
         private final ShimArgBuffer drawShapeBuffer;
         private final ShimArgBuffer drawSegmentBuffer;
@@ -121,11 +126,11 @@ public class DebugDraw {
 
         Callbacks(
                 MemorySegment segment,
-                DebugDrawCallbacks<T> functions,
-                DebugShapeCallbacks<T> shapes
+                DebugDrawFcn<T> functions,
+                UserData.OfShape<T> userShapes
         ) {
             this.functions = functions;
-            this.shapes = shapes;
+            this.userShapes = userShapes;
             this.drawShapeBuffer = new ShimArgBuffer(b3jshimDebugDraw.DrawShapeBuffer(segment));
             this.drawSegmentBuffer = new ShimArgBuffer(b3jshimDebugDraw.DrawSegmentBuffer(segment));
             this.drawTransformBuffer = new ShimArgBuffer(b3jshimDebugDraw.DrawTransformBuffer(segment));
@@ -168,18 +173,14 @@ public class DebugDraw {
 
             for (var i = 0; i < count; i++) {
                 var byteOffset = i * total_size;
-                var shapePtr = data.get(ValueLayout.JAVA_LONG, byteOffset + ptr_offset);
+                var packedShapeID = data.get(ValueLayout.JAVA_LONG, byteOffset + ptr_offset);
 
-                var shape = this.shapes.get(shapePtr);
-                if (shape == null) {
-                    System.err.println("DebugDraw: Shape not found for index " + shapePtr);
-                    continue;
-                }
+                var shape = this.userShapes.get(packedShapeID);
 
                 PrimitiveMemOps.setTransform(this.t1, data, byteOffset + transform_offset);
                 var color = data.get(ValueLayout.JAVA_INT, byteOffset + color_offset);
 
-                if (!this.functions.drawShape(shape, this.t1, color)) {
+                if (!this.functions.drawShapeFcn(shape, this.t1, color)) {
                     break;
                 }
             }
@@ -205,7 +206,7 @@ public class DebugDraw {
 
                 var color = data.get(ValueLayout.JAVA_INT, byteOffset + color_offset);
 
-                this.functions.drawSegment(this.v1, this.v2, color);
+                this.functions.drawSegmentFcn(this.v1, this.v2, color);
             }
 
         }
@@ -225,7 +226,7 @@ public class DebugDraw {
                 var byteOffset = i * total_size;
                 PrimitiveMemOps.setTransform(this.t1, data, byteOffset + transform_offset);
 
-                this.functions.drawTransform(this.t1);
+                this.functions.drawTransformFcn(this.t1);
             }
 
         }
@@ -249,7 +250,7 @@ public class DebugDraw {
                 var size = data.get(ValueLayout.JAVA_FLOAT, byteOffset + size_offset);
                 var color = data.get(ValueLayout.JAVA_INT, byteOffset + color_offset);
 
-                this.functions.drawPoint(this.v1, size, color);
+                this.functions.drawPointFcn(this.v1, size, color);
             }
 
         }
@@ -274,7 +275,7 @@ public class DebugDraw {
                 var color = data.get(ValueLayout.JAVA_INT, byteOffset + color_offset);
                 var alpha = data.get(ValueLayout.JAVA_FLOAT, byteOffset + alpha_offset);
 
-                this.functions.drawSphere(this.v1, radius, color, alpha);
+                this.functions.drawSphereFcn(this.v1, radius, color, alpha);
             }
 
         }
@@ -301,7 +302,7 @@ public class DebugDraw {
                 var color = data.get(ValueLayout.JAVA_INT, byteOffset + color_offset);
                 var alpha = data.get(ValueLayout.JAVA_FLOAT, byteOffset + alpha_offset);
 
-                this.functions.drawCapsule(this.v1, this.v2, radius, color, alpha);
+                this.functions.drawCapsuleFcn(this.v1, this.v2, radius, color, alpha);
             }
 
         }
@@ -323,7 +324,7 @@ public class DebugDraw {
                 this.bounds.set(data, byteOffset + aabb_offset);
                 var color = data.get(ValueLayout.JAVA_INT, byteOffset + color_offset);
 
-                this.functions.drawBounds(this.bounds, color);
+                this.functions.drawBoundsFcn(this.bounds, color);
             }
 
         }
@@ -347,7 +348,7 @@ public class DebugDraw {
                 PrimitiveMemOps.setTransform(this.t1, data, byteOffset + transform_offset);
                 var color = data.get(ValueLayout.JAVA_INT, byteOffset + color_offset);
 
-                this.functions.drawBox(this.v1, this.t1, color);
+                this.functions.drawBoxFcn(this.v1, this.t1, color);
             }
 
         }
@@ -372,7 +373,7 @@ public class DebugDraw {
                 var offset = data.get(ValueLayout.JAVA_LONG, byteOffset + s_offset);
                 var color = data.get(ValueLayout.JAVA_INT, byteOffset + color_offset);
 
-                this.functions.drawString(this.v1, text, offset, color);
+                this.functions.drawStringFcn(this.v1, text, offset, color);
             }
 
         }

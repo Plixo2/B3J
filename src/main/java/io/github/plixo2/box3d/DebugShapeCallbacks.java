@@ -1,29 +1,33 @@
 package io.github.plixo2.box3d;
 
 
+import lombok.Getter;
 import org.box2d.box3d.*;
-import org.eclipse.collections.impl.map.mutable.primitive.LongObjectHashMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
+/// Abstraction for both `b3CreateDebugShapeCallback` and `b3DestroyDebugShapeCallback`
 public abstract class DebugShapeCallbacks<T> {
 
-    private final LongObjectHashMap<T> objects = new LongObjectHashMap<>();
-    private long counter = 1;
+    @Getter
+    private final UserData.OfShape<T> userShapes;
 
-    public DebugShapeCallbacks() {}
-
-    protected abstract T create(ShapeID shapeID, ShapeType.Shape shape);
-    protected abstract void delete(T object);
-
-    public @Nullable T get(long id) {
-        return this.objects.get(id);
+    public DebugShapeCallbacks(UserData.OfShape<T> userShapes) {
+        this.userShapes = userShapes;
     }
 
+    /// b3CreateDebugShapeCallback
+    protected abstract T create(ShapeID shapeID, ShapeType.Shape shape);
+
+    /// b3DestroyDebugShapeCallback
+    protected abstract void delete(T object);
+
+
+
     private void delete(MemorySegment ptr, MemorySegment userContext) {
-        var shape = this.objects.remove(ptr.address());
+        var shape = this.userShapes.remove(ptr.address());
         if (shape != null) {
             this.delete(shape);
         }
@@ -85,14 +89,19 @@ public abstract class DebugShapeCallbacks<T> {
         };
 
         var object = this.create(shapeID, shape);
-        this.objects.put(this.counter, object);
-        return MemorySegment.ofAddress(this.counter++);
+        this.userShapes.put(shapeID, object);
+
+        return MemorySegment.ofAddress(shapeID.packedID());
 
     }
 
 
+
+
     static final class Allocated {
+        @SuppressWarnings("unused")
         private DebugShapeCallbacks<?> collection; // keep alive
+
         private Arena arena;
 
         MemorySegment creation;
