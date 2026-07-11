@@ -41,7 +41,7 @@ staying as close as possible to the original Box3D API.
   - B3J allocates as few objects as possible and reuses existing objects. 
   - Some method require a `in` parameter to be filled in. E.g. `Vector3f bodyGetPosition(Vector3f in, BodyID bodyId)`
   - Arguments of callbacks or custom Iterators can be mutable. Make sure to copy them if you want to keep the objects.
-  - Some arguments can be `null`, when they are not needed.
+  - Some arguments can be `null` when they are not needed.
 
 - Fearless Resource Management
   - A [Region](src/main/java/io/github/plixo2/box3d/region/Region.java) is used to manage resources. 

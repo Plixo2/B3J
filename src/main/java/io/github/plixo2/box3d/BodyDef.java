@@ -16,23 +16,23 @@ import java.lang.foreign.SegmentAllocator;
 @Setter
 public class BodyDef {
 
-    BodyType type;
-    Vector3f position = new Vector3f();
-    Quaternionf rotation = new Quaternionf();
-    Vector3f linearVelocity = new Vector3f();
-    Vector3f angularVelocity = new Vector3f();
-    float linearDamping;
-    float angularDamping;
-    float gravityScale;
-    float sleepThreshold;
-    @Nullable String name;
-    MotionLocks motionLocks = new MotionLocks();
-    boolean enableSleep;
-    boolean isAwake;
-    boolean isBullet;
-    boolean isEnabled;
-    boolean allowFastRotation;
-    boolean enableContactRecycling;
+    private BodyType type;
+    private Vector3f position = new Vector3f();
+    private Quaternionf rotation = new Quaternionf();
+    private Vector3f linearVelocity = new Vector3f();
+    private Vector3f angularVelocity = new Vector3f();
+    private float linearDamping;
+    private float angularDamping;
+    private float gravityScale;
+    private float sleepThreshold;
+    private @Nullable String name;
+    private MotionLocks motionLocks = new MotionLocks();
+    private boolean enableSleep;
+    private boolean isAwake;
+    private boolean isBullet;
+    private boolean isEnabled;
+    private boolean allowFastRotation;
+    private boolean enableContactRecycling;
 
     /// @api b3DefaultBodyDef
     public BodyDef() {

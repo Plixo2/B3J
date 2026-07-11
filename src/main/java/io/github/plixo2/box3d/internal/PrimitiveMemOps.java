@@ -181,7 +181,7 @@ public final class PrimitiveMemOps {
 
 
     public static long packWorldID(MemorySegment segment) {
-        return packID(segment, 0);
+        return packWorldID(segment, 0);
     }
     public static long packWorldID(MemorySegment segment, long offset) {
         return Integer.toUnsignedLong(segment.get(ValueLayout.JAVA_INT, offset));

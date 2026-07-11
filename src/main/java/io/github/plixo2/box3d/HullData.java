@@ -15,7 +15,6 @@ public non-sealed class HullData implements ShapeType.Shape {
 
     final MemorySegment segment;
 
-
     HullData(
             MemorySegment segment
     ) {

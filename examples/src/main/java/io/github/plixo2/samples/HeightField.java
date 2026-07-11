@@ -3,14 +3,13 @@ package io.github.plixo2.samples;
 import io.github.plixo2.Example;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.threads.BuildInScheduler;
-import io.github.plixo2.box3d.threads.ExecutorTaskPool;
 import io.github.plixo2.framework.MeshFactory;
 import org.joml.Random;
 import org.joml.SimplexNoise;
 import org.joml.Vector3f;
 
 
-public class HeigtField extends Example {
+public class HeightField extends Example {
 
 
     @Override

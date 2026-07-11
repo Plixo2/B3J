@@ -3,9 +3,7 @@ package io.github.plixo2.samples;
 import io.github.plixo2.Example;
 import io.github.plixo2.abstraction.Color;
 import io.github.plixo2.box3d.*;
-import io.github.plixo2.box3d.region.Region;
 import io.github.plixo2.box3d.threads.BuildInScheduler;
-import io.github.plixo2.box3d.threads.ExecutorTaskPool;
 import io.github.plixo2.framework.MeshFactory;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
@@ -26,7 +24,7 @@ import java.util.List;
 
 
 public class Determinism extends Example {
-    private static final boolean record = true;
+    private static final boolean record = false;
     private static final int SIZE = 29;
 
     private boolean saved = false;

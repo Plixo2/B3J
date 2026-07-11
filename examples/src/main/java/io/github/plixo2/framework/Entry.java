@@ -274,6 +274,8 @@ public class Entry implements AutoCloseable {
         var t = glfwGetKey(this.window, GLFW_KEY_T) == GLFW_PRESS;
         if (t) {
             this.example.update(dt);
+            this.example.update(dt);
+            this.example.update(dt);
         }
 
         this.camera.move(this.window, this.deltaX, this.deltaY, dt * 5f);

@@ -968,6 +968,8 @@ public final class B3 {
         }
     }
 
+
+
     /// @api b3Body_GetPosition
     public Vector3f bodyGetPosition(Vector3f in, BodyID bodyId) {
         var vec = b3Body_GetPosition(this.returnArena, bodyID(bodyId));
@@ -1099,6 +1101,7 @@ public final class B3 {
         var vec = b3Body_GetLocalVector(this.returnArena, bodyID(bodyId), vec3(worldVector));
         return PrimitiveMemOps.setVec3(in, vec);
     }
+
 
     /// @api b3Body_GetType
     public BodyType bodyGetType(BodyID bodyId) {
@@ -1256,6 +1259,680 @@ public final class B3 {
     }
 
 
+    // #HERE ParallelJoint
+
+    /// @api b3ParallelJoint_SetSpringHertz
+    public void parallelJointSetSpringHertz(JointID<JointType.Parallel> jointID) {
+
+    }
+    /// @api b3ParallelJoint_SetSpringDampingRatio
+    public void parallelJointSetSpringDampingRatio(JointID<JointType.Parallel> jointID) {
+
+    }
+    /// @api b3ParallelJoint_GetSpringHertz
+    public void parallelJointGetSpringHertz(JointID<JointType.Parallel> jointID) {
+
+    }
+    /// @api b3ParallelJoint_GetSpringDampingRatio
+    public void parallelJointGetSpringDampingRatio(JointID<JointType.Parallel> jointID) {
+
+    }
+    /// @api b3ParallelJoint_SetMaxTorque
+    public void parallelJointSetMaxTorque(JointID<JointType.Parallel> jointID) {
+
+    }
+    /// @api b3ParallelJoint_GetMaxTorque
+    public void parallelJointGetMaxTorque(JointID<JointType.Parallel> jointID) {
+
+    }
+
+    // #HERE DistanceJoint
+
+    /// @api b3DistanceJoint_SetLength
+    public void distanceJointSetLength(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_GetLength
+    public void distanceJointGetLength(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_EnableSpring
+    public void distanceJointEnableSpring(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_IsSpringEnabled
+    public void distanceJointIsSpringEnabled(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_SetSpringForceRange
+    public void distanceJointSetSpringForceRange(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_GetSpringForceRange
+    public void distanceJointGetSpringForceRange(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_SetSpringHertz
+    public void distanceJointSetSpringHertz(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_SetSpringDampingRatio
+    public void distanceJointSetSpringDampingRatio(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_GetSpringHertz
+    public void distanceJointGetSpringHertz(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_GetSpringDampingRatio
+    public void distanceJointGetSpringDampingRatio(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_EnableLimit
+    public void distanceJointEnableLimit(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_IsLimitEnabled
+    public void distanceJointIsLimitEnabled(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_SetLengthRange
+    public void distanceJointSetLengthRange(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_GetMinLength
+    public void distanceJointGetMinLength(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_GetMaxLength
+    public void distanceJointGetMaxLength(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_GetCurrentLength
+    public void distanceJointGetCurrentLength(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_EnableMotor
+    public void distanceJointEnableMotor(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_IsMotorEnabled
+    public void distanceJointIsMotorEnabled(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_SetMotorSpeed
+    public void distanceJointSetMotorSpeed(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_GetMotorSpeed
+    public void distanceJointGetMotorSpeed(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_SetMaxMotorForce
+    public void distanceJointSetMaxMotorForce(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_GetMaxMotorForce
+    public void distanceJointGetMaxMotorForce(JointID<JointType.Distance> jointID) {
+
+    }
+    /// @api b3DistanceJoint_GetMotorForce
+    public void distanceJointGetMotorForce(JointID<JointType.Distance> jointID) {
+
+    }
+
+    // #HERE MotorJoint
+
+    /// @api b3MotorJoint_SetLinearVelocity
+    public void motorJointSetLinearVelocity(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_GetLinearVelocity
+    public void motorJointGetLinearVelocity(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_SetAngularVelocity
+    public void motorJointSetAngularVelocity(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_GetAngularVelocity
+    public void motorJointGetAngularVelocity(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_SetMaxVelocityForce
+    public void motorJointSetMaxVelocityForce(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_GetMaxVelocityForce
+    public void motorJointGetMaxVelocityForce(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_SetMaxVelocityTorque
+    public void motorJointSetMaxVelocityTorque(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_GetMaxVelocityTorque
+    public void motorJointGetMaxVelocityTorque(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_SetLinearHertz
+    public void motorJointSetLinearHertz(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_GetLinearHertz
+    public void motorJointGetLinearHertz(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_SetLinearDampingRatio
+    public void motorJointSetLinearDampingRatio(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_GetLinearDampingRatio
+    public void motorJointGetLinearDampingRatio(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_SetAngularHertz
+    public void motorJointSetAngularHertz(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_GetAngularHertz
+    public void motorJointGetAngularHertz(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_SetAngularDampingRatio
+    public void motorJointSetAngularDampingRatio(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_GetAngularDampingRatio
+    public void motorJointGetAngularDampingRatio(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_SetMaxSpringForce
+    public void motorJointSetMaxSpringForce(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_GetMaxSpringForce
+    public void motorJointGetMaxSpringForce(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_SetMaxSpringTorque
+    public void motorJointSetMaxSpringTorque(JointID<JointType.Motor> jointID) {
+
+    }
+    /// @api b3MotorJoint_GetMaxSpringTorque
+    public void motorJointGetMaxSpringTorque(JointID<JointType.Motor> jointID) {
+
+    }
+
+    // #HERE PrismaticJoint
+
+    /// @api b3PrismaticJoint_EnableSpring
+    public void prismaticJointEnableSpring(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_IsSpringEnabled
+    public void prismaticJointIsSpringEnabled(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_SetSpringHertz
+    public void prismaticJointSetSpringHertz(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_GetSpringHertz
+    public void prismaticJointGetSpringHertz(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_SetSpringDampingRatio
+    public void prismaticJointSetSpringDampingRatio(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_GetSpringDampingRatio
+    public void prismaticJointGetSpringDampingRatio(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_SetTargetTranslation
+    public void prismaticJointSetTargetTranslation(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_GetTargetTranslation
+    public void prismaticJointGetTargetTranslation(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_EnableLimit
+    public void prismaticJointEnableLimit(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_IsLimitEnabled
+    public void prismaticJointIsLimitEnabled(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_GetLowerLimit
+    public void prismaticJointGetLowerLimit(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_GetUpperLimit
+    public void prismaticJointGetUpperLimit(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_SetLimits
+    public void prismaticJointSetLimits(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_EnableMotor
+    public void prismaticJointEnableMotor(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_IsMotorEnabled
+    public void prismaticJointIsMotorEnabled(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_SetMotorSpeed
+    public void prismaticJointSetMotorSpeed(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_GetMotorSpeed
+    public void prismaticJointGetMotorSpeed(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_SetMaxMotorForce
+    public void prismaticJointSetMaxMotorForce(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_GetMaxMotorForce
+    public void prismaticJointGetMaxMotorForce(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_GetMotorForce
+    public void prismaticJointGetMotorForce(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_GetTranslation
+    public void prismaticJointGetTranslation(JointID<JointType.Prismatic> jointID) {
+
+    }
+    /// @api b3PrismaticJoint_GetSpeed
+    public void prismaticJointGetSpeed(JointID<JointType.Prismatic> jointID) {
+
+    }
+
+    // #HERE RevoluteJoint
+
+    /// @api b3RevoluteJoint_EnableSpring
+    public void revoluteJointEnableSpring(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_IsSpringEnabled
+    public void revoluteJointIsSpringEnabled(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_SetSpringHertz
+    public void revoluteJointSetSpringHertz(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_GetSpringHertz
+    public void revoluteJointGetSpringHertz(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_SetSpringDampingRatio
+    public void revoluteJointSetSpringDampingRatio(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_GetSpringDampingRatio
+    public void revoluteJointGetSpringDampingRatio(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_SetTargetAngle
+    public void revoluteJointSetTargetAngle(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_GetTargetAngle
+    public void revoluteJointGetTargetAngle(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_GetAngle
+    public void revoluteJointGetAngle(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_EnableLimit
+    public void revoluteJointEnableLimit(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_IsLimitEnabled
+    public void revoluteJointIsLimitEnabled(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_GetLowerLimit
+    public void revoluteJointGetLowerLimit(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_GetUpperLimit
+    public void revoluteJointGetUpperLimit(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_SetLimits
+    public void revoluteJointSetLimits(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_EnableMotor
+    public void revoluteJointEnableMotor(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_IsMotorEnabled
+    public void revoluteJointIsMotorEnabled(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_SetMotorSpeed
+    public void revoluteJointSetMotorSpeed(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_GetMotorSpeed
+    public void revoluteJointGetMotorSpeed(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_GetMotorTorque
+    public void revoluteJointGetMotorTorque(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_SetMaxMotorTorque
+    public void revoluteJointSetMaxMotorTorque(JointID<JointType.Revolute> jointID) {
+
+    }
+    /// @api b3RevoluteJoint_GetMaxMotorTorque
+    public void revoluteJointGetMaxMotorTorque(JointID<JointType.Revolute> jointID) {
+
+    }
+
+
+    // #HERE SphericalJoints
+
+    /// @api b3SphericalJoint_EnableConeLimit
+    public void sphericalJoint_EnableConeLimit(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_IsConeLimitEnabled
+    public void sphericalJoint_IsConeLimitEnabled(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_GetConeLimit
+    public void sphericalJoint_GetConeLimit(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_SetConeLimit
+    public void sphericalJoint_SetConeLimit(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_GetConeAngle
+    public void sphericalJoint_GetConeAngle(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_EnableTwistLimit
+    public void sphericalJoint_EnableTwistLimit(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_IsTwistLimitEnabled
+    public void sphericalJoint_IsTwistLimitEnabled(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_GetLowerTwistLimit
+    public void sphericalJoint_GetLowerTwistLimit(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_GetUpperTwistLimit
+    public void sphericalJoint_GetUpperTwistLimit(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_SetTwistLimits
+    public void sphericalJoint_SetTwistLimits(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_GetTwistAngle
+    public void sphericalJoint_GetTwistAngle(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_EnableSpring
+    public void sphericalJoint_EnableSpring(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_IsSpringEnabled
+    public void sphericalJoint_IsSpringEnabled(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_SetSpringHertz
+    public void sphericalJoint_SetSpringHertz(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_GetSpringHertz
+    public void sphericalJoint_GetSpringHertz(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_SetSpringDampingRatio
+    public void sphericalJoint_SetSpringDampingRatio(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_GetSpringDampingRatio
+    public void sphericalJoint_GetSpringDampingRatio(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_SetTargetRotation
+    public void sphericalJoint_SetTargetRotation(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_GetTargetRotation
+    public void sphericalJoint_GetTargetRotation(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_EnableMotor
+    public void sphericalJoint_EnableMotor(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_IsMotorEnabled
+    public void sphericalJoint_IsMotorEnabled(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_SetMotorVelocity
+    public void sphericalJoint_SetMotorVelocity(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_GetMotorVelocity
+    public void sphericalJoint_GetMotorVelocity(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_GetMotorTorque
+    public void sphericalJoint_GetMotorTorque(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_SetMaxMotorTorque
+    public void sphericalJoint_SetMaxMotorTorque(JointID<JointType.Spherical> jointID) {
+
+    }
+    /// @api b3SphericalJoint_GetMaxMotorTorque
+    public void sphericalJoint_GetMaxMotorTorque(JointID<JointType.Spherical> jointID) {
+
+    }
+
+    // #HERE WeldJoint
+
+    /// @api b3WeldJoint_SetLinearHertz
+    public void weldJointSetLinearHertz(JointID<JointType.Weld> jointID) {
+
+    }
+    /// @api b3WeldJoint_GetLinearHertz
+    public void weldJointGetLinearHertz(JointID<JointType.Weld> jointID) {
+
+    }
+    /// @api b3WeldJoint_SetLinearDampingRatio
+    public void weldJointSetLinearDampingRatio(JointID<JointType.Weld> jointID) {
+
+    }
+    /// @api b3WeldJoint_GetLinearDampingRatio
+    public void weldJointGetLinearDampingRatio(JointID<JointType.Weld> jointID) {
+
+    }
+    /// @api b3WeldJoint_SetAngularHertz
+    public void weldJointSetAngularHertz(JointID<JointType.Weld> jointID) {
+
+    }
+    /// @api b3WeldJoint_GetAngularHertz
+    public void weldJointGetAngularHertz(JointID<JointType.Weld> jointID) {
+
+    }
+    /// @api b3WeldJoint_SetAngularDampingRatio
+    public void weldJointSetAngularDampingRatio(JointID<JointType.Weld> jointID) {
+
+    }
+    /// @api b3WeldJoint_GetAngularDampingRatio
+    public void weldJointGetAngularDampingRatio(JointID<JointType.Weld> jointID) {
+
+    }
+
+    // #HERE WheelJoint
+
+    /// @api b3WheelJoint_EnableSuspension
+    public void wheelJointEnableSuspension(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_IsSuspensionEnabled
+    public void wheelJointIsSuspensionEnabled(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_SetSuspensionHertz
+    public void wheelJointSetSuspensionHertz(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetSuspensionHertz
+    public void wheelJointGetSuspensionHertz(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_SetSuspensionDampingRatio
+    public void wheelJointSetSuspensionDampingRatio(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetSuspensionDampingRatio
+    public void wheelJointGetSuspensionDampingRatio(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_EnableSuspensionLimit
+    public void wheelJointEnableSuspensionLimit(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_IsSuspensionLimitEnabled
+    public void wheelJointIsSuspensionLimitEnabled(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetLowerSuspensionLimit
+    public void wheelJointGetLowerSuspensionLimit(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetUpperSuspensionLimit
+    public void wheelJointGetUpperSuspensionLimit(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_SetSuspensionLimits
+    public void wheelJointSetSuspensionLimits(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_EnableSpinMotor
+    public void wheelJointEnableSpinMotor(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_IsSpinMotorEnabled
+    public void wheelJointIsSpinMotorEnabled(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_SetSpinMotorSpeed
+    public void wheelJointSetSpinMotorSpeed(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetSpinMotorSpeed
+    public void wheelJointGetSpinMotorSpeed(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_SetMaxSpinTorque
+    public void wheelJointSetMaxSpinTorque(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetMaxSpinTorque
+    public void wheelJointGetMaxSpinTorque(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetSpinSpeed
+    public void wheelJointGetSpinSpeed(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetSpinTorque
+    public void wheelJointGetSpinTorque(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_EnableSteering
+    public void wheelJointEnableSteering(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_IsSteeringEnabled
+    public void wheelJointIsSteeringEnabled(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_SetSteeringHertz
+    public void wheelJointSetSteeringHertz(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetSteeringHertz
+    public void wheelJointGetSteeringHertz(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_SetSteeringDampingRatio
+    public void wheelJointSetSteeringDampingRatio(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetSteeringDampingRatio
+    public void wheelJointGetSteeringDampingRatio(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_SetMaxSteeringTorque
+    public void wheelJointSetMaxSteeringTorque(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetMaxSteeringTorque
+    public void wheelJointGetMaxSteeringTorque(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_EnableSteeringLimit
+    public void wheelJointEnableSteeringLimit(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_IsSteeringLimitEnabled
+    public void wheelJointIsSteeringLimitEnabled(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetLowerSteeringLimit
+    public void wheelJointGetLowerSteeringLimit(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetUpperSteeringLimit
+    public void wheelJointGetUpperSteeringLimit(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_SetSteeringLimits
+    public void wheelJointSetSteeringLimits(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_SetTargetSteeringAngle
+    public void wheelJointSetTargetSteeringAngle(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetTargetSteeringAngle
+    public void wheelJointGetTargetSteeringAngle(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetSteeringAngle
+    public void wheelJointGetSteeringAngle(JointID<JointType.Wheel> jointID) {
+
+    }
+    /// @api b3WheelJoint_GetSteeringTorque
+    public void wheelJointGetSteeringTorque(JointID<JointType.Wheel> jointID) {
+
+    }
+
+
 
 
 
@@ -1304,7 +1981,6 @@ public final class B3 {
     static float lengthUnitsPerMeter() {
         return b3GetLengthUnitsPerMeter();
     }
-
 
 
 

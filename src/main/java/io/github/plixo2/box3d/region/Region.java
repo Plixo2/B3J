@@ -17,6 +17,9 @@ import java.lang.foreign.Arena;
 ///
 /// If you are familiar with [Arena], this is similar.
 ///
+/// You can destroy single resources independently,
+/// so feel free to opt-out completly by just passing [#global()] as the region.
+///
 /// ## Confined regions
 ///
 /// Resources registered to confined regions will be released when the region is closed.
@@ -86,6 +89,7 @@ import java.lang.foreign.Arena;
 /// Box3D will automatically destroy any bodies of a world when the world is destroyed,
 /// so this should be used for bodies that are meant to live for the entire lifetime of a world.
 ///
+/// A call to [#global()] returns a singleton. This is a cheap operation and you dont have to store it.
 ///
 /// ## [#ofAuto(FreeList)]
 /// Returns a region, tied to a [FreeList].
@@ -120,13 +124,16 @@ import java.lang.foreign.Arena;
 /// ```
 ///
 ///
-/// ### Thread safety
+/// ## Thread safety
 ///
-/// A [#ofAuto(FreeList)] region can be shared between threads,
+/// - A [#ofAuto(FreeList)] region can be shared between threads,
 /// but be careful when [FreeList#drain()] is called.
 ///
-/// If you need to share a confined region between
+/// - [#global()] is thread safe.
+///
+/// - If you need to share a confined region between
 /// threads, you need to take care synchronization yourself.
+///
 ///
 ///
 public sealed interface Region
