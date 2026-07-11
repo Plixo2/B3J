@@ -343,6 +343,7 @@ public final class B3 {
         if (statsIn != null) {
             statsIn.set(stats);
         }
+
         return statsIn;
 
     }
@@ -370,6 +371,7 @@ public final class B3 {
         if (statsIn != null) {
             statsIn.set(stats);
         }
+
         return statsIn;
 
     }
@@ -406,7 +408,7 @@ public final class B3 {
 
     /// @api b3RayCastSphere
     public boolean rayCastSphere(
-            CastOutput in,
+            @Nullable CastOutput in,
             Sphere sphere,
             RayCastInput input
     ) {
@@ -421,7 +423,10 @@ public final class B3 {
             if (!CastOutput.hit(result)) {
                 return false;
             }
-            in.set(result);
+
+            if (in != null) {
+                in.set(result);
+            }
 
             return true;
         }
@@ -430,7 +435,7 @@ public final class B3 {
 
     /// @api b3RayCastHollowSphere
     public boolean rayCastHollowSphere(
-            CastOutput in,
+            @Nullable CastOutput in,
             Sphere sphere,
             RayCastInput input
     ) {
@@ -445,7 +450,10 @@ public final class B3 {
             if (!CastOutput.hit(result)) {
                 return false;
             }
-            in.set(result);
+
+            if (in != null) {
+                in.set(result);
+            }
 
             return true;
         }
@@ -454,7 +462,7 @@ public final class B3 {
 
     /// @api b3RayCastCapsule
     public boolean rayCastCapsule(
-            CastOutput in,
+            @Nullable CastOutput in,
             Capsule capsule,
             RayCastInput input
     ) {
@@ -469,7 +477,10 @@ public final class B3 {
             if (!CastOutput.hit(result)) {
                 return false;
             }
-            in.set(result);
+
+            if (in != null) {
+                in.set(result);
+            }
 
             return true;
         }
@@ -478,7 +489,7 @@ public final class B3 {
 
     /// @api b3RayCastHull
     public boolean rayCastHull(
-            CastOutput in,
+            @Nullable CastOutput in,
             HullData hull,
             RayCastInput input
     ) {
@@ -493,7 +504,10 @@ public final class B3 {
             if (!CastOutput.hit(result)) {
                 return false;
             }
-            in.set(result);
+
+            if (in != null) {
+                in.set(result);
+            }
 
             return true;
         }
@@ -503,7 +517,7 @@ public final class B3 {
 
     /// @api b3RayCastMesh
     public boolean rayCastMesh(
-            CastOutput in,
+            @Nullable CastOutput in,
             Mesh mesh,
             RayCastInput input
     ) {
@@ -518,7 +532,10 @@ public final class B3 {
             if (!CastOutput.hit(result)) {
                 return false;
             }
-            in.set(result);
+
+            if (in != null) {
+                in.set(result);
+            }
 
             return true;
         }
@@ -527,7 +544,7 @@ public final class B3 {
 
     /// @api b3RayCastHeightField
     public boolean rayCastHeightField(
-            CastOutput in,
+            @Nullable CastOutput in,
             HeightFieldData heightField,
             RayCastInput input
     ) {
@@ -542,7 +559,10 @@ public final class B3 {
             if (!CastOutput.hit(result)) {
                 return false;
             }
-            in.set(result);
+
+            if (in != null) {
+                in.set(result);
+            }
 
             return true;
         }
@@ -552,7 +572,7 @@ public final class B3 {
 
     /// @api b3ShapeCastSphere
     public boolean shapeCastSphere(
-            CastOutput in,
+            @Nullable CastOutput in,
             Sphere sphere,
             ShapeCastInput input
     ) {
@@ -567,7 +587,10 @@ public final class B3 {
             if (!CastOutput.hit(result)) {
                 return false;
             }
-            in.set(result);
+
+            if (in != null) {
+                in.set(result);
+            }
 
             return true;
         }
@@ -576,7 +599,7 @@ public final class B3 {
 
     /// @api b3ShapeCastCapsule
     public boolean shapeCastCapsule(
-            CastOutput in,
+            @Nullable CastOutput in,
             Capsule capsule,
             ShapeCastInput input
     ) {
@@ -591,7 +614,10 @@ public final class B3 {
             if (!CastOutput.hit(result)) {
                 return false;
             }
-            in.set(result);
+
+            if (in != null) {
+                in.set(result);
+            }
 
             return true;
         }
@@ -600,7 +626,7 @@ public final class B3 {
 
     /// @api b3ShapeCastHull
     public boolean shapeCastHull(
-            CastOutput in,
+            @Nullable CastOutput in,
             HullData hull,
             ShapeCastInput input
     ) {
@@ -615,7 +641,10 @@ public final class B3 {
             if (!CastOutput.hit(result)) {
                 return false;
             }
-            in.set(result);
+
+            if (in != null) {
+                in.set(result);
+            }
 
             return true;
         }
@@ -624,7 +653,7 @@ public final class B3 {
 
     /// @api b3ShapeCastMesh
     public boolean shapeCastMesh(
-            CastOutput in,
+            @Nullable CastOutput in,
             Mesh mesh,
             ShapeCastInput input
     ) {
@@ -639,7 +668,10 @@ public final class B3 {
             if (!CastOutput.hit(result)) {
                 return false;
             }
-            in.set(result);
+
+            if (in != null) {
+                in.set(result);
+            }
 
             return true;
         }
@@ -648,7 +680,7 @@ public final class B3 {
 
     /// @api b3ShapeCastHeightField
     public boolean shapeCastHeightField(
-            CastOutput in,
+            @Nullable CastOutput in,
             HeightFieldData heightField,
             ShapeCastInput input
     ) {
@@ -663,7 +695,10 @@ public final class B3 {
             if (!CastOutput.hit(result)) {
                 return false;
             }
-            in.set(result);
+
+            if (in != null) {
+                in.set(result);
+            }
 
             return true;
         }
@@ -749,6 +784,7 @@ public final class B3 {
             this.emptyDistanceCache.clear();
             simplexCache = this.emptyDistanceCache;
         }
+
         try (this.argArena) {
             var distanceOutput = b3ShapeDistance(
                     this.returnArena,

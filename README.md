@@ -26,7 +26,7 @@ staying as close as possible to the original Box3D API.
   - A `Matrix4f` is used as a rigid transform instead of `b3Transform`.
   - `Vector3f` and `Quaternionf` are used for `b3Vec3` and `b3Quat`.
 
-- Types & Methods are not prefixed with `b3` and follow Java naming conventions.
+- Types & Methods are not prefixed with 'b3' and follow Java naming conventions.
   - E.g. `b3Body_SetTransform` becomes `b3.bodySetTransform`
 
 - Similar API to Box3D, but no identical.
