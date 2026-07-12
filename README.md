@@ -9,7 +9,7 @@
 B3J is a handwritten Java binding library for [Box3D](https://github.com/erincatto/box3d).
 
 It is designed to be efficient yet convenient, 
-staying as close as possible to the original Box3D API. 
+staying to the original Box3D API. 
 
 > [!WARNING]  
 > Still in development. Somewhat usable, but far from feature complete.
@@ -18,7 +18,7 @@ staying as close as possible to the original Box3D API.
 ### [Examples](examples/src/main/java/io/github/plixo2/samples)
 
 - `lwjgl` is used for rendering with OpenGL > 4.3
-- Start them via `.\gradlew :examples:run ` or the [instance main methods](https://openjdk.org/jeps/445)
+- Start them via `.\gradlew :examples:run` or the [instance main methods](https://openjdk.org/jeps/445)
 
 ## Usage (and Box3d differences)
 
