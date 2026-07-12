@@ -29,7 +29,7 @@ staying close to the original Box3D API.
 
 
 - Similar API to Box3D, but not identical.
-  - Constructors are used, instead of `b3Default...` and zero-initialized structs.
+  - Constructors are used, instead of `b3Default...` methods and zero-initialized structs.
   - All other methods are found on the [B3](src/main/java/io/github/plixo2/box3d/B3.java) class.
   - Types & Methods are not prefixed with 'b3' and follow Java naming conventions.
     - E.g. `b3Body_SetTransform` becomes `b3.bodySetTransform`.
