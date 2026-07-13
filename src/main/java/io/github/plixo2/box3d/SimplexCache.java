@@ -1,7 +1,7 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.MemoryIterator;
-import io.github.plixo2.box3d.internal.U16;
+import io.github.plixo2.box3d.internal.Unsigned;
 import org.box2d.box3d.b3SimplexCache;
 
 import java.lang.foreign.Arena;
@@ -25,8 +25,8 @@ public class SimplexCache {
         return b3SimplexCache.metric(this.segment);
     }
 
-    public @U16 int count() {
-        return Short.toUnsignedInt(b3SimplexCache.count(this.segment));
+    public @Unsigned short count() {
+        return b3SimplexCache.count(this.segment);
     }
 
     public MemoryIterator.OfU8 indexA() {

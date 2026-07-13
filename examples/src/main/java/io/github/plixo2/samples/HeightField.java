@@ -24,7 +24,7 @@ public class HeightField extends Example {
         }
 
         worldDef.gravity().set(0, -10f, 0);
-        this.worldID = this.b3.createWorld(this.region, worldDef);
+        this.worldID = b3.createWorld(this.region, worldDef);
 
         var rd = new Random();
 
@@ -44,7 +44,7 @@ public class HeightField extends Example {
                     0.5f,
                     new Vector3f(rx, 21 + ry, rz)
             );
-            this.b3.bodySetName(sphere, "Sphere " + i);
+            b3.bodySetName(sphere, "Sphere " + i);
 
             if (rd.nextFloat() < 0.2) {
                 var capsule = new Capsule(
@@ -75,14 +75,14 @@ public class HeightField extends Example {
         var heightFieldDef = createHeightField(128, 128);
         heightFieldDef.globalMinimumHeight(-8.0f);
         heightFieldDef.globalMaximumHeight(8.0f);
-        var heightFieldData = this.b3.createHeightField(this.region, heightFieldDef);
+        var heightFieldData = b3.createHeightField(this.region, heightFieldDef);
 
         var heightFieldBodyDef = new BodyDef();
         heightFieldBodyDef.position().set(-64, 0, -64);
-        var heightFieldBody = this.b3.createBody(this.region, this.worldID, heightFieldBodyDef);
+        var heightFieldBody = b3.createBody(this.region, this.worldID, heightFieldBodyDef);
 
         var heightFieldShapeDef = new ShapeDef();
-        var _ = this.b3.createHeightFieldShape(heightFieldBody, heightFieldShapeDef, heightFieldData);
+        var _ = b3.createHeightFieldShape(heightFieldBody, heightFieldShapeDef, heightFieldData);
 
     }
 

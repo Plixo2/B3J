@@ -23,16 +23,16 @@ public class HelloFloor extends Example {
         }
 
         worldDef.gravity().set(0, -10f, 0);
-        this.worldID = this.b3.createWorld(this.region, worldDef);
+        this.worldID = b3.createWorld(this.region, worldDef);
         var bodyDef = new BodyDef();
         bodyDef.position().set(0, -10f, 0);
 
-        var groundID = this.b3.createBody(this.region, this.worldID, bodyDef);
+        var groundID = b3.createBody(this.region, this.worldID, bodyDef);
 
-        var groundBox = this.b3.makeBoxHull(50.0f, 10.0f, 50.0f);
+        var groundBox = b3.makeBoxHull(50.0f, 10.0f, 50.0f);
 
         ShapeDef groundShapeDef = new ShapeDef();
-        var _ = this.b3.createHullShape(groundID, groundShapeDef, groundBox.base());
+        var _ = b3.createHullShape(groundID, groundShapeDef, groundBox.base());
 
 
         var levels = 45;
@@ -61,7 +61,7 @@ public class HelloFloor extends Example {
 
 
         var sphere = spawnSphere(BodyType.DYNAMIC, 5, new Vector3f(0, 5, 10));
-        this.b3.bodySetName(sphere, "Sphere");
+        b3.bodySetName(sphere, "Sphere");
     }
 
 

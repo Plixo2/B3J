@@ -1,28 +1,21 @@
 package io.github.plixo2;
 
-import io.github.plixo2.abstraction.Color;
+import io.github.plixo2.framework.*;
+import io.github.plixo2.framework.abstractions.Camera;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.region.Region;
-import io.github.plixo2.framework.DrawConfig;
-import io.github.plixo2.framework.Entry;
-import io.github.plixo2.framework.MeshFactory;
-import io.github.plixo2.framework.TextRenderer;
 import org.joml.Vector3f;
-
-import java.util.HashMap;
-import java.util.Map;
 
 
 public abstract class Example {
+    public static final B3 b3 = B3.get();
     public Region region = Region.ofConfined();
     public boolean threaded = true;
 
-    public final B3 b3 = B3.get();
 
     public WorldID worldID;
     public final Vector3f initialCameraPosition = new Vector3f(5, 5, 5);
     public final DrawConfig drawConfig = new DrawConfig();
-    public final Map<ShapeID, Color> customColors = new HashMap<>();
 
     public final void main() {
         try (var renderer = new Entry(this)) {
@@ -48,16 +41,17 @@ public abstract class Example {
 
     }
 
-    public void update(float dt) {
-        float timeStep = Math.min(dt, 1.0f / 60.0f);
+    public void update(float dt, SceneDrawing drawing) {
+        update(dt);
+    }
+
+    protected void update(float dt) {
+        float timeStep =  1.0f / 60.0f;
         int subStepCount = 4;
 
-        this.b3.worldStep(this.worldID, timeStep, subStepCount);
+        b3.worldStep(this.worldID, timeStep, subStepCount);
     }
 
-    public void customColor(ShapeID shapeID, Color color) {
-        this.customColors.put(shapeID, color);
-    }
 
     public void initialCameraPosition(Vector3f position) {
         this.initialCameraPosition.set(position);
@@ -66,11 +60,19 @@ public abstract class Example {
         this.initialCameraPosition.set(x, y, z);
     }
 
+    public boolean customCameraMovement(
+            Camera camera,
+            Camera.ControlInput input,
+            float dt
+    ) {
+        return false;
+    }
+
 
     protected void applyClickImpuls(Vector3f dir, Vector3f origin, float strength) {
 
         var result = new RayResult();
-        var hit = this.b3.worldCastRayClosest(
+        var hit = b3.worldCastRayClosest(
                 result,
                 this.worldID,
                 origin,
@@ -83,13 +85,13 @@ public abstract class Example {
         }
 
         var shape = result.shapeID();
-        var body = this.b3.shapeGetBody(shape);
+        var body = b3.shapeGetBody(shape);
         var impuls = new Vector3f(result.normal());
-        var mass = this.b3.bodyGetMass(body);
+        var mass = b3.bodyGetMass(body);
 
         impuls.mul(-strength * mass);
 
-        this.b3.bodyApplyLinearImpulse(body, impuls, result.point(), true);
+        b3.bodyApplyLinearImpulse(body, impuls, result.point(), true);
 
     }
 
@@ -138,10 +140,10 @@ public abstract class Example {
         var dynBodyDef = new BodyDef();
         dynBodyDef.type(bodyType);
         dynBodyDef.position().set(position);
-        BodyID bodyId = this.b3.createBody(this.region, this.worldID, dynBodyDef);
+        BodyID bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
 
-        var dynamicBox = this.b3.makeCubeHull(0.5f);
-        var _ = this.b3.createHullShape(bodyId, boxDef, dynamicBox.base());
+        var dynamicBox = b3.makeCubeHull(0.5f);
+        var _ = b3.createHullShape(bodyId, boxDef, dynamicBox.base());
         return bodyId;
     }
 
@@ -149,10 +151,10 @@ public abstract class Example {
         var dynBodyDef = new BodyDef();
         dynBodyDef.type(bodyType);
         dynBodyDef.position().set(position);
-        BodyID bodyId = this.b3.createBody(this.region, this.worldID, dynBodyDef);
+        BodyID bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
 
-        var dynamicBox = this.b3.makeBoxHull(size.x / 2f, size.y / 2f, size.z / 2f);
-        var _ = this.b3.createHullShape(bodyId, boxDef, dynamicBox.base());
+        var dynamicBox = b3.makeBoxHull(size.x / 2f, size.y / 2f, size.z / 2f);
+        var _ = b3.createHullShape(bodyId, boxDef, dynamicBox.base());
         return bodyId;
     }
 
@@ -161,10 +163,10 @@ public abstract class Example {
         var dynBodyDef = new BodyDef();
         dynBodyDef.type(bodyType);
         dynBodyDef.position().set(position);
-        BodyID bodyId = this.b3.createBody(this.region, this.worldID, dynBodyDef);
+        BodyID bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
 
-        var hull = this.b3.createCone(height, radius1, radius2, slices);
-        var _ = this.b3.createHullShape(bodyId, coneDef, hull);
+        var hull = b3.createCone(height, radius1, radius2, slices);
+        var _ = b3.createHullShape(bodyId, coneDef, hull);
         return bodyId;
     }
 
@@ -172,10 +174,10 @@ public abstract class Example {
         var dynBodyDef = new BodyDef();
         dynBodyDef.type(bodyType);
         dynBodyDef.position().set(position);
-        BodyID bodyId = this.b3.createBody(this.region, this.worldID, dynBodyDef);
+        BodyID bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
 
-        var hull = this.b3.createCylinder(height, radius, 0, slices);
-        var _ = this.b3.createHullShape(bodyId, cylinderDef, hull);
+        var hull = b3.createCylinder(height, radius, 0, slices);
+        var _ = b3.createHullShape(bodyId, cylinderDef, hull);
         return bodyId;
     }
 
@@ -183,9 +185,9 @@ public abstract class Example {
         var dynBodyDef = new BodyDef();
         dynBodyDef.type(bodyType);
         dynBodyDef.position().set(position);
-        BodyID bodyId = this.b3.createBody(this.region, this.worldID, dynBodyDef);
+        BodyID bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
 
-        var _ = this.b3.createCapsuleShape(bodyId, capsuleDef, capsule);
+        var _ = b3.createCapsuleShape(bodyId, capsuleDef, capsule);
         return bodyId;
     }
 
@@ -193,10 +195,10 @@ public abstract class Example {
         var dynBodyDef = new BodyDef();
         dynBodyDef.type(bodyType);
         dynBodyDef.position().set(position);
-        var bodyId = this.b3.createBody(this.region, this.worldID, dynBodyDef);
+        var bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
 
         var sphere = new Sphere(radius);
-        var _ = this.b3.createSphereShape(bodyId, sphereDef, sphere);
+        var _ = b3.createSphereShape(bodyId, sphereDef, sphere);
         return bodyId;
     }
 

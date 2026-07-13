@@ -28,7 +28,7 @@ public class SceneDrawing implements DebugDrawFcn<MultiMesh.MeshRecord> {
         }
     }
 
-    private static final float TRANSFORM_AXIS_LENGTH = 0.9f;
+    private static final float TRANSFORM_AXIS_LENGTH = 0.5f;
 
     private final LineRenderer lineRenderer;
     private final TextRenderer.World text3D;
@@ -43,11 +43,10 @@ public class SceneDrawing implements DebugDrawFcn<MultiMesh.MeshRecord> {
             System.err.println("Invalid userShape");
             return true;
         }
-        var customColor = userShape.customColor();
         userShape.putDraw(
                 transform,
                 transform.normal(this.normal),
-                customColor != null ? customColor.argb() : color
+                color
         );
 
         return true;

@@ -20,7 +20,7 @@ public class Queries extends Example {
         }
 
         worldDef.gravity().set(0, -4f, 0);
-        this.worldID = this.b3.createWorld(this.region, worldDef);
+        this.worldID = b3.createWorld(this.region, worldDef);
 
         spawnBox(
                 BodyType.STATIC,
@@ -56,10 +56,5 @@ public class Queries extends Example {
     }
 
 
-    @Override
-    public void update(float dt) {
-        super.update(dt);
 
-
-    }
 }

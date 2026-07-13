@@ -1,7 +1,7 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
-import io.github.plixo2.box3d.internal.U64;
+import io.github.plixo2.box3d.internal.Unsigned;
 import lombok.Getter;
 import org.box2d.box3d.b3BodyCastResult;
 import org.joml.Vector3f;
@@ -16,7 +16,7 @@ public class BodyCastResult {
     private final Vector3f normal = new Vector3f();
     private float fraction;
     private int triangleIndex;
-    private @U64 long userMaterialId;
+    private @Unsigned long userMaterialId;
     private int iterations;
     private boolean hit;
 

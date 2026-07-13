@@ -2,12 +2,11 @@ package io.github.plixo2.framework;
 
 
 import io.github.plixo2.Example;
-import io.github.plixo2.abstraction.Camera;
-import io.github.plixo2.abstraction.Capabilities;
-import io.github.plixo2.abstraction.Color;
-import io.github.plixo2.abstraction.GLResourceManagement;
+import io.github.plixo2.box3d.internal.U64;
+import io.github.plixo2.framework.abstractions.*;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.region.Region;
+import io.github.plixo2.framework.abstractions.Mesh;
 import lombok.val;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -19,7 +18,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.github.plixo2.box3d.internal.Internal.U64_MAX;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR;
@@ -55,6 +53,7 @@ public class Entry implements AutoCloseable {
     private final List<NativeResource> closeables = new ArrayList<>();
 
     private final Camera.FreeCam camera;
+    private final Camera.ControlInput input = new Camera.ControlInput();
 
     private final SceneDrawing sceneRendering;
 
@@ -123,7 +122,6 @@ public class Entry implements AutoCloseable {
             GL.createCapabilities();
         }
 
-
         this.window = windowID;
 
         glfwSetKeyCallback(this.window, addCloseable(GLFWKeyCallback.create(this::keyCallback)));
@@ -140,7 +138,6 @@ public class Entry implements AutoCloseable {
         setRealWindowSize(this.window);
 
         Capabilities.get(); // static init
-
 
         // actual version can differ from requested version
         int[] major = new int[1];
@@ -179,8 +176,9 @@ public class Entry implements AutoCloseable {
         Capabilities.get().print();
 
         System.out.println();
-        System.out.println();
         System.out.println(ctrlReset);
+
+        GLGlobalState.reset();
 
         this.meshRenderer = new MeshRenderer();
         this.lineRenderer = new LineRenderer();
@@ -220,8 +218,7 @@ public class Entry implements AutoCloseable {
     }
 
     private void initExample() {
-        this.example.customColors.clear();
-        var meshFactory = new MeshFactory(this.meshRenderer, this.example.customColors);
+        var meshFactory = new MeshFactory(this.meshRenderer);
 
         this.example.init(meshFactory);
         if (this.example.worldID == null) {
@@ -263,7 +260,7 @@ public class Entry implements AutoCloseable {
         this.fpsCounter++;
 
 
-        this.example.update(dt);
+        this.example.update(dt, this.sceneRendering);
 
         var afterUpdate = System.nanoTime();
         var dtPhysics = (float) ((afterUpdate - now) / 1e9d);
@@ -271,12 +268,17 @@ public class Entry implements AutoCloseable {
 
         var t = glfwGetKey(this.window, GLFW_KEY_T) == GLFW_PRESS;
         if (t) {
-            this.example.update(dt);
-            this.example.update(dt);
-            this.example.update(dt);
+            this.example.update(dt, this.sceneRendering);
+            this.example.update(dt, this.sceneRendering);
+            this.example.update(dt, this.sceneRendering);
         }
 
-        this.camera.move(this.window, this.deltaX, this.deltaY, dt * 5f);
+        this.input.update(this.window, this.deltaX, this.deltaY);
+
+        var customMovement = this.example.customCameraMovement(this.camera, this.input, dt);
+        if (!customMovement) {
+            this.camera.move(this.input, dt * 5f);
+        }
 
         this.example.drawConfig.update(this.debugDraw);
 
@@ -294,7 +296,7 @@ public class Entry implements AutoCloseable {
                 usedMemoryMB()
         );
 
-        this.example.b3.worldDraw(this.example.worldID, this.debugDraw, U64_MAX);
+        Example.b3.worldDraw(this.example.worldID, this.debugDraw, U64.MAX);
 
         this.lineRenderer.addLine(0, 0, 0, 1, 0, 0, Color.RED.argb());
         this.lineRenderer.addLine(0, 0, 0, 0, 1, 0, Color.GREEN.argb());
@@ -324,6 +326,7 @@ public class Entry implements AutoCloseable {
 
     @Override
     public void close() {
+        GLGlobalState.reset();
         glfwSetWindowShouldClose(this.window, true);
 
         for (var closeable : this.closeables) {

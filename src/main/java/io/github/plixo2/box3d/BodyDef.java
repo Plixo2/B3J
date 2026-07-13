@@ -1,6 +1,6 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.Internal;
+import io.github.plixo2.box3d.internal.B3JUtil;
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import lombok.Getter;
 import lombok.Setter;
@@ -77,7 +77,7 @@ public class BodyDef {
         b3BodyDef.angularDamping(segment, this.angularDamping);
         b3BodyDef.gravityScale(segment, this.gravityScale);
         b3BodyDef.sleepThreshold(segment, this.sleepThreshold);
-        b3BodyDef.name(segment, Internal.allocNullString(arena, this.name));
+        b3BodyDef.name(segment, B3JUtil.allocNullString(arena, this.name));
         this.motionLocks.put(b3BodyDef.motionLocks(segment));
         b3BodyDef.enableSleep(segment, this.enableSleep);
         b3BodyDef.isAwake(segment, this.isAwake);

@@ -15,10 +15,12 @@ public final class PrimitiveMemOps {
     private static final long rotation_vec_offset = b3Quat.v$offset();
     private static final long rotation_w_offset = b3Quat.s$offset();
 
-
     private static final long transform_rot_w_offset = transform_rot_offset + rotation_w_offset;
     private static final long transform_rot_vec_offset = transform_rot_offset + rotation_vec_offset;
 
+    private static final long mat3_cx_offset = b3Matrix3.cx$offset();
+    private static final long mat3_cy_offset = b3Matrix3.cy$offset();
+    private static final long mat3_cz_offset = b3Matrix3.cz$offset();
 
     public static void putQuat(MemorySegment segment, Quaternionf quat) {
         putQuat(segment, quat.x(), quat.y(), quat.z(), quat.w());
@@ -60,21 +62,41 @@ public final class PrimitiveMemOps {
     }
 
     public static void putMat3(MemorySegment segment, Matrix3f matrix) {
-        putVec3(b3Matrix3.cx(segment), matrix.m00(), matrix.m01(), matrix.m02());
-        putVec3(b3Matrix3.cy(segment), matrix.m10(), matrix.m11(), matrix.m12());
-        putVec3(b3Matrix3.cz(segment), matrix.m20(), matrix.m21(), matrix.m22());
+        putMat3(segment, matrix, 0);
+    }
+    public static void putMat3(MemorySegment segment, Matrix3f matrix, long offset) {
+
+        segment.set(ValueLayout.JAVA_FLOAT, offset + mat3_cx_offset + Float.BYTES * 0, matrix.m00);
+        segment.set(ValueLayout.JAVA_FLOAT, offset + mat3_cx_offset + Float.BYTES * 1, matrix.m01);
+        segment.set(ValueLayout.JAVA_FLOAT, offset + mat3_cx_offset + Float.BYTES * 2, matrix.m02);
+
+        segment.set(ValueLayout.JAVA_FLOAT, offset + mat3_cy_offset + Float.BYTES * 0, matrix.m10);
+        segment.set(ValueLayout.JAVA_FLOAT, offset + mat3_cy_offset + Float.BYTES * 1, matrix.m11);
+        segment.set(ValueLayout.JAVA_FLOAT, offset + mat3_cy_offset + Float.BYTES * 2, matrix.m12);
+
+        segment.set(ValueLayout.JAVA_FLOAT, offset + mat3_cz_offset + Float.BYTES * 0, matrix.m20);
+        segment.set(ValueLayout.JAVA_FLOAT, offset + mat3_cz_offset + Float.BYTES * 1, matrix.m21);
+        segment.set(ValueLayout.JAVA_FLOAT, offset + mat3_cz_offset + Float.BYTES * 2, matrix.m22);
+
     }
 
     public static Matrix3f setMat3(Matrix3f matrix, MemorySegment segment) {
-        matrix.m00(b3Vec3.x(b3Matrix3.cx(segment)));
-        matrix.m01(b3Vec3.y(b3Matrix3.cx(segment)));
-        matrix.m02(b3Vec3.z(b3Matrix3.cx(segment)));
-        matrix.m10(b3Vec3.x(b3Matrix3.cy(segment)));
-        matrix.m11(b3Vec3.y(b3Matrix3.cy(segment)));
-        matrix.m12(b3Vec3.z(b3Matrix3.cy(segment)));
-        matrix.m20(b3Vec3.x(b3Matrix3.cz(segment)));
-        matrix.m21(b3Vec3.y(b3Matrix3.cz(segment)));
-        matrix.m22(b3Vec3.z(b3Matrix3.cz(segment)));
+        return setMat3(matrix, segment, 0);
+    }
+    public static Matrix3f setMat3(Matrix3f matrix, MemorySegment segment, long offset) {
+
+        matrix.m00 = segment.get(ValueLayout.JAVA_FLOAT, offset + mat3_cx_offset + Float.BYTES * 0);
+        matrix.m01 = segment.get(ValueLayout.JAVA_FLOAT, offset + mat3_cx_offset + Float.BYTES * 1);
+        matrix.m02 = segment.get(ValueLayout.JAVA_FLOAT, offset + mat3_cx_offset + Float.BYTES * 2);
+
+        matrix.m10 = segment.get(ValueLayout.JAVA_FLOAT, offset + mat3_cy_offset + Float.BYTES * 0);
+        matrix.m11 = segment.get(ValueLayout.JAVA_FLOAT, offset + mat3_cy_offset + Float.BYTES * 1);
+        matrix.m12 = segment.get(ValueLayout.JAVA_FLOAT, offset + mat3_cy_offset + Float.BYTES * 2);
+
+        matrix.m20 = segment.get(ValueLayout.JAVA_FLOAT, offset + mat3_cz_offset + Float.BYTES * 0);
+        matrix.m21 = segment.get(ValueLayout.JAVA_FLOAT, offset + mat3_cz_offset + Float.BYTES * 1);
+        matrix.m22 = segment.get(ValueLayout.JAVA_FLOAT, offset + mat3_cz_offset + Float.BYTES * 2);
+
         return matrix;
     }
 
@@ -157,6 +179,8 @@ public final class PrimitiveMemOps {
         }
     }
 
+    //<editor-fold desc="Packed BodyID, ShapeID & JointID" default-state="collapsed">
+
 
     public static long packID(MemorySegment segment) {
         return packID(segment, 0);
@@ -181,6 +205,11 @@ public final class PrimitiveMemOps {
     public static boolean isPackedIDNull(long packed) {
         return getIndexFromPacked(packed) == 0;
     }
+    //</editor-fold>
+
+
+    //<editor-fold desc="Packed WorldID" default-state="collapsed">
+
 
     public static long packWorldID(MemorySegment segment) {
         return packWorldID(segment, 0);
@@ -203,6 +232,6 @@ public final class PrimitiveMemOps {
     public static boolean isPackedWorldIDNull(long packed) {
         return getWorldIDIndexFromPackedID(packed) == 0;
     }
-
+    //</editor-fold>
 
 }

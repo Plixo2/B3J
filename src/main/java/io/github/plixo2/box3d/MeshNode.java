@@ -1,22 +1,26 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
-import io.github.plixo2.box3d.internal.U32;
+import io.github.plixo2.box3d.internal.Unsigned;
+import lombok.Getter;
+import lombok.Setter;
 import org.box2d.box3d.b3MeshNode;
 import org.joml.Vector3f;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
+@Getter
+@Setter
 public class MeshNode {
 
     public Vector3f lowerBound = new Vector3f();
-    public @U32 int axis;
-    public @U32 int childOffset;
-    public @U32 int type;
-    public @U32 int triangleCount;
+    public @Unsigned int axis;
+    public @Unsigned int childOffset;
+    public @Unsigned int type;
+    public @Unsigned int triangleCount;
     public Vector3f upperBound = new Vector3f();
-    public @U32 int triangleOffset;
+    public @Unsigned int triangleOffset;
 
     public MeshNode() {
 

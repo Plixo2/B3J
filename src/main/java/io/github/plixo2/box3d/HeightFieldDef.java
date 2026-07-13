@@ -1,6 +1,6 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.Internal;
+import io.github.plixo2.box3d.internal.B3JUtil;
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import lombok.Getter;
 import lombok.Setter;
@@ -92,19 +92,12 @@ public class HeightFieldDef {
     public void materialIndices(ByteBuffer materialIndices) {
         materialIndices(MemorySegment.ofBuffer(materialIndices));
     }
-    public void materialIndices(int[] materialIndices) {
-        var bytes = new byte[materialIndices.length];
-        for (int i = 0; i < materialIndices.length; i++) {
-            bytes[i] = Internal.assertU8(materialIndices[i], "materialIndex");
-        }
-        materialIndices(bytes);
-    }
 
     MemorySegment create(SegmentAllocator arena) {
 
         var segment = b3HeightFieldDef.allocate(arena);
 
-        b3HeightFieldDef.heights(segment, Internal.ensureOffHeap(arena, this.heights));
+        b3HeightFieldDef.heights(segment, B3JUtil.ensureOffHeap(arena, this.heights));
 
         b3HeightFieldDef.materialIndices(segment, this.materialIndices);
         PrimitiveMemOps.putVec3(b3HeightFieldDef.scale(segment), this.scale);

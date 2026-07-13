@@ -1,8 +1,7 @@
 package io.github.plixo2.framework;
 
-import io.github.plixo2.abstraction.texture.*;
+import io.github.plixo2.framework.abstractions.texture.*;
 import lombok.Getter;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Vector4f;
 
 import javax.imageio.ImageIO;
@@ -60,7 +59,7 @@ public class TextAtlas {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Failed to load font atlas texture: " + e.getMessage());
+                System.err.println("Failed to load font metrics: " + e.getMessage());
             }
         });
 
@@ -106,6 +105,7 @@ public class TextAtlas {
         }
     }
 
+    // generator for atlas & metrics
     public static class Writer {
 
         void main() {
@@ -165,17 +165,14 @@ public class TextAtlas {
 
         private static Atlas tryBuildAtlas(Font font, int size) {
 
-
             var color = java.awt.Color.WHITE;
             var padding = 4;
             var bg = new java.awt.Color(255, 255, 255, 0);
-
 
             var image = image(size);
             var gfx = graphics(image, font, bg, color);
 
             var fm = gfx.getFontMetrics();
-
             var glyphHeight = fm.getHeight();
             var glyphAscent = fm.getAscent();
 
@@ -211,7 +208,6 @@ public class TextAtlas {
                 metrics[i] = Metric.create(positionX, positionY, glyphWidth, glyphHeight, size);
                 positionX += glyphWidth + padding;
             }
-
 
             return new Atlas(image, gfx, metrics, success);
         }

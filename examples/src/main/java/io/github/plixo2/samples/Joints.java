@@ -1,7 +1,7 @@
 package io.github.plixo2.samples;
 
 import io.github.plixo2.Example;
-import io.github.plixo2.abstraction.Color;
+import io.github.plixo2.framework.abstractions.Color;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.internal.U64;
 import io.github.plixo2.box3d.tasks.BuildInScheduler;
@@ -41,15 +41,15 @@ public class Joints extends Example {
         }
 
         worldDef.gravity().set(0, -10f, 0);
-        this.worldID = this.b3.createWorld(this.region, worldDef);
+        this.worldID = b3.createWorld(this.region, worldDef);
         var bodyDef = new BodyDef();
         bodyDef.position().set(0, -10f, 0);
-        var groundID = this.b3.createBody(this.region, this.worldID, bodyDef);
-        var groundBox = this.b3.makeBoxHull(50.0f, 10.0f, 50.0f);
+        var groundID = b3.createBody(this.region, this.worldID, bodyDef);
+        var groundBox = b3.makeBoxHull(50.0f, 10.0f, 50.0f);
         ShapeDef groundShapeDef = new ShapeDef();
         groundShapeDef.filter().categoryBits = GROUND_CATEGORY;
         groundShapeDef.enableCustomFiltering(true);
-        var _ = this.b3.createHullShape(groundID, groundShapeDef, groundBox.base());
+        var _ = b3.createHullShape(groundID, groundShapeDef, groundBox.base());
 
 
         revolute(2 + -20);
@@ -88,12 +88,12 @@ public class Joints extends Example {
 
         var boxA = spawnBox(BodyType.DYNAMIC, shapeDef, new Vector3f(1.5f, 0.5f, 0.5f), position);
         var boxB = spawnBox(BodyType.DYNAMIC, shapeDef, new Vector3f(0.5f, 1.5f, 0.5f), position);
-        this.b3.bodyEnableSleep(boxA, false);
-        this.b3.bodyEnableSleep(boxB, false);
-        this.b3.bodySetTransform(boxB, position, rotationB);
+        b3.bodyEnableSleep(boxA, false);
+        b3.bodyEnableSleep(boxB, false);
+        b3.bodySetTransform(boxB, position, rotationB);
 
         var jointDef = new FilterJointDef(boxA, boxB);
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
     }
     //</editor-fold>
 
@@ -106,11 +106,11 @@ public class Joints extends Example {
     private void createParallelKeeper(Vector3f position, float angle, float hertz, float dampingRatio, float maxTorque) {
         var reference = createMotorController(position);
         var body = spawnBox(BodyType.DYNAMIC, new Vector3f(0.6f, 1.8f, 0.6f), position);
-        this.b3.bodyEnableSleep(body, false);
+        b3.bodyEnableSleep(body, false);
 
-        var transform = this.b3.bodyGetTransform(new Matrix4f(), body);
+        var transform = b3.bodyGetTransform(new Matrix4f(), body);
         transform.rotateZ(angle);
-        this.b3.bodySetTransform(body, transform);
+        b3.bodySetTransform(body, transform);
 
         var axis = new Quaternionf().rotateX(Math.PI_OVER_2_f);
         var jointDef = new ParallelJointDef(reference, body);
@@ -120,7 +120,7 @@ public class Joints extends Example {
         jointDef.dampingRatio(dampingRatio);
         jointDef.maxTorque(maxTorque);
 
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
     }
     //</editor-fold>
 
@@ -148,19 +148,19 @@ public class Joints extends Example {
     private void createBallSocket(Vector3f pivot, Consumer<SphericalJointDef> configure) {
         var anchor = spawnSphere(BodyType.STATIC, 0.2f, pivot);
         var body = spawnBox(BodyType.DYNAMIC, new Vector3f(0.5f, 1.8f, 0.5f), new Vector3f(0, -0.9f, 0).add(pivot));
-        this.b3.bodyEnableSleep(body, false);
+        b3.bodyEnableSleep(body, false);
 
         var jointDef = new SphericalJointDef(anchor, body);
         var axis = new Quaternionf().rotateX(Math.PI_OVER_2_f);
-        var localA = this.b3.bodyGetLocalPoint(new Vector3f(), anchor, pivot);
-        var localB = this.b3.bodyGetLocalPoint(new Vector3f(), body, pivot);
+        var localA = b3.bodyGetLocalPoint(new Vector3f(), anchor, pivot);
+        var localB = b3.bodyGetLocalPoint(new Vector3f(), body, pivot);
 
         jointDef.base().localFrameA().translationRotate(localA, axis);
         jointDef.base().localFrameB().translationRotate(localB, axis);
 
         configure.accept(jointDef);
 
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
     }
     //</editor-fold>
 
@@ -174,8 +174,8 @@ public class Joints extends Example {
         chassisDef.filter().groupIndex = carGroup;
         chassisDef.enableCustomFiltering(true);
         var chassis = spawnBox(BodyType.DYNAMIC, chassisDef, new Vector3f(3.5f, 0.5f, 1.4f), chassisPosition);
-        this.b3.bodyEnableSleep(chassis, false);
-        this.b3.bodySetName(chassis, "wheel-car");
+        b3.bodyEnableSleep(chassis, false);
+        b3.bodySetName(chassis, "wheel-car");
 
         var angle = Math.toRadians(-45.0f);
         var angle2 = Math.toRadians(5.0f);
@@ -200,8 +200,8 @@ public class Joints extends Example {
             var y = -0.14f + 0.08f * (i % 2) ;
             var left = spawnSphere(BodyType.STATIC, 0.35f, new Vector3f(x + 0.7f , y, z + i));
             var right = spawnSphere(BodyType.STATIC, 0.35f, new Vector3f(x - 0.7f, y, z + i));
-            this.b3.bodySetName(left, "wheel-bump");
-            this.b3.bodySetName(right, "wheel-bump");
+            b3.bodySetName(left, "wheel-bump");
+            b3.bodySetName(right, "wheel-bump");
         }
     }
     private void createCarWheel(
@@ -220,8 +220,8 @@ public class Joints extends Example {
         var jointDef = new WheelJointDef(chassis, wheel);
         var suspensionFrame = new Quaternionf().rotateZ(Math.PI_OVER_2_f);
         var wheelFrame = new Quaternionf().rotateX(-Math.PI_OVER_2_f).mul(suspensionFrame);
-        var localA = this.b3.bodyGetLocalPoint(new Vector3f(), chassis, wheelPosition);
-        var localB = this.b3.bodyGetLocalPoint(new Vector3f(), wheel, wheelPosition);
+        var localA = b3.bodyGetLocalPoint(new Vector3f(), chassis, wheelPosition);
+        var localB = b3.bodyGetLocalPoint(new Vector3f(), wheel, wheelPosition);
 
         jointDef.base().localFrameA().translationRotate(localA, suspensionFrame);
         jointDef.base().localFrameB().translationRotate(localB, wheelFrame);
@@ -241,27 +241,27 @@ public class Joints extends Example {
         jointDef.targetSteeringAngle(steeringAngle);
         jointDef.maxSteeringTorque(200.0f);
 
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
 
         var filterDef = new FilterJointDef(chassis, wheel);
-        var _ = this.b3.createJoint(this.worldID, filterDef);
+        var _ = b3.createJoint(this.worldID, filterDef);
     }
     private BodyID createWheelBody(Vector3f position, float friction, int carGroup) {
         var bodyDef = new BodyDef();
         bodyDef.type(BodyType.DYNAMIC);
         bodyDef.position().set(position);
         bodyDef.rotation().rotateX(Math.PI_OVER_2_f);
-        var wheel = this.b3.createBody(this.region, this.worldID, bodyDef);
+        var wheel = b3.createBody(this.region, this.worldID, bodyDef);
 
         var wheelDef = new ShapeDef();
         wheelDef.density(1.0f);
         wheelDef.baseMaterial().friction(friction);
         wheelDef.filter().groupIndex = carGroup;
         wheelDef.enableCustomFiltering(true);
-        var cylinder = this.b3.createCylinder(0.35f, 0.45f, -0.35f / 2f, 24);
-        var _ = this.b3.createHullShape(wheel, wheelDef, cylinder);
-        this.b3.bodyEnableSleep(wheel, false);
-        this.b3.bodySetName(wheel, "wheel");
+        var cylinder = b3.createCylinder(0.35f, 0.45f, -0.35f / 2f, 24);
+        var _ = b3.createHullShape(wheel, wheelDef, cylinder);
+        b3.bodyEnableSleep(wheel, false);
+        b3.bodySetName(wheel, "wheel");
 
         return wheel;
     }
@@ -276,14 +276,14 @@ public class Joints extends Example {
     private void createVelocityMotor(Vector3f position) {
         var controller = createMotorController(position);
         var driven = spawnBox(BodyType.DYNAMIC, new Vector3f(0.7f, 0.7f, 0.7f), position);
-        this.b3.bodyEnableSleep(driven, false);
+        b3.bodyEnableSleep(driven, false);
 
         var wall = spawnBox(
                 BodyType.STATIC,
                 new Vector3f(0.3f, 2.0f, 2.0f),
                 new Vector3f(4, 0, 0).add(position)
         );
-        this.b3.bodySetName(wall, "motor-block");
+        b3.bodySetName(wall, "motor-block");
 
         var jointDef = new MotorJointDef(controller, driven);
         jointDef.linearVelocity().set(2.0f, 0.0f, 0.0f);
@@ -291,17 +291,17 @@ public class Joints extends Example {
         jointDef.angularVelocity().set(0.0f, 3.0f, 0.0f);
         jointDef.maxVelocityTorque(12.0f);
 
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
     }
     private void createSpringMotor(Vector3f position) {
         var controller = createMotorController(position);
         var startPosition = new Vector3f(2.5f, 1.0f, 0).add(position);
         var driven = spawnBox(BodyType.DYNAMIC, new Vector3f(0.8f, 0.8f, 0.8f), startPosition);
-        this.b3.bodyEnableSleep(driven, false);
+        b3.bodyEnableSleep(driven, false);
 
-        var transform = this.b3.bodyGetTransform(new Matrix4f(), driven);
+        var transform = b3.bodyGetTransform(new Matrix4f(), driven);
         transform.rotateZ(Math.PI_OVER_2_f * 0.5f);
-        this.b3.bodySetTransform(driven, transform);
+        b3.bodySetTransform(driven, transform);
 
         var jointDef = new MotorJointDef(controller, driven);
         jointDef.linearHertz(1.5f);
@@ -311,7 +311,7 @@ public class Joints extends Example {
         jointDef.angularDampingRatio(0.7f);
         jointDef.maxSpringTorque(20.0f);
 
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
     }
     private void createFollowerMotor(Vector3f position) {
         var radius = 2.0f;
@@ -319,14 +319,14 @@ public class Joints extends Example {
         var targetPosition = new Vector3f(radius, 0, 0).add(position);
         var controller = createMotorController(targetPosition, BodyType.KINEMATIC);
         var driven = spawnBox(BodyType.DYNAMIC, new Vector3f(0.65f, 0.65f, 0.65f), targetPosition);
-        this.b3.bodyEnableSleep(driven, false);
+        b3.bodyEnableSleep(driven, false);
 
         var velocity = new Vector3f();
         update((_) -> {
             velocity.x = -Math.sin(this.time * speed) * radius * speed;
             velocity.y =  Math.cos(this.time * speed) * radius * speed;
             velocity.z = 0.0f;
-            this.b3.bodySetLinearVelocity(controller, velocity);
+            b3.bodySetLinearVelocity(controller, velocity);
         });
 
         var jointDef = new MotorJointDef(controller, driven);
@@ -336,7 +336,7 @@ public class Joints extends Example {
         jointDef.angularVelocity().set(0.0f, 2.0f, 0.0f);
         jointDef.maxVelocityTorque(8.0f);
 
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
     }
     private BodyID createMotorController(Vector3f position) {
         return createMotorController(position, BodyType.STATIC);
@@ -345,7 +345,7 @@ public class Joints extends Example {
         var bodyDef = new BodyDef();
         bodyDef.type(type);
         bodyDef.position().set(position);
-        return this.b3.createBody(this.region, this.worldID, bodyDef);
+        return b3.createBody(this.region, this.worldID, bodyDef);
     }
     //</editor-fold>
 
@@ -363,12 +363,12 @@ public class Joints extends Example {
         for (var i = 1; i < count; i++) {
             var offset = new Vector3f(i * size.x, 0, 0);
             var segment = spawnBox(BodyType.DYNAMIC, size, new Vector3f(position).add(offset));
-            this.b3.bodyEnableSleep(segment, false);
+            b3.bodyEnableSleep(segment, false);
 
             var jointPosition = new Vector3f(position).add((i - 0.5f) * size.x, 0, 0);
             var jointDef = new WeldJointDef(previous, segment);
-            var localA = this.b3.bodyGetLocalPoint(new Vector3f(), previous, jointPosition);
-            var localB = this.b3.bodyGetLocalPoint(new Vector3f(), segment, jointPosition);
+            var localA = b3.bodyGetLocalPoint(new Vector3f(), previous, jointPosition);
+            var localB = b3.bodyGetLocalPoint(new Vector3f(), segment, jointPosition);
 
             jointDef.base().localFrameA().translation(localA);
             jointDef.base().localFrameB().translation(localB);
@@ -377,7 +377,7 @@ public class Joints extends Example {
             jointDef.linearDampingRatio(damp);
             jointDef.angularDampingRatio(damp);
 
-            var _ = this.b3.createJoint(this.worldID, jointDef);
+            var _ = b3.createJoint(this.worldID, jointDef);
 
             previous = segment;
         }
@@ -388,12 +388,12 @@ public class Joints extends Example {
         var weightSize = new Vector3f(1.0f, 1.0f, 1.0f);
         var weightPosition = new Vector3f(position).add(count * size.x, 0, 0);
         var weight = spawnBox(BodyType.DYNAMIC, weightDef, weightSize, weightPosition);
-        this.b3.bodyEnableSleep(weight, false);
+        b3.bodyEnableSleep(weight, false);
 
         var jointPosition = new Vector3f(position).add((count - 0.5f) * size.x, 0, 0);
         var jointDef = new WeldJointDef(previous, weight);
-        var localA = this.b3.bodyGetLocalPoint(new Vector3f(), previous, jointPosition);
-        var localB = this.b3.bodyGetLocalPoint(new Vector3f(), weight, jointPosition);
+        var localA = b3.bodyGetLocalPoint(new Vector3f(), previous, jointPosition);
+        var localB = b3.bodyGetLocalPoint(new Vector3f(), weight, jointPosition);
 
         jointDef.base().localFrameA().translation(localA);
         jointDef.base().localFrameB().translation(localB);
@@ -402,7 +402,7 @@ public class Joints extends Example {
         jointDef.linearDampingRatio(damp);
         jointDef.angularDampingRatio(damp);
 
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
     }
     //</editor-fold>
 
@@ -438,7 +438,7 @@ public class Joints extends Example {
             jointDef.maxMotorForce(3.0f);
             jointDef.motorSpeed(0.0f);
         });
-        this.b3.bodySetLinearVelocity(frictionSlider, new Vector3f(5, 0, 0));
+        b3.bodySetLinearVelocity(frictionSlider, new Vector3f(5, 0, 0));
     }
     private BodyID createSlider(Vector3f position, float initialTranslation, Consumer<PrismaticJointDef> configure) {
         var rail = spawnBox(BodyType.STATIC, new Vector3f(5.0f, 0.15f, 0.15f), position);
@@ -448,20 +448,20 @@ public class Joints extends Example {
 
         var sliderPosition = new Vector3f(initialTranslation, 0.45f, 0).add(position);
         var slider = spawnBox(BodyType.DYNAMIC, new Vector3f(0.7f, 0.5f, 0.5f), sliderPosition);
-        this.b3.bodyEnableSleep(slider, false);
+        b3.bodyEnableSleep(slider, false);
 
         var jointDef = new PrismaticJointDef(rail, slider);
         var worldFrameA = new Vector3f(0, 0.45f, 0).add(position);
 
-        var localA = this.b3.bodyGetLocalPoint(new Vector3f(), rail, worldFrameA);
-        var localB = this.b3.bodyGetLocalPoint(new Vector3f(), slider, sliderPosition);
+        var localA = b3.bodyGetLocalPoint(new Vector3f(), rail, worldFrameA);
+        var localB = b3.bodyGetLocalPoint(new Vector3f(), slider, sliderPosition);
 
         jointDef.base().localFrameA().translation(localA);
         jointDef.base().localFrameB().translation(localB);
 
         configure.accept(jointDef);
 
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
 
         return slider;
     }
@@ -500,7 +500,7 @@ public class Joints extends Example {
         update((_) -> {
 
             velo.z = Math.sin(this.time * speed) * distance;
-            this.b3.bodySetLinearVelocity(control, velo);
+            b3.bodySetLinearVelocity(control, velo);
 
         });
 
@@ -513,7 +513,7 @@ public class Joints extends Example {
         configure.accept(jointDef);
 
 
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
 
     }
     //</editor-fold>
@@ -536,19 +536,19 @@ public class Joints extends Example {
         var w = new Vector3f(0.86f, 2.1f, 0.1f);
         var p = new Vector3f(w.x / 2f, w.y / 2f, 0).add(position);
         var door = spawnBox(BodyType.DYNAMIC, boxDef, w, p);
-        this.b3.bodyEnableSleep(door, false);
-        this.b3.bodySetName(door, "door");
+        b3.bodyEnableSleep(door, false);
+        b3.bodySetName(door, "door");
 
         var hw = new Vector3f(0.1f, w.y, 0.1f);
         var hp = new Vector3f(-hw.x / 2f, w.y / 2f, 0).add(position);
         var hinge = spawnBox(BodyType.STATIC, hw, hp);
-        this.b3.bodySetName(hinge, "hinge");
+        b3.bodySetName(hinge, "hinge");
 
         var worldPivot = new Vector3f(w.z / 2f,  w.y / 2f, 0).add(position);
 
         var jointDef = new RevoluteJointDef(hinge, door);
-        var localA = this.b3.bodyGetLocalPoint(new Vector3f(), hinge, worldPivot);
-        var localB = this.b3.bodyGetLocalPoint(new Vector3f(), door, worldPivot);
+        var localA = b3.bodyGetLocalPoint(new Vector3f(), hinge, worldPivot);
+        var localB = b3.bodyGetLocalPoint(new Vector3f(), door, worldPivot);
 
         var axis = new Quaternionf();
         axis.rotateX(Math.PI_OVER_2_f);
@@ -571,42 +571,42 @@ public class Joints extends Example {
         }
 
         // is destroyed when any body is destroyed
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
     }
     private void spawnFalling(Vector3f position) {
 
         var cubeA = spawnAngleBox(new Vector3f(-0.5f, 6, 0).add(position), 45f);
         var cubeB = spawnAngleBox(new Vector3f( 0.5f, 6, 0).add(position), -45f);
 
-        this.b3.bodySetName(cubeA, "cube-A");
-        this.b3.bodySetName(cubeB, "cube-B");
+        b3.bodySetName(cubeA, "cube-A");
+        b3.bodySetName(cubeB, "cube-B");
 
         var worldPivot = new Vector3f(0, 5.5f, 0).add(position);
 
         var jointDef = new RevoluteJointDef(cubeA, cubeB);
 
 
-        var localA = this.b3.bodyGetLocalPoint(new Vector3f(), cubeA, worldPivot);
-        var localB = this.b3.bodyGetLocalPoint(new Vector3f(), cubeB, worldPivot);
+        var localA = b3.bodyGetLocalPoint(new Vector3f(), cubeA, worldPivot);
+        var localB = b3.bodyGetLocalPoint(new Vector3f(), cubeB, worldPivot);
 
         jointDef.base().localFrameA().translation(localA);
         jointDef.base().localFrameB().translation(localB);
 
         // is destroyed when any body is destroyed
-        var _ = this.b3.createJoint(this.worldID, jointDef);
+        var _ = b3.createJoint(this.worldID, jointDef);
 
         var _ = spawnSphere(BodyType.STATIC, 0.2f, new Vector3f(0, 5, -0.1f).add(position));
     }
     private BodyID spawnAngleBox(Vector3f position, float rotation) {
         var bodyId = spawnBox(BodyType.DYNAMIC, position);
 
-        var transform = this.b3.bodyGetTransform(new Matrix4f(), bodyId);
+        var transform = b3.bodyGetTransform(new Matrix4f(), bodyId);
         var localPivot = Math.signum(rotation) * 0.5f;
         transform.translate(localPivot, -0.5f, 0)
                  .rotateZ(Math.toRadians(rotation))
                  .translate(-localPivot, 0.5f, 0);
 
-        this.b3.bodySetTransform(bodyId, transform);
+        b3.bodySetTransform(bodyId, transform);
 
         return bodyId;
     }
@@ -631,7 +631,7 @@ public class Joints extends Example {
             update.update(timeStep);
         }
 
-        this.b3.worldStep(this.worldID, timeStep, subStepCount);
+        b3.worldStep(this.worldID, timeStep, subStepCount);
     }
 
 

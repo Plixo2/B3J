@@ -1,11 +1,10 @@
 package io.github.plixo2.box3d;
 
 
+import io.github.plixo2.box3d.internal.AllocatedShapeCallbacks;
 import lombok.Getter;
 import org.box2d.box3d.*;
-import org.jetbrains.annotations.Nullable;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 
 /// Abstraction for both `b3CreateDebugShapeCallback` and `b3DestroyDebugShapeCallback`
@@ -23,7 +22,6 @@ public abstract class DebugShapeCallbacks<T> {
 
     /// b3DestroyDebugShapeCallback
     protected abstract void delete(T object);
-
 
 
     private void delete(MemorySegment ptr, MemorySegment userContext) {
@@ -95,33 +93,8 @@ public abstract class DebugShapeCallbacks<T> {
 
     }
 
-
-
-
-    static final class Allocated {
-        @SuppressWarnings("unused")
-        private DebugShapeCallbacks<?> collection; // keep alive
-
-        private Arena arena;
-
-        MemorySegment creation;
-        MemorySegment deletion;
-
-        Allocated(DebugShapeCallbacks<?> collection) {
-            this.collection = collection;
-            this.arena = Arena.ofConfined();
-            this.creation = b3CreateDebugShapeCallback.allocate(collection::create, this.arena);
-            this.deletion = b3DestroyDebugShapeCallback.allocate(collection::delete, this.arena);
-        }
-
-        void close() {
-            this.arena.close();
-            this.arena = null;
-            this.collection = null;
-            this.creation = null;
-            this.deletion = null;
-        }
+    AllocatedShapeCallbacks createCallbacks() {
+        return AllocatedShapeCallbacks.createCallbacks(this, this::create, this::delete);
     }
-
 
 }

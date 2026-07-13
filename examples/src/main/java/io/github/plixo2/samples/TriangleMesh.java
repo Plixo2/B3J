@@ -29,7 +29,7 @@ public class TriangleMesh extends Example {
         }
 
         worldDef.gravity().set(0, -10f, 0);
-        this.worldID = this.b3.createWorld(this.region, worldDef);
+        this.worldID = b3.createWorld(this.region, worldDef);
 
         var rd = new Random();
 
@@ -50,13 +50,13 @@ public class TriangleMesh extends Example {
                     0.5f,
                     new Vector3f(rx, 21 + ry, rz)
             );
-            this.b3.bodySetName(sphere, "Sphere " + i);
+            b3.bodySetName(sphere, "Sphere " + i);
         }
 
         var dynBodyDef = new BodyDef();
         dynBodyDef.type(BodyType.STATIC);
         dynBodyDef.position().set(0, -10, 0);
-        BodyID bodyId = this.b3.createBody(this.region, this.worldID, dynBodyDef);
+        BodyID bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
 
         MeshDef meshDef;
         try {
@@ -68,7 +68,7 @@ public class TriangleMesh extends Example {
         meshDef.weldVertices(true);
         meshDef.identifyEdges(true);
 
-        var meshData = this.b3.createMesh(this.region, meshDef);
+        var meshData = b3.createMesh(this.region, meshDef);
         if (meshData == null) {
             System.err.println("Failed to create mesh");
             return;
@@ -78,7 +78,7 @@ public class TriangleMesh extends Example {
         shapeDef.density(1.0f);
         shapeDef.baseMaterial().friction(0.1f);
 
-        var _ = this.b3.createMeshShape(bodyId, shapeDef, meshData, new Vector3f(30f));
+        var _ = b3.createMeshShape(bodyId, shapeDef, meshData, new Vector3f(30f));
 
     }
 

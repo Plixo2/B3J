@@ -9,7 +9,25 @@ import java.lang.foreign.MemorySegment;
 import java.util.Objects;
 
 public final class BodyID {
+
     public static final BodyID NULL_ID = new BodyID(null, null, 0);
+
+    public static BodyID fromUnknown(long packedID) {
+        return fromUnknown(packedID, null);
+    }
+
+    public static BodyID fromUnknown(long packedID, @Nullable Region region) {
+        B3 b3 = null;
+        if (region != null) {
+            b3 = B3.get();
+        }
+        return new BodyID(
+                b3,
+                region,
+                packedID
+        );
+    }
+
 
     private final long packedID;
 
@@ -35,6 +53,8 @@ public final class BodyID {
         return this.packedID;
     }
 
+
+
     @Override
     public boolean equals(Object object) {
         if (!(object instanceof BodyID bodyID)) {
@@ -54,6 +74,7 @@ public final class BodyID {
     }
 
 
+
     static BodyID of(
             B3 instance,
             Region region,
@@ -67,6 +88,7 @@ public final class BodyID {
                 identifier
         );
     }
+
     static BodyID of(
             MemorySegment segment
     ) {

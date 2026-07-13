@@ -1,66 +1,44 @@
 package io.github.plixo2.box3d;
 
 
-import io.github.plixo2.box3d.internal.Internal;
-import io.github.plixo2.box3d.internal.U64;
+import io.github.plixo2.box3d.internal.B3JUtil;
+import io.github.plixo2.box3d.internal.Unsigned;
+import lombok.Getter;
+import lombok.Setter;
 import org.box2d.box3d.b3QueryFilter;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.util.Objects;
+import java.lang.foreign.SegmentAllocator;
 
+@Getter
+@Setter
 public class QueryFilter {
 
-    final MemorySegment segment;
-    private @Nullable String name = null;
+    private @Unsigned long categoryBits;
+    private @Unsigned long maskBits;
+    private @Unsigned long id;
+    private @Nullable String name;
 
     /// @api b3DefaultQueryFilter
     public QueryFilter() {
         this(B3.DEFAULT_CATEGORY_BITS, B3.DEFAULT_MASK_BITS);
     }
 
-    public QueryFilter(@U64 long categoryBits, @U64 long maskBits) {
-        this.segment = b3QueryFilter.allocate(Arena.ofAuto());
-        categoryBits(categoryBits);
-        maskBits(maskBits);
+    public QueryFilter(@Unsigned long categoryBits, @Unsigned long maskBits) {
+        this.categoryBits = categoryBits;
+        this.maskBits = maskBits;
     }
 
-    public void categoryBits(@U64 long categoryBits) {
-        b3QueryFilter.categoryBits(this.segment, categoryBits);
-    }
+    MemorySegment create(SegmentAllocator arena) {
+        var segment = b3QueryFilter.allocate(arena);
 
-    public void maskBits(@U64 long maskBits) {
-        b3QueryFilter.maskBits(this.segment, maskBits);
-    }
+        b3QueryFilter.categoryBits(segment, this.categoryBits);
+        b3QueryFilter.maskBits(segment, this.maskBits);
+        b3QueryFilter.name(segment, B3JUtil.allocNullString(arena, this.name));
+        b3QueryFilter.id(segment, this.id);
 
-    public void id(@U64 long id) {
-        b3QueryFilter.id(this.segment, id);
-    }
-
-    public void name(@Nullable String name) {
-        if (Objects.equals(this.name, name)) {
-            return;
-        }
-
-        this.name = name;
-        try (var arena = Arena.ofConfined()) {
-            b3QueryFilter.name(this.segment, Internal.allocNullString(arena, name));
-        }
-    }
-
-    public @U64 long categoryBits() {
-        return b3QueryFilter.categoryBits(this.segment);
-    }
-    public @U64 long maskBits() {
-        return b3QueryFilter.maskBits(this.segment);
-    }
-    public @U64 long id() {
-        return b3QueryFilter.id(this.segment);
-    }
-
-    public @Nullable String name() {
-        return this.name;
+        return segment;
     }
 
 }

@@ -1,9 +1,8 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
-import io.github.plixo2.box3d.internal.U64;
+import io.github.plixo2.box3d.internal.Unsigned;
 import lombok.Getter;
-import lombok.ToString;
 import org.box2d.box3d.b3RayResult;
 import org.joml.Vector3f;
 
@@ -16,7 +15,7 @@ public class RayResult {
     private ShapeID shapeID = ShapeID.NULL_ID;
     private final Vector3f point = new Vector3f();
     private final Vector3f normal = new Vector3f();
-    private @U64 long userMaterialId;
+    private @Unsigned long userMaterialId;
     private float fraction;
     private int triangleIndex;
     private int childIndex;
@@ -42,10 +41,10 @@ public class RayResult {
     }
 
 
-    public TreeStats stats(TreeStats in) {
-        in.leafVisits = this.leafVisits;
-        in.nodeVisits = this.nodeVisits;
-        return in;
+    public TreeStats stats(TreeStats dest) {
+        dest.leafVisits = this.leafVisits;
+        dest.nodeVisits = this.nodeVisits;
+        return dest;
     }
 
     void setMiss() {

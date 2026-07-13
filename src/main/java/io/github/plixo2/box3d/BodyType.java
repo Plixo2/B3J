@@ -1,6 +1,6 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.Internal;
+import io.github.plixo2.box3d.internal.B3JUtil;
 
 public enum BodyType {
     STATIC,
@@ -10,7 +10,7 @@ public enum BodyType {
     ;
 
     public static BodyType fromCode(int code) {
-        return Internal.enumValue(BodyType.class, code);
+        return B3JUtil.enumValue(BodyType.class, code);
     }
 
     public int code() {

@@ -33,10 +33,10 @@ public final class ShimArgBuffer {
     public MemorySegment data() {
         return b3jshimFunctionArgBuffer.data(this.segment).reinterpret(byteCount());
     }
-    public @U64 long byteCount() {
+    public @Unsigned long byteCount() {
         return b3jshimFunctionArgBuffer.size(this.segment);
     }
-    public @U64 long elementCount() {
+    public @Unsigned long elementCount() {
         return b3jshimFunctionArgBuffer.count(this.segment);
     }
 

@@ -1,55 +1,64 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.AllocState;
+import io.github.plixo2.box3d.internal.AllocatedShapeCallbacks;
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
-import io.github.plixo2.box3d.internal.U16;
 import io.github.plixo2.box3d.region.Region;
-import io.github.plixo2.box3d.internal.AllocatedPool;
-import org.box2d.box3d.b3WorldId;
+import io.github.plixo2.box3d.internal.AllocatedTaskCallbacks;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
 import java.lang.foreign.MemorySegment;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
 
 public final class WorldID {
-    public static final WorldID NULL_ID = new WorldID(null, null, null, null, 0);
+
+    public static final WorldID NULL_ID = new WorldID(null, null, StateValues.none(), 0);
+
+    public static WorldID fromUnknown(long packedID) {
+        return fromUnknown(packedID, null);
+    }
+
+    public static WorldID fromUnknown(long packedID, @Nullable Region region) {
+        B3 b3 = null;
+        if (region != null) {
+            b3 = B3.get();
+        }
+        return new WorldID(
+                b3,
+                region,
+                StateValues.none(),
+                packedID
+        );
+    }
+
+
 
     private final long packedID;
 
     final AllocState state = AllocState.create();
 
-    final @Nullable AllocatedPool taskPool;               // keep alive
-    final @Nullable DebugShapeCallbacks.Allocated shapes; // keep alive
+    // hold variables from the WorldDef to keep them alive
+    final StateValues stateValues;
 
     private WorldID(
             @Nullable B3 instance,
             @Nullable Region region,
-            @Nullable AllocatedPool taskPool,
-            @Nullable DebugShapeCallbacks.Allocated shapes,
+            StateValues values,
             long packedID
     ) {
 
         this.packedID = packedID;
 
-        this.taskPool = taskPool;
-        this.shapes = shapes;
+        this.stateValues = values;
 
         if (instance != null && region != null) {
             region.register(this.state, () -> {
+                values.closeReferences();
                 instance.destroyWorld(packedID);
-                if (taskPool != null) {
-                    taskPool.close();
-                }
-                if (shapes != null) {
-                    shapes.close();
-                }
             });
         }
+
     }
 
     public long packedID() {
@@ -57,10 +66,7 @@ public final class WorldID {
         return this.packedID;
     }
 
-    @Override
-    public String toString() {
-        return toString(this.packedID);
-    }
+
 
     @Override
     public boolean equals(Object object) {
@@ -75,19 +81,24 @@ public final class WorldID {
         return Long.hashCode(this.packedID);
     }
 
+    @Override
+    public String toString() {
+        return toString(this.packedID);
+    }
+
+
+
     static WorldID of(
             B3 instance,
             Region region,
-            @Nullable AllocatedPool taskPool,
-            @Nullable DebugShapeCallbacks.Allocated shapes,
+            StateValues worldStateValues,
             MemorySegment segment
     ) {
         var identifier = PrimitiveMemOps.packWorldID(segment);
         return new WorldID(
                 instance,
                 region,
-                taskPool,
-                shapes,
+                worldStateValues,
                 identifier
         );
     }
@@ -97,12 +108,10 @@ public final class WorldID {
         return new WorldID(
                 null,
                 null,
-                null,
-                null,
+                StateValues.none(),
                 identifier
         );
     }
-
 
     static String toString(long packedID) {
         return "WorldID{"
@@ -110,5 +119,32 @@ public final class WorldID {
                 + ", generation=" + PrimitiveMemOps.getWorldIDGenerationFromPackedID(packedID)
                 + '}';
     }
+
+    // Class to hold on and close objects created my
+    @AllArgsConstructor(access = AccessLevel.PACKAGE)
+    static final class StateValues {
+
+        private @Nullable AllocatedTaskCallbacks taskPool; // keep alive
+        private @Nullable AllocatedShapeCallbacks shapes;  // keep alive
+
+        static StateValues none() {
+            return new StateValues(null, null);
+        }
+
+        public void closeReferences() {
+            var taskPool = this.taskPool;
+            var shapes = this.shapes;
+
+            if (taskPool != null) {
+                this.taskPool = null;
+                taskPool.close();
+            }
+            if (shapes != null) {
+                this.shapes = null;
+                shapes.close();
+            }
+        }
+    }
+
 
 }

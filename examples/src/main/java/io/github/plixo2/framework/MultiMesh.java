@@ -1,6 +1,6 @@
 package io.github.plixo2.framework;
 
-import io.github.plixo2.abstraction.*;
+import io.github.plixo2.framework.abstractions.*;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
@@ -97,7 +97,7 @@ public class MultiMesh {
     }
 
 
-    MeshRecord place(MeshCreator.MeshArgs mesh, @Nullable Color customColor) {
+    MeshRecord place(MeshCreator.MeshArgs mesh) {
         if (!canPlace(mesh)) {
             throw new RuntimeException("Cannot place mesh, capacity exceeded");
         }
@@ -116,7 +116,6 @@ public class MultiMesh {
         );
 
         var record = new MeshRecord(
-                customColor,
                 this,
                 this.vertexFloatCount / FLOATS_PER_VERTEX,
                 this.indexCount,
@@ -142,8 +141,6 @@ public class MultiMesh {
     }
 
     void draw(Shader.Uniform<Integer> u_legacy_instance) {
-
-
         if (this.useLegacy) {
             assert this.legacyCommands != null;
 
@@ -178,6 +175,9 @@ public class MultiMesh {
             this.mesh.multiDrawInstancedIndirect(0, this.count);
         }
 
+        reset();
+    }
+    void reset() {
         this.count = 0;
         this.perInstanceData.clear();
     }
@@ -229,7 +229,6 @@ public class MultiMesh {
 
 
     public record MeshRecord(
-            @Nullable Color customColor,
             MultiMesh mesh,
             int vertexOffset,
             int indexOffset,

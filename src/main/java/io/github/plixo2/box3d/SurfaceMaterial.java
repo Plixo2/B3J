@@ -1,8 +1,7 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
-import io.github.plixo2.box3d.internal.U32;
-import io.github.plixo2.box3d.internal.U64;
+import io.github.plixo2.box3d.internal.Unsigned;
 import lombok.Getter;
 import lombok.Setter;
 import org.box2d.box3d.b3SurfaceMaterial;
@@ -10,7 +9,6 @@ import org.joml.Vector3f;
 
 import java.lang.foreign.MemorySegment;
 
-import static io.github.plixo2.box3d.internal.Internal.assertU32;
 
 @Getter
 @Setter
@@ -20,7 +18,7 @@ public class SurfaceMaterial {
     private float restitution;
     private float rollingResistance;
     private Vector3f tangentVelocity = new Vector3f();
-    private @U64 long userMaterialId;
+    private @Unsigned long userMaterialId;
     private int customColor;
 
     /// @api b3DefaultSurfaceMaterial

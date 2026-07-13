@@ -15,6 +15,13 @@ public class Plane {
     public float normalY;
     public float normalZ;
 
+    public Plane() {
+        this.offset = 0;
+        this.normalX = 0;
+        this.normalY = 1;
+        this.normalZ = 0;
+    }
+
     public Plane(float offset, float normalX, float normalY, float normalZ) {
         this.offset = offset;
         this.normalX = normalX;
@@ -35,6 +42,15 @@ public class Plane {
         this.normalY = other.normalY;
         this.normalZ = other.normalZ;
     }
+
+    Plane set(Plane other) {
+        this.offset = other.offset;
+        this.normalX = other.normalX;
+        this.normalY = other.normalY;
+        this.normalZ = other.normalZ;
+        return this;
+    }
+
 
     Plane set(MemorySegment segment) {
         var normal = b3Plane.normal(segment);

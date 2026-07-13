@@ -7,86 +7,54 @@ import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.function.*;
 
-public sealed class MemoryIterator<T> implements Iterable<T> {
-    protected final T element;
-    protected final long elementBytes;
-    protected final MemorySegment segment;
-    protected int length;
-    protected final BiConsumer<T, MemorySegment> set;
+/// Be careful what conversions you pick for primitives
+public final class MemoryIterator<T> extends MemoryIteratorBase<T> {
+
+    private final T element;
+    private final BiConsumer<T, MemorySegment> set;
 
     public MemoryIterator(
             T element,
             MemorySegment segment,
-            long elementBytes,
+            long bytesPerElement,
             BiConsumer<T, MemorySegment> set
     ) {
+        super(segment, bytesPerElement);
         this.element = element;
-        this.segment = segment;
-        this.elementBytes = elementBytes;
-
-        if (segment.address() == 0) {
-            this.length = 0;
-        } else {
-            this.length = assertSize(segment, elementBytes);
-        }
-
         this.set = set;
     }
 
     public MemoryIterator(
             T element,
             MemorySegment segment,
-            long byteLength,
-            long elementBytes,
+            long count,
+            long bytesPerElement,
             BiConsumer<T, MemorySegment> set
     ) {
-
-
-        if (segment.address() == 0) {
-            this.length = 0;
-        } else {
-            this.length = assertSize(byteLength, elementBytes);
-            if (byteLength > segment.byteSize()) {
-                segment = segment.reinterpret(byteLength);
-            }
-        }
-
+        super(segment, count, bytesPerElement);
         this.element = element;
-        this.segment = segment;
-        this.elementBytes = elementBytes;
-
         this.set = set;
-    }
-
-    public int length() {
-        return this.length;
     }
 
     public List<T> collect(Function<T, T> clone) {
         var list = new ArrayList<T>(this.length);
 
         for (int i = 0; i < this.length; i++) {
-            var seg = this.segment.asSlice(i * this.elementBytes, this.elementBytes);
-            var el = clone.apply(this.element);
-            this.set.accept(el, seg);
-            list.add(el);
+            list.add(clone.apply(getUnchecked(i)));
         }
+
         return list;
     }
 
     public T get(int index) {
-        if (index < 0 || index >= this.length) {
-            throw new IndexOutOfBoundsException("Index " + index + " is out of bounds for length " + this.length);
-        }
+        checkIndex(index);
         return getUnchecked(index);
     }
 
     private T getUnchecked(int index) {
-        var seg = this.segment.asSlice(index * this.elementBytes, this.elementBytes);
+        var seg = this.segment.asSlice(index * this.bytesPerElement, this.bytesPerElement);
         this.set.accept(this.element, seg);
         return this.element;
     }
@@ -112,62 +80,34 @@ public sealed class MemoryIterator<T> implements Iterable<T> {
 
             @Override
             public T next() {
-
-                if (this.index >= this.length) {
-                    throw new IndexOutOfBoundsException(
-                            "Index "
-                            + this.index
-                            + " is out of bounds for length "
-                            + this.length
-                    );
-                }
-
-                return MemoryIterator.this.getUnchecked(this.index++);
+                return MemoryIterator.this.get(this.index++);
             }
         };
     }
 
-
-
-    static abstract sealed class OfPrimitive<T> extends MemoryIterator<T> {
+    public static abstract sealed class OfPrimitive<T> extends MemoryIteratorBase<T> {
 
         OfPrimitive(
                 MemorySegment segment,
-                long elementBytes
+                long bytesPerElement
         ) {
-            super(null, segment, elementBytes, null);
+            super(segment, bytesPerElement);
         }
+
         OfPrimitive(
                 MemorySegment segment,
-                long byteLength,
-                long elementBytes
+                long count,
+                long bytesPerElement
         ) {
-            super(null, segment, elementBytes, byteLength, null);
+            super(segment, bytesPerElement, count);
         }
 
-        protected abstract T getAtIndex(int index);
-
-        @Override
-        public T get(int index) {
-            if (index < 0 || index >= this.length) {
-                throw new IndexOutOfBoundsException("Index " + index + " is out of bounds for length " + this.length);
-            }
-            return getAtIndex(index);
-        }
-
-        @Override
-        public List<T> collect(Function<T, T> clone) {
-            var list = new ArrayList<T>(this.length);
-            for (int i = 0; i < this.length; i++) {
-                list.add(getAtIndex(i));
-            }
-            return list;
-        }
+        abstract T getUnchecked(int index);
 
         @Override
         public void forEach(Consumer<? super T> action) {
             for (int i = 0; i < this.length; i++) {
-                action.accept(getAtIndex(i));
+                action.accept(getUnchecked(i));
             }
         }
 
@@ -184,50 +124,26 @@ public sealed class MemoryIterator<T> implements Iterable<T> {
 
                 @Override
                 public T next() {
-                    if (this.index >= this.length) {
-                        throw new IndexOutOfBoundsException(
-                                "Index "
-                                + this.index
-                                + " is out of bounds for length "
-                                + this.length
-                        );
-                    }
-                    return OfPrimitive.this.getAtIndex(this.index++);
+                    checkIndex(this.index);
+                    return OfPrimitive.this.getUnchecked(this.index++);
                 }
             };
         }
 
     }
 
-    public static final class OfInt extends OfPrimitive<Integer> {
-        public OfInt(MemorySegment segment) {
-            super(segment, Integer.BYTES);
-        }
-        public OfInt(MemorySegment segment, long byteLength) {
-            super(segment, byteLength, Integer.BYTES);
-        }
 
-        @Override
-        protected Integer getAtIndex(int index) {
-            return this.segment.getAtIndex(ValueLayout.JAVA_INT, index);
-        }
-
-        public int[] collect() {
-            return this.segment.toArray(ValueLayout.JAVA_INT);
-        }
-
-    }
-    public static sealed class OfLong extends OfPrimitive<Long> {
+    public static final class OfLong extends OfPrimitive<Long> {
 
         public OfLong(MemorySegment segment) {
             super(segment, Long.BYTES);
         }
-        public OfLong(MemorySegment segment, long byteLength) {
-            super(segment, byteLength, Long.BYTES);
+        public OfLong(MemorySegment segment, long count) {
+            super(segment, count, Long.BYTES);
         }
 
-        @Override
-        protected Long getAtIndex(int index) {
+        public long getLong(int index) {
+            checkIndex(index);
             return this.segment.getAtIndex(ValueLayout.JAVA_LONG, index);
         }
 
@@ -235,98 +151,271 @@ public sealed class MemoryIterator<T> implements Iterable<T> {
             return this.segment.toArray(ValueLayout.JAVA_LONG);
         }
 
+        public void forEach(LongConsumer action) {
+            for (int i = 0; i < this.length; i++) {
+                action.accept(getLong(i));
+            }
+        }
+
+        @Override
+        protected Long getUnchecked(int index) {
+            return this.segment.getAtIndex(ValueLayout.JAVA_LONG, index);
+        }
+    }
+
+    public static final class OfU64 extends OfPrimitive<Long> {
+        public OfU64(MemorySegment segment) {
+            super(segment, Long.BYTES);
+        }
+        public OfU64(MemorySegment segment, long count) {
+            super(segment, count, Long.BYTES);
+        }
+
+        public @Unsigned long getLong(int index) {
+            checkIndex(index);
+            return this.segment.getAtIndex(ValueLayout.JAVA_LONG, index);
+        }
+
+        public long getLongExact(int index) {
+            var v = getLong(index);
+            if (v < 0) {
+                throw new ArithmeticException("long overflow");
+            }
+            return v;
+        }
+
+        public @Unsigned long[] collect() {
+            return this.segment.toArray(ValueLayout.JAVA_LONG);
+        }
+
+        public void forEach(LongConsumer action) {
+            for (int i = 0; i < this.length; i++) {
+                action.accept(getLong(i));
+            }
+        }
+
+        @Override
+        protected Long getUnchecked(int index) {
+            return this.segment.getAtIndex(ValueLayout.JAVA_LONG, index);
+        }
 
     }
 
-    public static final class OfU32 extends OfPrimitive<Long> {
+    public static final class OfInt extends OfPrimitive<Integer> {
+
+        public OfInt(MemorySegment segment) {
+            super(segment, Integer.BYTES);
+        }
+        public OfInt(MemorySegment segment, long count) {
+            super(segment, count, Integer.BYTES);
+        }
+
+        public int getInt(int index) {
+            checkIndex(index);
+            return this.segment.getAtIndex(ValueLayout.JAVA_INT, index);
+        }
+
+        public int[] collect() {
+            return this.segment.toArray(ValueLayout.JAVA_INT);
+        }
+
+        public void forEach(IntConsumer action) {
+            for (int i = 0; i < this.length; i++) {
+                action.accept(getInt(i));
+            }
+        }
+
+        @Override
+        protected Integer getUnchecked(int index) {
+            return this.segment.getAtIndex(ValueLayout.JAVA_INT, index);
+        }
+
+    }
+
+    public static final class OfU32 extends OfPrimitive<Integer> {
         public OfU32(MemorySegment segment) {
             super(segment, Integer.BYTES);
         }
-        public OfU32(MemorySegment segment, long byteLength) {
-            super(segment, byteLength, Integer.BYTES);
+        public OfU32(MemorySegment segment, long count) {
+            super(segment, count, Integer.BYTES);
         }
 
-        @Override
-        protected Long getAtIndex(int index) {
+        /// performs [Integer#toUnsignedLong]
+        public @Unsigned long getToUnsignedLong(int index) {
+            checkIndex(index);
             return Integer.toUnsignedLong(this.segment.getAtIndex(ValueLayout.JAVA_INT, index));
         }
+        public @Unsigned int getAsInt(int index) {
+            checkIndex(index);
+            return this.segment.getAtIndex(ValueLayout.JAVA_INT, index);
+        }
+        public int getAsIntExact(int index) {
+            return Math.toIntExact(getToUnsignedLong(index));
+        }
 
-        public long[] collect() {
+        /// performs [Integer#toUnsignedLong]
+        public @Unsigned long[] collectToUnsignedLong() {
             var array = new long[this.length];
             for (int i = 0; i < this.length; i++) {
-                array[i] = getAtIndex(i);
+                array[i] = Integer.toUnsignedLong(this.segment.getAtIndex(ValueLayout.JAVA_INT, i));
             }
             return array;
         }
 
-    }
-    public static final class OfU64 extends OfLong {
-        public OfU64(MemorySegment segment) {
-            super(segment);
+        public @Unsigned int[] collectAsInt() {
+            var array = new int[this.length];
+            for (int i = 0; i < this.length; i++) {
+                array[i] = this.segment.getAtIndex(ValueLayout.JAVA_INT, i);
+            }
+            return array;
         }
-        public OfU64(MemorySegment segment, long byteLength) {
-            super(segment, byteLength);
+
+        public void forEach(IntConsumer action) {
+            for (int i = 0; i < this.length; i++) {
+                action.accept(getAsInt(i));
+            }
         }
+
+        @Override
+        protected Integer getUnchecked(int index) {
+            return this.segment.getAtIndex(ValueLayout.JAVA_INT, index);
+        }
+
     }
 
-    public static final class OfU16 extends OfPrimitive<Integer> {
+    public static final class OfU16 extends OfPrimitive<Short> {
         public OfU16(MemorySegment segment) {
             super(segment, Short.BYTES);
         }
-        public OfU16(MemorySegment segment, long byteLength) {
-            super(segment, byteLength, Short.BYTES);
+        public OfU16(MemorySegment segment, long count) {
+            super(segment, count, Short.BYTES);
         }
 
-        @Override
-        protected Integer getAtIndex(int index) {
+        // performs [Short#toUnsignedInt]
+        public @Unsigned int getToUnsignedInt(int index) {
+            checkIndex(index);
             return Short.toUnsignedInt(this.segment.getAtIndex(ValueLayout.JAVA_SHORT, index));
         }
+        public @Unsigned short getAsShort(int index) {
+            checkIndex(index);
+            return this.segment.getAtIndex(ValueLayout.JAVA_SHORT, index);
+        }
+        public short getAsShortExact(int index) {
+            var v = getToUnsignedInt(index);
+            if ((short)v != v) {
+                throw new ArithmeticException("short overflow");
+            }
+            return (short)v;
+        }
 
-        public int[] collect() {
+        /// performs [Short#toUnsignedInt]
+        public @Unsigned int[] collectToUnsignedInt() {
             var array = new int[this.length];
             for (int i = 0; i < this.length; i++) {
-                array[i] = getAtIndex(i);
+                array[i] = Short.toUnsignedInt(this.segment.getAtIndex(ValueLayout.JAVA_SHORT, i));
             }
             return array;
         }
 
+        public @Unsigned short[] collectAsShort() {
+            var array = new short[this.length];
+            for (int i = 0; i < this.length; i++) {
+                array[i] = this.segment.getAtIndex(ValueLayout.JAVA_SHORT, i);
+            }
+            return array;
+        }
+
+        public void forEach(ShortConsumer action) {
+            for (int i = 0; i < this.length; i++) {
+                action.accept(this.segment.getAtIndex(ValueLayout.JAVA_SHORT, i));
+            }
+        }
+
+        @Override
+        protected Short getUnchecked(int index) {
+            return this.segment.getAtIndex(ValueLayout.JAVA_SHORT, index);
+        }
+
     }
 
-    public static final class OfU8 extends OfPrimitive<Integer> {
+    public static final class OfU8 extends OfPrimitive<Byte> {
         public OfU8(MemorySegment segment) {
             super(segment, Byte.BYTES);
         }
-        public OfU8(MemorySegment segment, long byteLength) {
-            super(segment, byteLength, Byte.BYTES);
+        public OfU8(MemorySegment segment, long count) {
+            super(segment, count, Byte.BYTES);
         }
 
-        @Override
-        protected Integer getAtIndex(int index) {
+        /// performs [Byte#toUnsignedInt]
+        public @Unsigned int getToUnsignedInt(int index) {
+            checkIndex(index);
             return Byte.toUnsignedInt(this.segment.getAtIndex(ValueLayout.JAVA_BYTE, index));
         }
+        /// performs [Byte#toUnsignedInt]
+        public @Unsigned short getToUnsignedShort(int index) {
+            return (short) getToUnsignedInt(index);
+        }
+        public @Unsigned byte getAsByte(int index) {
+            checkIndex(index);
+            return this.segment.getAtIndex(ValueLayout.JAVA_BYTE, index);
+        }
+        public byte getAsByteExact(int index) {
+            var v = getToUnsignedInt(index);
+            if ((byte)v != v) {
+                throw new ArithmeticException("byte overflow");
+            }
+            return (byte)v;
+        }
 
-        public int[] collect() {
+        /// performs [Byte#toUnsignedInt]
+        public @Unsigned int[] collectToUnsignedInt() {
             var array = new int[this.length];
             for (int i = 0; i < this.length; i++) {
-                array[i] = getAtIndex(i);
+                array[i] = Byte.toUnsignedInt(this.segment.getAtIndex(ValueLayout.JAVA_BYTE, i));
             }
             return array;
         }
-    }
 
-
-    private static int assertSize(MemorySegment segment, long elementBytes) {
-        long size = segment.byteSize();
-        if (size % elementBytes != 0) {
-            throw new IllegalArgumentException("Segment size " + size + " is not a multiple of element size " + elementBytes);
+        /// performs [Byte#toUnsignedInt]
+        public @Unsigned short[] collectToUnsignedShort() {
+            var array = new short[this.length];
+            for (int i = 0; i < this.length; i++) {
+                array[i] = (short) Byte.toUnsignedInt(this.segment.getAtIndex(ValueLayout.JAVA_BYTE, i));
+            }
+            return array;
         }
-        return Math.toIntExact(size / elementBytes);
-    }
-    private static int assertSize(long size, long elementBytes) {
-        if (size % elementBytes != 0) {
-            throw new IllegalArgumentException("Segment size " + size + " is not a multiple of element size " + elementBytes);
+
+        public @Unsigned byte[] collectAsByte() {
+            var array = new byte[this.length];
+            for (int i = 0; i < this.length; i++) {
+                array[i] = this.segment.getAtIndex(ValueLayout.JAVA_BYTE, i);
+            }
+            return array;
         }
-        return Math.toIntExact(size / elementBytes);
+
+        public void forEach(ByteConsumer action) {
+            for (int i = 0; i < this.length; i++) {
+                action.accept(this.segment.getAtIndex(ValueLayout.JAVA_BYTE, i));
+            }
+        }
+
+        @Override
+        protected Byte getUnchecked(int index) {
+            return this.segment.getAtIndex(ValueLayout.JAVA_BYTE, index);
+        }
+
     }
 
+
+    public interface ShortConsumer {
+
+        void accept(short value);
+
+    }
+
+    public interface ByteConsumer {
+
+        void accept(byte value);
+
+    }
 }

@@ -2,36 +2,34 @@ package io.github.plixo2;
 
 import io.github.plixo2.samples.*;
 
-import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import io.github.plixo2.samples.*;
 
 public class CLIEntry {
 
     Map<String, Runnable> examples = samples(
-            sample("HelloFloor",    new HelloFloor()::main),
+            sample("Hello Floor",    new HelloFloor()::main),
             sample("Joints",        new Joints()::main),
             sample("Determinism",   new Determinism()::main),
-            sample("HeightField",   new HeightField()::main),
-            sample("TriangleMesh",  new TriangleMesh()::main),
+            sample("Heightfield",   new HeightField()::main),
+            sample("Triangle mesh",  new TriangleMesh()::main),
             sample("Queries",       new Queries()::main),
             sample("Controller",    new Controller()::main)
     );
 
 
-    void main(String[] args) {
+    void main(String[] args) throws IllegalArgumentException {
         this.examples.get(name(args)).run();
     }
 
-    String name(String[] args) {
+    String name(String[] args) throws IllegalArgumentException {
         if (args.length == 0) {
-            return io();
+            return fromIO();
         }
         return fromArg(args[0]);
     }
 
-    String io() {
+    String fromIO() {
 
         var names = this.examples.keySet().stream().toList();
         for (var i = 0; i < names.size(); i++) {
@@ -55,13 +53,14 @@ public class CLIEntry {
 
     }
 
-    String fromArg(String arg) {
+    String fromArg(String arg) throws IllegalArgumentException {
 
         for (var s : this.examples.keySet()) {
             if (s.equalsIgnoreCase(arg)) {
                 return s;
             }
         }
+
         throw new IllegalArgumentException("Unknown example: " + arg);
 
     }

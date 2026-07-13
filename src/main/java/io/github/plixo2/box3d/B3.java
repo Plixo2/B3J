@@ -6,67 +6,84 @@ import io.github.plixo2.box3d.region.Region;
 import org.box2d.box3d.*;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
+import org.joml.*;
 
+import java.lang.Math;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.FloatBuffer;
 import java.util.Objects;
 
-import static io.github.plixo2.box3d.internal.Internal.*;
+import static io.github.plixo2.box3d.internal.B3JUtil.*;
 import static org.box2d.box3d.box3d_h.*;
-import static org.box2d.box3d.box3d_h.B3_MAX_ROTATION;
 
 public final class B3 {
 
     static {
-        Internal.setAssertFcn();
+        GlobalAssertionCallback.installDefault();
     }
 
     /// @api B3_DEFAULT_CATEGORY_BITS
     public static final long DEFAULT_CATEGORY_BITS = U64.MAX;
+
     /// @api B3_DEFAULT_MASK_BITS
     public static final long DEFAULT_MASK_BITS = U64.MAX;
+
     /// @api B3_HEIGHT_FIELD_HOLE
-    public static final @U8 int HEIGHT_FIELD_HOLE = B3_HEIGHT_FIELD_HOLE;
+    public static final @Unsigned byte HEIGHT_FIELD_HOLE = (byte) B3_HEIGHT_FIELD_HOLE;
+
     /// @api B3_MAX_WORKERS
-    public static final @U32 int MAX_WORKERS = B3_MAX_WORKERS;
+    public static final @Unsigned int MAX_WORKERS = B3_MAX_WORKERS;
+
     /// @api B3_MAX_TASKS
-    public static final @U32 int MAX_TASKS = B3_MAX_TASKS;
+    public static final @Unsigned int MAX_TASKS = B3_MAX_TASKS;
+
     /// @api B3_GRAPH_COLOR_COUNT
-    public static final @U32 int GRAPH_COLOR_COUNT = B3_GRAPH_COLOR_COUNT;
+    public static final @Unsigned int GRAPH_COLOR_COUNT = B3_GRAPH_COLOR_COUNT;
+
     /// @api B3_CONTACT_MANIFOLD_COUNT_BUCKETS
-    public static final @U32 int CONTACT_MANIFOLD_COUNT_BUCKETS = B3_CONTACT_MANIFOLD_COUNT_BUCKETS;
+    public static final @Unsigned int CONTACT_MANIFOLD_COUNT_BUCKETS = B3_CONTACT_MANIFOLD_COUNT_BUCKETS;
+
     /// @api B3_MAX_WORLDS
-    public static final @U32 int MAX_WORLDS = B3_MAX_WORLDS;
+    public static final @Unsigned int MAX_WORLDS = B3_MAX_WORLDS;
+
     /// @api B3_MAX_ROTATION
     public static final float MAX_ROTATION = B3_MAX_ROTATION;
+
     /// @api B3_CONTACT_RECYCLE_ANGULAR_DISTANCE
-    public static final @U32 float CONTACT_RECYCLE_ANGULAR_DISTANCE = B3_CONTACT_RECYCLE_ANGULAR_DISTANCE;
+    public static final float CONTACT_RECYCLE_ANGULAR_DISTANCE = B3_CONTACT_RECYCLE_ANGULAR_DISTANCE;
+
     /// @api B3_AABB_MARGIN_FRACTION
-    public static final @U32 float AABB_MARGIN_FRACTION = B3_AABB_MARGIN_FRACTION;
+    public static final float AABB_MARGIN_FRACTION = B3_AABB_MARGIN_FRACTION;
+
     /// @api B3_TIME_TO_SLEEP
-    public static final @U32 float TIME_TO_SLEEP = B3_TIME_TO_SLEEP;
+    public static final float TIME_TO_SLEEP = B3_TIME_TO_SLEEP;
+
     /// @api B3_BODY_NAME_LENGTH
-    public static final @U32 int BODY_NAME_LENGTH = B3_BODY_NAME_LENGTH;
+    public static final @Unsigned int BODY_NAME_LENGTH = B3_BODY_NAME_LENGTH;
+
     /// @api B3_SHAPE_NAME_LENGTH
-    public static final @U32 int SHAPE_NAME_LENGTH = B3_SHAPE_NAME_LENGTH;
+    public static final @Unsigned int SHAPE_NAME_LENGTH = B3_SHAPE_NAME_LENGTH;
+
     /// @api B3_MAX_MANIFOLD_POINTS
-    public static final @U32 int MAX_MANIFOLD_POINTS = B3_MAX_MANIFOLD_POINTS;
+    public static final @Unsigned int MAX_MANIFOLD_POINTS = B3_MAX_MANIFOLD_POINTS;
+
     /// @api B3_MAX_SHAPE_CAST_POINTS
-    public static final @U32 int MAX_SHAPE_CAST_POINTS = B3_MAX_SHAPE_CAST_POINTS;
+    public static final @Unsigned int MAX_SHAPE_CAST_POINTS = B3_MAX_SHAPE_CAST_POINTS;
+
     /// @api B3_SHAPE_POWER
-    public static final @U32 int SHAPE_POWER = B3_SHAPE_POWER;
+    public static final @Unsigned int SHAPE_POWER = B3_SHAPE_POWER;
+
     /// @api B3_CHILD_POWER
-    public static final @U32 int CHILD_POWER = B3_CHILD_POWER;
+    public static final @Unsigned int CHILD_POWER = B3_CHILD_POWER;
+
     /// @api B3_MAX_SHAPES
-    public static final @U32 int MAX_SHAPES = B3_MAX_SHAPES;
+    public static final @Unsigned int MAX_SHAPES = B3_MAX_SHAPES;
+
     /// @api B3_MAX_CHILD_SHAPES
-    public static final @U32 int MAX_CHILD_SHAPES = B3_MAX_CHILD_SHAPES;
+    public static final @Unsigned int MAX_CHILD_SHAPES = B3_MAX_CHILD_SHAPES;
+
 
 
     private static final ThreadLocal<B3> tls = ThreadLocal.withInitial(B3::new);
@@ -88,14 +105,15 @@ public final class B3 {
     }
 
     /// @api b3SetAssertFcn
-    public static void setAssertFcn(AssertFcn assertFcn) {
-        Internal.setAssertFcn(assertFcn);
+    public static void setAssertFcn(@Nullable AssertFcn assertFcn) {
+        GlobalAssertionCallback.install(assertFcn);
     }
 
     /// @api b3SetStallThreshold
     public static void setStallThreshold(float seconds) {
         b3SetStallThreshold(seconds);
     }
+
     /// @api b3GetStallThreshold
     public static float getStallThreshold() {
         return b3GetStallThreshold();
@@ -160,16 +178,12 @@ public final class B3 {
     ) {
         try (this.argArena) {
             var result = worldDef.create(this.argArena);
-            var taskPool = result.taskPool();
-            var shapes = result.shapes();
-
             var segment = b3CreateWorld(this.returnArena, result.segment());
 
             return WorldID.of(
                     this,
                     region,
-                    taskPool,
-                    shapes,
+                    result.worldStateValues(),
                     segment
             );
         }
@@ -194,7 +208,7 @@ public final class B3 {
     public void worldDraw(
             WorldID worldID,
             DebugDraw draw,
-            @U64 long maskBits
+            @Unsigned long maskBits
     ) {
         b3jshimWorld_Draw(worldID(worldID), draw.segment(), maskBits);
         draw.invoke();
@@ -237,7 +251,7 @@ public final class B3 {
 
         try (this.argArena) {
              hull = b3CreateHull(
-                     ensureOffHeap(this.argArena, points),
+                     B3JUtil.ensureOffHeap(this.argArena, points),
                      vertexCount,
                      maxVertexCount
              );
@@ -456,91 +470,97 @@ public final class B3 {
     /// @api b3World_OverlapAABB
     @Contract("null, _, _, _, _ -> null; !null, _, _, _, _ -> !null")
     public @Nullable TreeStats worldOverlapAABB(
-            @Nullable TreeStats in,
+            @Nullable TreeStats dest,
             WorldID worldID,
             AABB aabb,
             QueryFilter filter,
             OverlapResultFcn fcn
     ) {
+        try (this.argArena) {
 
-        var stats = this.scratchOverlapAABB.invoke(
-                this.returnArena,
-                worldID(worldID),
-                aabb(aabb),
-                filter.segment,
-                fcn
-        );
+            var stats = this.scratchOverlapAABB.invoke(
+                    this.returnArena,
+                    worldID(worldID),
+                    aabb(aabb),
+                    filter.create(this.argArena),
+                    fcn
+            );
 
-        if (in != null) {
-            in.set(stats);
+            if (dest != null) {
+                dest.set(stats);
+            }
+
+            return dest;
+
         }
-
-        return in;
-
     }
 
     /// @api b3World_CastRay
     @Contract("null, _, _, _, _, _ -> null; !null, _, _, _, _, _ -> !null")
     public @Nullable TreeStats worldCastRay(
-            @Nullable TreeStats in,
+            @Nullable TreeStats dest,
             WorldID worldID,
             Vector3f origin,
             Vector3f translation,
             QueryFilter filter,
             CastResultFcn fcn
     ) {
+        try (this.argArena) {
 
-        var stats = this.scratchCastFn.invoke(
-                this.returnArena,
-                worldID(worldID),
-                vec3(origin),
-                vec3_2(translation),
-                filter.segment,
-                fcn
-        );
+            var stats = this.scratchCastFn.invoke(
+                    this.returnArena,
+                    worldID(worldID),
+                    vec3(origin),
+                    vec3_2(translation),
+                    filter.create(this.argArena),
+                    fcn
+            );
 
-        if (in != null) {
-            in.set(stats);
+            if (dest != null) {
+                dest.set(stats);
+            }
+
+            return dest;
+
         }
-
-        return in;
-
     }
 
     /// @return true if `hit`, false otherwise
     /// @api b3World_CastRayClosest
     public boolean worldCastRayClosest(
-            @Nullable RayResult in,
+            @Nullable RayResult dest,
             WorldID worldID,
             Vector3f origin,
             Vector3f translation,
             QueryFilter filter
     ) {
+        try (this.argArena) {
 
-        var result = b3World_CastRayClosest(
-                this.returnArena,
-                worldID(worldID),
-                vec3(origin),
-                vec3_2(translation),
-                filter.segment
-        );
+            var result = b3World_CastRayClosest(
+                    this.returnArena,
+                    worldID(worldID),
+                    vec3(origin),
+                    vec3_2(translation),
+                    filter.create(this.argArena)
+            );
 
-        var hit = RayResult.hit(result);
-        if (in != null) {
-            if (hit) {
-                in.setOnHit(result);
-            } else {
-                in.setMiss();
+            var hit = RayResult.hit(result);
+            if (dest != null) {
+                if (hit) {
+                    dest.setOnHit(result);
+                } else {
+                    dest.setMiss();
+                }
             }
-        }
-        return hit;
+            return hit;
 
+        }
     }
 
     /// @return true if `hit`, false otherwise
     /// @api b3Body_CastRay
     public boolean bodyCastRay(
-            @Nullable BodyCastResult in,
+            @Nullable BodyCastResult dest,
             BodyID bodyID,
             Vector3f origin,
             Vector3f translation,
@@ -549,32 +569,35 @@ public final class B3 {
             Matrix4f bodyTransform
     ) {
 
-        var result = b3Body_CastRay(
-                this.returnArena,
-                bodyID(bodyID),
-                vec3(origin),
-                vec3_2(translation),
-                filter.segment,
-                maxFraction,
-                transform(bodyTransform)
-        );
+        try (this.argArena) {
 
-        var hit = BodyCastResult.hit(result);
-        if (in != null) {
-            if (hit) {
-                in.setOnHit(result);
-            } else {
-                in.setMiss();
+            var result = b3Body_CastRay(
+                    this.returnArena,
+                    bodyID(bodyID),
+                    vec3(origin),
+                    vec3_2(translation),
+                    filter.create(this.argArena),
+                    maxFraction,
+                    transform(bodyTransform)
+            );
+
+            var hit = BodyCastResult.hit(result);
+            if (dest != null) {
+                if (hit) {
+                    dest.setOnHit(result);
+                } else {
+                    dest.setMiss();
+                }
             }
-        }
-        return hit;
+            return hit;
 
+        }
     }
 
     /// @return true if `hit`, false otherwise
     /// @api b3Body_CastShape
     public boolean bodyCastShape(
-            @Nullable BodyCastResult in,
+            @Nullable BodyCastResult dest,
             BodyID bodyID,
             Vector3f origin,
             ShapeProxy proxy,
@@ -592,18 +615,18 @@ public final class B3 {
                     vec3(origin),
                     proxy.create(this.argArena),
                     vec3_2(translation),
-                    filter.segment,
+                    filter.create(this.argArena),
                     maxFraction,
                     canEncroach,
                     transform(bodyTransform)
             );
 
             var hit = BodyCastResult.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -615,7 +638,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3RayCastSphere
     public boolean rayCastSphere(
-            @Nullable CastOutput in,
+            @Nullable CastOutput dest,
             Sphere sphere,
             RayCastInput input
     ) {
@@ -628,11 +651,11 @@ public final class B3 {
             );
 
             var hit = CastOutput.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -643,7 +666,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3RayCastHollowSphere
     public boolean rayCastHollowSphere(
-            @Nullable CastOutput in,
+            @Nullable CastOutput dest,
             Sphere sphere,
             RayCastInput input
     ) {
@@ -656,11 +679,11 @@ public final class B3 {
             );
 
             var hit = CastOutput.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -671,7 +694,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3RayCastCapsule
     public boolean rayCastCapsule(
-            @Nullable CastOutput in,
+            @Nullable CastOutput dest,
             Capsule capsule,
             RayCastInput input
     ) {
@@ -684,11 +707,11 @@ public final class B3 {
             );
 
             var hit = CastOutput.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -699,7 +722,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3RayCastHull
     public boolean rayCastHull(
-            @Nullable CastOutput in,
+            @Nullable CastOutput dest,
             HullData hull,
             RayCastInput input
     ) {
@@ -712,11 +735,11 @@ public final class B3 {
             );
 
             var hit = CastOutput.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -727,7 +750,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3RayCastMesh
     public boolean rayCastMesh(
-            @Nullable CastOutput in,
+            @Nullable CastOutput dest,
             Mesh mesh,
             RayCastInput input
     ) {
@@ -740,11 +763,11 @@ public final class B3 {
             );
 
             var hit = CastOutput.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -755,7 +778,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3RayCastHeightField
     public boolean rayCastHeightField(
-            @Nullable CastOutput in,
+            @Nullable CastOutput dest,
             HeightFieldData heightField,
             RayCastInput input
     ) {
@@ -768,11 +791,11 @@ public final class B3 {
             );
 
             var hit = CastOutput.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -783,7 +806,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3ShapeCastSphere
     public boolean shapeCastSphere(
-            @Nullable CastOutput in,
+            @Nullable CastOutput dest,
             Sphere sphere,
             ShapeCastInput input
     ) {
@@ -796,11 +819,11 @@ public final class B3 {
             );
 
             var hit = CastOutput.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -811,7 +834,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3ShapeCastCapsule
     public boolean shapeCastCapsule(
-            @Nullable CastOutput in,
+            @Nullable CastOutput dest,
             Capsule capsule,
             ShapeCastInput input
     ) {
@@ -824,11 +847,11 @@ public final class B3 {
             );
 
             var hit = CastOutput.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -839,7 +862,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3ShapeCastHull
     public boolean shapeCastHull(
-            @Nullable CastOutput in,
+            @Nullable CastOutput dest,
             HullData hull,
             ShapeCastInput input
     ) {
@@ -852,11 +875,11 @@ public final class B3 {
             );
 
             var hit = CastOutput.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -867,7 +890,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3ShapeCastMesh
     public boolean shapeCastMesh(
-            @Nullable CastOutput in,
+            @Nullable CastOutput dest,
             Mesh mesh,
             ShapeCastInput input
     ) {
@@ -880,11 +903,11 @@ public final class B3 {
             );
 
             var hit = CastOutput.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -895,7 +918,7 @@ public final class B3 {
     /// @return true if `hit`, false otherwise
     /// @api b3ShapeCastHeightField
     public boolean shapeCastHeightField(
-            @Nullable CastOutput in,
+            @Nullable CastOutput dest,
             HeightFieldData heightField,
             ShapeCastInput input
     ) {
@@ -908,11 +931,11 @@ public final class B3 {
             );
 
             var hit = CastOutput.hit(result);
-            if (in != null) {
+            if (dest != null) {
                 if (hit) {
-                    in.setOnHit(result);
+                    dest.setOnHit(result);
                 } else {
-                    in.setMiss();
+                    dest.setMiss();
                 }
             }
             return hit;
@@ -978,7 +1001,7 @@ public final class B3 {
     /// @api b3ShapeDistance
     @Contract("null, _, _, _ -> null; !null, _, _, _ -> !null")
     public @Nullable DistanceOutput shapeDistance(
-            @Nullable DistanceOutput in,
+            @Nullable DistanceOutput dest,
             DistanceInput input,
             @Nullable SimplexCache cache,
             @Nullable Simplexes simplexes
@@ -1008,12 +1031,122 @@ public final class B3 {
                     simplexCapacity
             );
 
-            if (in != null) {
-                in.set(distanceOutput);
+            if (dest != null) {
+                dest.set(distanceOutput);
             }
 
-            return in;
+            return dest;
         }
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="Character Mover" default-state="collapsed">
+
+
+    /// @api b3World_CastMover
+    public float worldCastMover(
+            WorldID world,
+            Vector3f origin,
+            Capsule mover,
+            Vector3f translation,
+            QueryFilter filter,
+            @Nullable MoverFilterFcn fcn
+    ) {
+
+        try (this.argArena) {
+            return this.scratchMoverFilter.invoke(
+                    worldID(world),
+                    vec3(origin),
+                    mover.create(this.argArena),
+                    vec3_2(translation),
+                    filter.create(this.argArena),
+                    fcn
+            );
+        }
+
+    }
+
+    /// @api b3World_CollideMover
+    public void worldCollideMover(
+            WorldID world,
+            Vector3f origin,
+            Capsule mover,
+            QueryFilter filter,
+            PlaneResultFcn fcn
+    ) {
+
+        try (this.argArena) {
+            this.scratchPlaneResult.invoke(
+                    worldID(world),
+                    vec3(origin),
+                    mover.create(this.argArena),
+                    filter.create(this.argArena),
+                    fcn
+            );
+        }
+
+    }
+
+    /// @return iterationCount
+    /// @api b3SolvePlanes
+    public int solvePlanes(
+            Vector3f dest,
+            Vector3f targetDelta,
+            CollisionPlane[] planes,
+            int count
+    ) {
+
+        if (count > planes.length) {
+            throw new IllegalArgumentException("count > planes.length");
+        }
+
+        try (this.argArena) {
+            var planesSegment = CollisionPlane.putPlanes(planes, count, this.argArena);
+
+            var result = b3SolvePlanes(
+                    this.returnArena,
+                    vec3(targetDelta),
+                    planesSegment,
+                    count
+            );
+
+            // write back `push` parameter
+            CollisionPlane.setPlanes(planes, count, planesSegment);
+
+            PrimitiveMemOps.setVec3(dest, result, b3PlaneSolverResult.delta$offset());
+            return result.get(ValueLayout.JAVA_INT, b3PlaneSolverResult.iterationCount$offset());
+
+        }
+
+    }
+
+    /// @api b3ClipVector
+    public Vector3f clipVector(
+            Vector3f dest,
+            Vector3f vector,
+            CollisionPlane[] planes,
+            int count
+    ) {
+
+        if (count > planes.length) {
+            throw new IllegalArgumentException("count > planes.length");
+        }
+
+        try (this.argArena) {
+            var planesSegment = CollisionPlane.putPlanes(planes, count, this.argArena);
+
+            var result = b3ClipVector(
+                    this.returnArena,
+                    vec3(vector),
+                    planesSegment,
+                    count
+            );
+            PrimitiveMemOps.setVec3(dest, result);
+
+        }
+
+        return dest;
+
     }
     //</editor-fold>
 
@@ -1037,21 +1170,21 @@ public final class B3 {
     }
 
     /// @api b3Body_GetPosition
-    public Vector3f bodyGetPosition(Vector3f in, BodyID bodyId) {
+    public Vector3f bodyGetPosition(Vector3f dest, BodyID bodyId) {
         var vec = b3Body_GetPosition(this.returnArena, bodyID(bodyId));
-        return PrimitiveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(dest, vec);
     }
 
     /// @api b3Body_GetRotation
-    public Quaternionf bodyGetRotation(Quaternionf in, BodyID bodyId) {
+    public Quaternionf bodyGetRotation(Quaternionf dest, BodyID bodyId) {
         var quat = b3Body_GetRotation(this.returnArena, bodyID(bodyId));
-        return PrimitiveMemOps.setQuat(in, quat);
+        return PrimitiveMemOps.setQuat(dest, quat);
     }
 
     /// @api b3Body_GetTransform
-    public Matrix4f bodyGetTransform(Matrix4f in, BodyID bodyId) {
+    public Matrix4f bodyGetTransform(Matrix4f dest, BodyID bodyId) {
         var transform = b3Body_GetTransform(this.returnArena, bodyID(bodyId));
-        return PrimitiveMemOps.setTransform(in, transform);
+        return PrimitiveMemOps.setTransform(dest, transform);
     }
 
     /// @api b3Body_SetTransform
@@ -1068,15 +1201,15 @@ public final class B3 {
     }
 
     /// @api b3Body_GetLinearVelocity
-    public Vector3f bodyGetLinearVelocity(Vector3f in, BodyID bodyId) {
+    public Vector3f bodyGetLinearVelocity(Vector3f dest, BodyID bodyId) {
         var vec = b3Body_GetLinearVelocity(this.returnArena, bodyID(bodyId));
-        return PrimitiveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(dest, vec);
     }
 
     /// @api b3Body_GetAngularVelocity
-    public Vector3f bodyGetAngularVelocity(Vector3f in, BodyID bodyId) {
+    public Vector3f bodyGetAngularVelocity(Vector3f dest, BodyID bodyId) {
         var vec = b3Body_GetAngularVelocity(this.returnArena, bodyID(bodyId));
-        return PrimitiveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(dest, vec);
     }
 
     /// @api b3Body_SetTargetTransform
@@ -1101,15 +1234,15 @@ public final class B3 {
     }
 
     /// @api b3Body_GetWorldCenterOfMass
-    public Vector3f bodyGetWorldCenterOfMass(Vector3f in, BodyID bodyId) {
+    public Vector3f bodyGetWorldCenterOfMass(Vector3f dest, BodyID bodyId) {
         var vec = b3Body_GetWorldCenterOfMass(this.returnArena, bodyID(bodyId));
-        return PrimitiveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(dest, vec);
     }
 
     /// @api b3Body_GetLocalCenterOfMass
-    public Vector3f bodyGetLocalCenterOfMass(Vector3f in, BodyID bodyId) {
+    public Vector3f bodyGetLocalCenterOfMass(Vector3f dest, BodyID bodyId) {
         var vec = b3Body_GetLocalCenterOfMass(this.returnArena, bodyID(bodyId));
-        return PrimitiveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(dest, vec);
     }
 
     /// @api b3Body_ApplyForce
@@ -1144,28 +1277,27 @@ public final class B3 {
 
 
     /// @api b3Body_GetWorldPoint
-    public Vector3f bodyGetWorldPoint(Vector3f in, BodyID bodyId, Vector3f localPoint) {
+    public Vector3f bodyGetWorldPoint(Vector3f dest, BodyID bodyId, Vector3f localPoint) {
         var vec = b3Body_GetWorldPoint(this.returnArena, bodyID(bodyId), vec3(localPoint));
-        return PrimitiveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(dest, vec);
     }
 
-
     /// @api b3Body_GetWorldVector
-    public Vector3f bodyGetWorldVector(Vector3f in, BodyID bodyId, Vector3f localVector) {
+    public Vector3f bodyGetWorldVector(Vector3f dest, BodyID bodyId, Vector3f localVector) {
         var vec = b3Body_GetWorldVector(this.returnArena, bodyID(bodyId), vec3(localVector));
-        return PrimitiveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(dest, vec);
     }
 
     /// @api b3Body_GetLocalPoint
-    public Vector3f bodyGetLocalPoint(Vector3f in, BodyID bodyId, Vector3f worldPoint) {
+    public Vector3f bodyGetLocalPoint(Vector3f dest, BodyID bodyId, Vector3f worldPoint) {
         var vec = b3Body_GetLocalPoint(this.returnArena, bodyID(bodyId), vec3(worldPoint));
-        return PrimitiveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(dest, vec);
     }
 
     /// @api b3Body_GetLocalVector
-    public Vector3f bodyGetLocalVector(Vector3f in, BodyID bodyId, Vector3f worldVector) {
+    public Vector3f bodyGetLocalVector(Vector3f dest, BodyID bodyId, Vector3f worldVector) {
         var vec = b3Body_GetLocalVector(this.returnArena, bodyID(bodyId), vec3(worldVector));
-        return PrimitiveMemOps.setVec3(in, vec);
+        return PrimitiveMemOps.setVec3(dest, vec);
     }
 
     /// @api b3Body_GetType
@@ -1179,10 +1311,21 @@ public final class B3 {
         return b3Body_GetMass(bodyID(bodyId));
     }
 
+    /// @api b3Body_GetInverseMass
+    public float bodyGetInverseMass(BodyID bodyId) {
+        return b3Body_GetInverseMass(bodyID(bodyId));
+    }
+
+    /// @api b3Body_GetWorldInverseRotationalInertia
+    public Matrix3f bodyGetWorldInverseRotationalInertia(Matrix3f dest, BodyID bodyId) {
+        var matrix = b3Body_GetWorldInverseRotationalInertia(this.returnArena, bodyID(bodyId));
+        return PrimitiveMemOps.setMat3(dest, matrix);
+    }
+
     /// @api b3Body_GetName
     public @Nullable String bodyGetName(BodyID bodyId) {
         var name = b3Body_GetName(bodyID(bodyId));
-        return Internal.getNullString(name);
+        return B3JUtil.getNullString(name);
     }
 
     /// @api b3Body_SetName
@@ -1200,6 +1343,7 @@ public final class B3 {
     //</editor-fold>
 
     //<editor-fold desc="ID Tests" default-state="collapsed">
+
 
     /// @api b3Shape_IsValid
     public boolean shapeIsValid(ShapeID shapeId) {
@@ -1315,12 +1459,7 @@ public final class B3 {
             b3DestroyWorld(segment);
 
         } finally {
-            if (worldID.taskPool != null) {
-                worldID.taskPool.close();
-            }
-            if (worldID.shapes != null) {
-                worldID.shapes.close();
-            }
+            worldID.stateValues.closeReferences();
         }
     }
 
@@ -1385,18 +1524,18 @@ public final class B3 {
         b3Joint_SetLocalFrameA(jointID(jointID), transform(localFrame));
     }
     /// @api b3Joint_GetLocalFrameA
-    public Matrix4f jointGetLocalFrameA(Matrix4f in, JointID<?> jointID) {
+    public Matrix4f jointGetLocalFrameA(Matrix4f dest, JointID<?> jointID) {
         var localFrame = b3Joint_GetLocalFrameA(this.returnArena, jointID(jointID));
-        return PrimitiveMemOps.setTransform(in, localFrame);
+        return PrimitiveMemOps.setTransform(dest, localFrame);
     }
     /// @api b3Joint_SetLocalFrameB
     public void jointSetLocalFrameB(JointID<?> jointID, Matrix4f localFrame) {
         b3Joint_SetLocalFrameB(jointID(jointID), transform(localFrame));
     }
     /// @api b3Joint_GetLocalFrameB
-    public Matrix4f jointGetLocalFrameB(Matrix4f in, JointID<?> jointID) {
+    public Matrix4f jointGetLocalFrameB(Matrix4f dest, JointID<?> jointID) {
         var localFrame = b3Joint_GetLocalFrameB(this.returnArena, jointID(jointID));
-        return PrimitiveMemOps.setTransform(in, localFrame);
+        return PrimitiveMemOps.setTransform(dest, localFrame);
     }
     /// @api b3Joint_SetCollideConnected
     public void jointSetCollideConnected(JointID<?> jointID, boolean shouldCollide) {
@@ -1411,14 +1550,14 @@ public final class B3 {
         b3Joint_WakeBodies(jointID(jointID));
     }
     /// @api b3Joint_GetConstraintForce
-    public Vector3f jointGetConstraintForce(Vector3f in, JointID<?> jointID) {
+    public Vector3f jointGetConstraintForce(Vector3f dest, JointID<?> jointID) {
         var force = b3Joint_GetConstraintForce(this.returnArena, jointID(jointID));
-        return PrimitiveMemOps.setVec3(in, force);
+        return PrimitiveMemOps.setVec3(dest, force);
     }
     /// @api b3Joint_GetConstraintTorque
-    public Vector3f jointGetConstraintTorque(Vector3f in, JointID<?> jointID) {
+    public Vector3f jointGetConstraintTorque(Vector3f dest, JointID<?> jointID) {
         var torque = b3Joint_GetConstraintTorque(this.returnArena, jointID(jointID));
-        return PrimitiveMemOps.setVec3(in, torque);
+        return PrimitiveMemOps.setVec3(dest, torque);
     }
     /// @api b3Joint_GetLinearSeparation
     public float jointGetLinearSeparation(JointID<?> jointID) {
@@ -1434,14 +1573,14 @@ public final class B3 {
     }
     /// @return x = hertz, y = dampingRatio
     /// @api b3Joint_GetConstraintTuning
-    public Vector2f jointGetConstraintTuning(Vector2f in, JointID<?> jointID) {
+    public Vector2f jointGetConstraintTuning(Vector2f dest, JointID<?> jointID) {
         try (this.argArena) {
             var hertz = this.argArena.allocate(ValueLayout.JAVA_FLOAT);
             var dampingRatio = this.argArena.allocate(ValueLayout.JAVA_FLOAT);
             b3Joint_GetConstraintTuning(jointID(jointID), hertz, dampingRatio);
-            in.x = hertz.get(ValueLayout.JAVA_FLOAT, 0);
-            in.y = dampingRatio.get(ValueLayout.JAVA_FLOAT, 0);
-            return in;
+            dest.x = hertz.get(ValueLayout.JAVA_FLOAT, 0);
+            dest.y = dampingRatio.get(ValueLayout.JAVA_FLOAT, 0);
+            return dest;
         }
     }
     /// @api b3Joint_SetForceThreshold
@@ -1552,14 +1691,14 @@ public final class B3 {
     }
     /// @return x = lowerForce, y = upperForce
     /// @api b3DistanceJoint_GetSpringForceRange
-    public Vector2f distanceJointGetSpringForceRange(Vector2f in, JointID<JointType.Distance> jointID) {
+    public Vector2f distanceJointGetSpringForceRange(Vector2f dest, JointID<JointType.Distance> jointID) {
         try (this.argArena) {
             var lowerForce = this.argArena.allocate(ValueLayout.JAVA_FLOAT);
             var upperForce = this.argArena.allocate(ValueLayout.JAVA_FLOAT);
             b3DistanceJoint_GetSpringForceRange(jointID(jointID), lowerForce, upperForce);
-            in.x = lowerForce.get(ValueLayout.JAVA_FLOAT, 0);
-            in.y = upperForce.get(ValueLayout.JAVA_FLOAT, 0);
-            return in;
+            dest.x = lowerForce.get(ValueLayout.JAVA_FLOAT, 0);
+            dest.y = upperForce.get(ValueLayout.JAVA_FLOAT, 0);
+            return dest;
         }
     }
     /// @api b3DistanceJoint_SetSpringHertz
@@ -1672,18 +1811,18 @@ public final class B3 {
         b3MotorJoint_SetLinearVelocity(jointID(jointID), vec3(velocity));
     }
     /// @api b3MotorJoint_GetLinearVelocity
-    public Vector3f motorJointGetLinearVelocity(Vector3f in, JointID<JointType.Motor> jointID) {
+    public Vector3f motorJointGetLinearVelocity(Vector3f dest, JointID<JointType.Motor> jointID) {
         var velocity = b3MotorJoint_GetLinearVelocity(this.returnArena, jointID(jointID));
-        return PrimitiveMemOps.setVec3(in, velocity);
+        return PrimitiveMemOps.setVec3(dest, velocity);
     }
     /// @api b3MotorJoint_SetAngularVelocity
     public void motorJointSetAngularVelocity(JointID<JointType.Motor> jointID, Vector3f velocity) {
         b3MotorJoint_SetAngularVelocity(jointID(jointID), vec3(velocity));
     }
     /// @api b3MotorJoint_GetAngularVelocity
-    public Vector3f motorJointGetAngularVelocity(Vector3f in, JointID<JointType.Motor> jointID) {
+    public Vector3f motorJointGetAngularVelocity(Vector3f dest, JointID<JointType.Motor> jointID) {
         var velocity = b3MotorJoint_GetAngularVelocity(this.returnArena, jointID(jointID));
-        return PrimitiveMemOps.setVec3(in, velocity);
+        return PrimitiveMemOps.setVec3(dest, velocity);
     }
     /// @api b3MotorJoint_SetMaxVelocityForce
     public void motorJointSetMaxVelocityForce(JointID<JointType.Motor> jointID, float maxForce) {
@@ -2057,9 +2196,9 @@ public final class B3 {
         b3SphericalJoint_SetTargetRotation(jointID(jointID), quat(targetRotation));
     }
     /// @api b3SphericalJoint_GetTargetRotation
-    public Quaternionf sphericalJoint_GetTargetRotation(Quaternionf in, JointID<JointType.Spherical> jointID) {
+    public Quaternionf sphericalJoint_GetTargetRotation(Quaternionf dest, JointID<JointType.Spherical> jointID) {
         var rotation = b3SphericalJoint_GetTargetRotation(this.returnArena, jointID(jointID));
-        return PrimitiveMemOps.setQuat(in, rotation);
+        return PrimitiveMemOps.setQuat(dest, rotation);
     }
     /// @api b3SphericalJoint_EnableMotor
     public void sphericalJoint_EnableMotor(JointID<JointType.Spherical> jointID, boolean enableMotor) {
@@ -2074,14 +2213,14 @@ public final class B3 {
         b3SphericalJoint_SetMotorVelocity(jointID(jointID), vec3(motorVelocity));
     }
     /// @api b3SphericalJoint_GetMotorVelocity
-    public Vector3f sphericalJoint_GetMotorVelocity(Vector3f in, JointID<JointType.Spherical> jointID) {
+    public Vector3f sphericalJoint_GetMotorVelocity(Vector3f dest, JointID<JointType.Spherical> jointID) {
         var velocity = b3SphericalJoint_GetMotorVelocity(this.returnArena, jointID(jointID));
-        return PrimitiveMemOps.setVec3(in, velocity);
+        return PrimitiveMemOps.setVec3(dest, velocity);
     }
     /// @api b3SphericalJoint_GetMotorTorque
-    public Vector3f sphericalJoint_GetMotorTorque(Vector3f in, JointID<JointType.Spherical> jointID) {
+    public Vector3f sphericalJoint_GetMotorTorque(Vector3f dest, JointID<JointType.Spherical> jointID) {
         var torque = b3SphericalJoint_GetMotorTorque(this.returnArena, jointID(jointID));
-        return PrimitiveMemOps.setVec3(in, torque);
+        return PrimitiveMemOps.setVec3(dest, torque);
     }
     /// @api b3SphericalJoint_SetMaxMotorTorque
     public void sphericalJoint_SetMaxMotorTorque(JointID<JointType.Spherical> jointID, float torque) {
@@ -2314,6 +2453,8 @@ public final class B3 {
     //</editor-fold>
 
 
+
+
     //<editor-fold desc="Internal" default-state="collapsed">
 
 
@@ -2321,29 +2462,31 @@ public final class B3 {
 
     private final Arena scratchArena = Arena.ofAuto();
 
-    /// 4 KB for return values. Should definitely be enough for all return types
-    private final ConstAllocator returnArena = new ConstAllocator(this.scratchArena,   4 * 1024);
+    /// 1 KB for return values. Should definitely be enough for all return types
+    private final ConstAllocator returnArena = new ConstAllocator(this.scratchArena, 1 * 1024);
 
-    /// 128 KB for arguments. Does not need to be this big 99% of the time,
-    /// but [Internal#ensureOffHeap] may be called to copy data to off-heap memory.
-    /// The [StackAllocator] falls back to a confined arena if it runs out of space
-    private final StackAllocator argArena    = new StackAllocator(this.scratchArena, 128 * 1024);
+    /// 8 KB for arguments. Will create a confined arena when it runs out of space.
+    /// Warning: The allocator can return segments with byte sizes larger than the requested size.
+    private final StackAllocator argArena    = new StackAllocator(this.scratchArena, 8 * 1024);
 
-    private final MemorySegment worldIDSegment   = b3WorldId    .allocate(this.scratchArena);
-    private final MemorySegment bodyIDSegment    = b3BodyId     .allocate(this.scratchArena);
-    private final MemorySegment contactIDSegment = b3ContactId  .allocate(this.scratchArena);
-    private final MemorySegment shapeIDSegment   = b3ShapeId    .allocate(this.scratchArena);
-    private final MemorySegment jointIDSegment   = b3JointId    .allocate(this.scratchArena);
-    private final MemorySegment vec3Segment      = b3Vec3       .allocate(this.scratchArena);
-    private final MemorySegment quatSegment      = b3Quat       .allocate(this.scratchArena);
-    private final MemorySegment vec3Segment2     = b3Vec3       .allocate(this.scratchArena);
-    private final MemorySegment transformSegment = b3Transform  .allocate(this.scratchArena);
-    private final MemorySegment aabbSegment      = b3AABB       .allocate(this.scratchArena);
+    private final MemorySegment worldIDSegment    = b3WorldId    .allocate(this.scratchArena);
+    private final MemorySegment bodyIDSegment     = b3BodyId     .allocate(this.scratchArena);
+    private final MemorySegment contactIDSegment  = b3ContactId  .allocate(this.scratchArena);
+    private final MemorySegment shapeIDSegment    = b3ShapeId    .allocate(this.scratchArena);
+    private final MemorySegment jointIDSegment    = b3JointId    .allocate(this.scratchArena);
+    private final MemorySegment vec3Segment       = b3Vec3       .allocate(this.scratchArena);
+    private final MemorySegment vec3Segment2      = b3Vec3       .allocate(this.scratchArena);
+    private final MemorySegment mat3Segment       = b3Matrix3    .allocate(this.scratchArena);
+    private final MemorySegment quatSegment       = b3Quat       .allocate(this.scratchArena);
+    private final MemorySegment transformSegment  = b3Transform  .allocate(this.scratchArena);
+    private final MemorySegment aabbSegment       = b3AABB       .allocate(this.scratchArena);
 
-    private final Quaternionf          scratchQuat        = new Quaternionf();
-    private final SimplexCache         emptyDistanceCache = new SimplexCache();
-    private final ScratchCastResultFcn scratchCastFn      = new ScratchCastResultFcn(this.scratchArena);
-    private final ScratchOverlapAABB   scratchOverlapAABB = new ScratchOverlapAABB(this.scratchArena);
+    private final Quaternionf           scratchQuat        = new Quaternionf();
+    private final SimplexCache          emptyDistanceCache = new SimplexCache();
+    private final ScratchCastResultFcn  scratchCastFn      = new ScratchCastResultFcn(this.scratchArena);
+    private final ScratchMoverFilterFcn scratchMoverFilter = new ScratchMoverFilterFcn(this.scratchArena);
+    private final ScratchOverlapAABB    scratchOverlapAABB = new ScratchOverlapAABB(this.scratchArena);
+    private final ScratchPlaneResultFcn scratchPlaneResult = new ScratchPlaneResultFcn(this.scratchArena);
 
 
     //<editor-fold desc="Destructors without reference" default-state="collapsed">
@@ -2402,8 +2545,8 @@ public final class B3 {
     }
     private MemorySegment contactID(ContactID contactID) {
         b3ContactId.index1(this.contactIDSegment, contactID.index1());
-        b3ContactId.world0(this.contactIDSegment, assertU16(contactID.world0(), "world0"));
-        b3ContactId.generation(this.contactIDSegment, assertU32(contactID.generation(), "generation"));
+        b3ContactId.world0(this.contactIDSegment, contactID.world0());
+        b3ContactId.generation(this.contactIDSegment, contactID.generation());
         return this.contactIDSegment;
     }
     private MemorySegment shapeID(ShapeID shapeID) {
@@ -2442,6 +2585,10 @@ public final class B3 {
     private MemorySegment vec3_2(Vector3f vec) {
         PrimitiveMemOps.putVec3(this.vec3Segment2, vec);
         return this.vec3Segment2;
+    }
+    private MemorySegment mat3(Matrix3f matrix3f) {
+        PrimitiveMemOps.putMat3(this.mat3Segment, matrix3f);
+        return this.mat3Segment;
     }
     private MemorySegment quat(Quaternionf quat) {
         PrimitiveMemOps.putQuat(this.quatSegment, quat);

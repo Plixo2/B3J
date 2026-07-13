@@ -3,8 +3,7 @@ package io.github.plixo2.box3d;
 import io.github.plixo2.box3d.internal.AllocState;
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.internal.MemoryIterator;
-import io.github.plixo2.box3d.internal.U32;
-import io.github.plixo2.box3d.internal.U64;
+import io.github.plixo2.box3d.internal.Unsigned;
 import io.github.plixo2.box3d.region.Region;
 import org.box2d.box3d.*;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +34,7 @@ public class MeshData {
         return this.segment;
     }
 
-    public @U64 long version() {
+    public @Unsigned long version() {
         return b3MeshData.version(segment());
     }
 
@@ -43,12 +42,12 @@ public class MeshData {
         return b3MeshData.byteCount(segment());
     }
 
-    public @U32 int hash() {
+    public @Unsigned int hash() {
         return b3MeshData.hash(segment());
     }
 
-    public AABB bounds(AABB in) {
-        return in.set(b3MeshData.bounds(segment()));
+    public AABB bounds(AABB dest) {
+        return dest.set(b3MeshData.bounds(segment()));
     }
 
     public float surfaceArea() {
@@ -152,30 +151,30 @@ public class MeshData {
         return segment().asSlice(offset, (long) triangleCount() * Byte.BYTES);
     }
 
-    public MemoryIterator<MeshNode> nodeIterator(MeshNode in) {
+    public MemoryIterator<MeshNode> nodeIterator() {
         var segment = nodes();
         return new MemoryIterator<>(
-                in,
+                new MeshNode(),
                 segment,
                 b3MeshNode.sizeof(),
                 MeshNode::set
         );
     }
 
-    public MemoryIterator<Vector3f> vertexIterator(Vector3f in) {
+    public MemoryIterator<Vector3f> vertexIterator() {
         var segment = vertices();
         return new MemoryIterator<>(
-                in,
+                new Vector3f(),
                 segment,
                 b3Vec3.sizeof(),
                 PrimitiveMemOps::setVec3
         );
     }
 
-    public MemoryIterator<MeshTriangle> triangleIterator(MeshTriangle in) {
+    public MemoryIterator<MeshTriangle> triangleIterator() {
         var segment = triangles();
         return new MemoryIterator<>(
-                in,
+                new MeshTriangle(),
                 segment,
                 b3MeshTriangle.sizeof(),
                 MeshTriangle::set

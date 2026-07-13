@@ -1,7 +1,7 @@
 package io.github.plixo2.box3d;
 
 
-import io.github.plixo2.box3d.internal.Internal;
+import io.github.plixo2.box3d.internal.B3JUtil;
 
 public enum ShapeType {
     CAPSULE,
@@ -14,7 +14,7 @@ public enum ShapeType {
     ;
 
     public static ShapeType fromCode(int code) {
-        return Internal.enumValue(ShapeType.class, code);
+        return B3JUtil.enumValue(ShapeType.class, code);
     }
 
     public int code() {

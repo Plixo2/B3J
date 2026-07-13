@@ -1,21 +1,15 @@
 package io.github.plixo2.framework;
 
-import io.github.plixo2.abstraction.Color;
 import io.github.plixo2.box3d.*;
-
-import java.util.Map;
 
 public class MeshFactory extends DebugShapeCallbacks<MultiMesh.MeshRecord> {
     private final MeshRenderer buffers;
-    private final Map<ShapeID, Color> customColors;
 
     public MeshFactory(
-            MeshRenderer buffers,
-            Map<ShapeID, Color> customColors
+            MeshRenderer buffers
     ) {
         super(buffers.userShapes());
         this.buffers = buffers;
-        this.customColors = customColors;
     }
 
 
@@ -33,7 +27,7 @@ public class MeshFactory extends DebugShapeCallbacks<MultiMesh.MeshRecord> {
             }
         };
 
-        return this.buffers.place(args, this.customColors.get(shapeID));
+        return this.buffers.place(args);
     }
 
     @Override

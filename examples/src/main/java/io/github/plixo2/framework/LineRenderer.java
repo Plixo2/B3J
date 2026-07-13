@@ -1,6 +1,9 @@
 package io.github.plixo2.framework;
 
-import io.github.plixo2.abstraction.*;
+import io.github.plixo2.framework.abstractions.MemorySide;
+import io.github.plixo2.framework.abstractions.Mesh;
+import io.github.plixo2.framework.abstractions.Shader;
+import io.github.plixo2.framework.abstractions.ShaderBuffer;
 import org.joml.Matrix4f;
 
 import static org.lwjgl.opengl.GL11.GL_CULL_FACE;
@@ -23,7 +26,7 @@ public class LineRenderer {
     private int count = 0;
 
     public LineRenderer() {
-        this.shader = Shader.fromResource("/lines");
+        this.shader = Shader.fromResource("/shaders/lines");
         this.u_projView = this.shader.uniform("u_projView", Matrix4f.class);
         this.u_width = this.shader.uniform("u_width", Float.class);
         this.mesh = Mesh.shaderCreatedQuad();

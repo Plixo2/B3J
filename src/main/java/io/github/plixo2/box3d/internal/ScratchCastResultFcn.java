@@ -63,15 +63,16 @@ public final class ScratchCastResultFcn implements b3CastResultFcn.Function {
             int childIndex,
             MemorySegment context
     ) {
-        var function1 = this.function;
-        Objects.requireNonNull(function1, "function not set");
-        PrimitiveMemOps.setVec3(this.v1, point);
-        PrimitiveMemOps.setVec3(this.v2, normal);
-
-        var packedID = PrimitiveMemOps.packID(shapeId);
-        var shape = ShapeID.fromUnknown(packedID);
 
         try {
+            var function1 = this.function;
+            Objects.requireNonNull(function1, "function not set");
+            PrimitiveMemOps.setVec3(this.v1, point);
+            PrimitiveMemOps.setVec3(this.v2, normal);
+
+            var packedID = PrimitiveMemOps.packID(shapeId);
+            var shape = ShapeID.fromUnknown(packedID);
+
             return function1.onHit(
                     shape,
                     this.v1,
@@ -82,7 +83,7 @@ public final class ScratchCastResultFcn implements b3CastResultFcn.Function {
                     childIndex
             );
         } catch(Exception e) {
-            Internal.unhandledCallbackException(e);
+            B3JUtil.unhandledCallbackException(e);
             return 0.0f; // 0 to terminate the ray
         }
     }

@@ -5,6 +5,7 @@ import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import java.lang.foreign.MemorySegment;
 
 public final class JointID<T extends JointType> {
+
     public static final JointID<?> NULL_ID = new JointID<>(0);
 
     @SuppressWarnings("unchecked")
@@ -12,12 +13,14 @@ public final class JointID<T extends JointType> {
         return (JointID<T>) NULL_ID;
     }
 
+    public static <T extends JointType> JointID<T> fromUnknown(long packedID) {
+        return new JointID<>(packedID);
+    }
+
 
     private final long packedID;
 
-    private JointID(
-            long packedID
-    ) {
+    private JointID(long packedID) {
         this.packedID = packedID;
     }
 
@@ -71,6 +74,7 @@ public final class JointID<T extends JointType> {
     }
 
 
+
     @Override
     public boolean equals(Object object) {
         if (!(object instanceof JointID<?> JointID)) {
@@ -88,6 +92,8 @@ public final class JointID<T extends JointType> {
     public String toString() {
         return toString(this.packedID);
     }
+
+
 
     static <T extends JointType> JointID<T> of(
             MemorySegment segment

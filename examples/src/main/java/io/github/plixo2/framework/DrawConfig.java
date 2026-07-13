@@ -1,6 +1,6 @@
 package io.github.plixo2.framework;
 
-import io.github.plixo2.abstraction.Color;
+import io.github.plixo2.framework.abstractions.Color;
 import io.github.plixo2.box3d.DebugDraw;
 
 import java.util.LinkedHashMap;

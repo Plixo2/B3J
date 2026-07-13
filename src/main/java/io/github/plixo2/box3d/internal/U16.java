@@ -1,14 +1,11 @@
 package io.github.plixo2.box3d.internal;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
-@Retention(RetentionPolicy.CLASS)
-@Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD, ElementType.LOCAL_VARIABLE, ElementType.RECORD_COMPONENT})
-public @interface U16 {
 
-    long MAX = Internal.U16_MAX;
+public final class U16 {
+    private U16() {}
+
+    public static final long MAX = 0xFFFF;
+    public static final short MAX_AS_SHORT = (short) MAX;
 
 }

@@ -1,27 +1,29 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.U8;
+import io.github.plixo2.box3d.internal.Unsigned;
 import org.box2d.box3d.b3HullVertex;
 
 import java.lang.foreign.MemorySegment;
 
-import static io.github.plixo2.box3d.internal.Internal.assertU8;
+
 
 public class HullVertex {
-    public @U8 int edge;
+    public @Unsigned byte edge;
 
-    public HullVertex(@U8 int edge) {
-        assertU8(edge, "edge");
+    public HullVertex(@Unsigned byte edge) {
         this.edge = edge;
+    }
+
+    public HullVertex() {
+        this.edge = 0;
     }
 
     public HullVertex(HullVertex other) {
         this.edge = other.edge;
     }
 
-    HullVertex set(MemorySegment segment) {
-        this.edge = Byte.toUnsignedInt(b3HullVertex.edge(segment));
-        return this;
+    void set(MemorySegment segment) {
+        this.edge = b3HullVertex.edge(segment);
     }
 
 }

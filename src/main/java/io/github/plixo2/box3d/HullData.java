@@ -2,8 +2,7 @@ package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.internal.MemoryIterator;
-import io.github.plixo2.box3d.internal.U32;
-import io.github.plixo2.box3d.internal.U64;
+import io.github.plixo2.box3d.internal.Unsigned;
 import org.box2d.box3d.*;
 import org.joml.Matrix3f;
 import org.joml.Vector3f;
@@ -21,7 +20,7 @@ public non-sealed class HullData implements ShapeType.Shape {
         this.segment = segment;
     }
 
-    public @U64 long version() {
+    public @Unsigned long version() {
         return b3HullData.version(this.segment);
     }
 
@@ -29,12 +28,12 @@ public non-sealed class HullData implements ShapeType.Shape {
         return b3HullData.byteCount(this.segment);
     }
 
-    public @U32 int hash() {
+    public @Unsigned int hash() {
         return b3HullData.hash(this.segment);
     }
 
-    public AABB aabb(AABB in) {
-        return in.set(b3HullData.aabb(this.segment));
+    public AABB aabb(AABB dest) {
+        return dest.set(b3HullData.aabb(this.segment));
     }
 
     public float surfaceArea() {
@@ -49,12 +48,12 @@ public non-sealed class HullData implements ShapeType.Shape {
         return b3HullData.innerRadius(this.segment);
     }
 
-    public Vector3f center(Vector3f in) {
-        return PrimitiveMemOps.setVec3(in, b3HullData.center(this.segment));
+    public Vector3f center(Vector3f dest) {
+        return PrimitiveMemOps.setVec3(dest, b3HullData.center(this.segment));
     }
 
-    public Matrix3f centralInertia(Matrix3f in) {
-        return PrimitiveMemOps.setMat3(in, b3HullData.centralInertia(this.segment));
+    public Matrix3f centralInertia(Matrix3f dest) {
+        return PrimitiveMemOps.setMat3(dest, b3HullData.centralInertia(this.segment));
     }
 
     public int vertexCount() {
@@ -143,50 +142,50 @@ public non-sealed class HullData implements ShapeType.Shape {
         return this.segment.asSlice(offset, (long) faceCount() * bytesPerPlane);
     }
 
-    public MemoryIterator<HullVertex> vertexIterator(HullVertex in) {
+    public MemoryIterator<HullVertex> vertexIterator() {
         var segment = vertices();
         return new MemoryIterator<>(
-                in,
+                new HullVertex(),
                 segment,
                 b3HullVertex.sizeof(),
                 HullVertex::set
         );
     }
 
-    public MemoryIterator<Vector3f> pointIterator(Vector3f in) {
+    public MemoryIterator<Vector3f> pointIterator() {
         var segment = points();
         return new MemoryIterator<>(
-                in,
+                new Vector3f(),
                 segment,
                 b3Vec3.sizeof(),
                 PrimitiveMemOps::setVec3
         );
     }
 
-    public MemoryIterator<HullHalfEdge> edgeIterator(HullHalfEdge in) {
+    public MemoryIterator<HullHalfEdge> edgeIterator() {
         var segment = edges();
         return new MemoryIterator<>(
-                in,
+                new HullHalfEdge(),
                 segment,
                 b3HullHalfEdge.sizeof(),
                 HullHalfEdge::set
         );
     }
 
-    public MemoryIterator<HullFace> faceIterator(HullFace in) {
+    public MemoryIterator<HullFace> faceIterator() {
         var segment = faces();
         return new MemoryIterator<>(
-                in,
+                new HullFace(),
                 segment,
                 b3HullFace.sizeof(),
                 HullFace::set
         );
     }
 
-    public MemoryIterator<Plane> planeIterator(Plane in) {
+    public MemoryIterator<Plane> planeIterator() {
         var segment = planes();
         return new MemoryIterator<>(
-                in,
+                new Plane(),
                 segment,
                 b3Plane.sizeof(),
                 Plane::set

@@ -1,7 +1,5 @@
 package io.github.plixo2.framework;
 
-import io.github.plixo2.abstraction.Mesh;
-import io.github.plixo2.abstraction.Shader;
 import io.github.plixo2.box3d.*;
 import org.joml.Vector3f;
 
@@ -83,7 +81,7 @@ public class MeshCreator {
 
         int columns = heightField.columnCount();
         int rows = heightField.rowCount();
-        var heights = heightField.heightIterator().collect();
+        var heights = heightField.heightIterator().collectToUnsignedInt();
 
         if (columns <= 0 || rows <= 0 || heights.length == 0) {
             return emptyMesh();
@@ -112,7 +110,7 @@ public class MeshCreator {
         }
 
         List<Integer> indices = new ArrayList<>();
-        var materials = heightField.materialIterator().collect();
+        var materials = heightField.materialIterator().collectAsByte();
         boolean clockwise = heightField.clockwise();
 
         for (int row = 0; row + 1 < rows; row++) {
@@ -151,10 +149,10 @@ public class MeshCreator {
 
     static MeshArgs createHull(HullData hull) {
 
-        var faces = hull.faceIterator(new HullFace(0));
-        var points = hull.pointIterator(new Vector3f());
-        var edges = hull.edgeIterator(new HullHalfEdge(0, 0, 0, 0));
-        var planes = hull.planeIterator(new Plane(0, 0, 0, 0));
+        var faces = hull.faceIterator();
+        var points = hull.pointIterator();
+        var edges = hull.edgeIterator();
+        var planes = hull.planeIterator();
 
         if (faces.length() == 0 || points.length() == 0 || edges.length() == 0 || planes.length() == 0) {
             return emptyMesh();
@@ -167,11 +165,10 @@ public class MeshCreator {
             int firstEdge = faces.get(faceIndex).edge;
             int edgeIndex = firstEdge;
             int guard = 0;
-
             List<Integer> facePointIndices = new ArrayList<>();
             do {
                 var edge = edges.get(edgeIndex);
-                facePointIndices.add(edge.origin);
+                facePointIndices.add(Byte.toUnsignedInt(edge.origin));
                 edgeIndex = edge.next;
                 guard++;
             } while (edgeIndex != firstEdge && guard <= 256);
@@ -205,8 +202,8 @@ public class MeshCreator {
 
         var data = mesh.data;
 
-        var vertices = data.vertexIterator(new Vector3f());
-        var triangles = data.triangleIterator(new MeshTriangle(0, 0, 0));
+        var vertices = data.vertexIterator();
+        var triangles = data.triangleIterator();
 
         var vertexCount = vertices.length();
         var triangleCount = triangles.length();

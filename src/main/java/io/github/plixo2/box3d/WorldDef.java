@@ -3,8 +3,9 @@ package io.github.plixo2.box3d;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 
+import io.github.plixo2.box3d.internal.AllocatedShapeCallbacks;
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
-import io.github.plixo2.box3d.internal.AllocatedPool;
+import io.github.plixo2.box3d.internal.AllocatedTaskCallbacks;
 import io.github.plixo2.box3d.tasks.BuildInScheduler;
 import io.github.plixo2.box3d.tasks.CustomTaskScheduler;
 import io.github.plixo2.box3d.tasks.TaskScheduler;
@@ -63,14 +64,14 @@ public class WorldDef {
     CreationResult create(SegmentAllocator arena) {
         var segment = b3WorldDef.allocate(arena);
 
-        AllocatedPool taskPool = null;
+        AllocatedTaskCallbacks taskPool = null;
         var enqueueTask = MemorySegment.NULL;
         var finishTask = MemorySegment.NULL;
 
         var workerCount = switch (this.taskPool) {
             case BuildInScheduler(var wc) -> wc;
             case CustomTaskScheduler<?> scheduler -> {
-                taskPool = AllocatedPool.of(scheduler);
+                taskPool = AllocatedTaskCallbacks.createCallbacks(scheduler);
                 enqueueTask = taskPool.enqueueTaskCallback();
                 finishTask = taskPool.finishTaskCallback();
                 yield scheduler.workerCount();
@@ -78,14 +79,14 @@ public class WorldDef {
             case null -> 0;
         };
 
-        DebugShapeCallbacks.Allocated shapes = null;
+        AllocatedShapeCallbacks shapes = null;
         var createDebugShape = MemorySegment.NULL;
         var destroyDebugShape = MemorySegment.NULL;
 
         if (this.debugShapes != null) {
-            shapes = new DebugShapeCallbacks.Allocated(this.debugShapes);
-            createDebugShape = shapes.creation;
-            destroyDebugShape = shapes.deletion;
+            shapes = this.debugShapes.createCallbacks();
+            createDebugShape = shapes.creation();
+            destroyDebugShape = shapes.deletion();
         }
 
 
@@ -110,14 +111,14 @@ public class WorldDef {
         this.capacity.put(b3WorldDef.capacity(segment));
         b3WorldDef.internalValue(segment, B3.SECRET_COOKIE);
 
-        return new CreationResult(shapes, taskPool, segment);
+        var worldStateValues = new WorldID.StateValues(taskPool, shapes);
+        return new CreationResult(segment, worldStateValues);
     }
-    record CreationResult(
-            @Nullable DebugShapeCallbacks.Allocated shapes,
-            @Nullable AllocatedPool taskPool,
-            MemorySegment segment
-    ) {}
 
+    record CreationResult(
+            MemorySegment segment,
+            WorldID.StateValues worldStateValues
+    ) {}
 
     private MemorySegment nls(Object object) {
         if (object != null) {

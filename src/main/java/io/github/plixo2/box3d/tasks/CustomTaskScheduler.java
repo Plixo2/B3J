@@ -1,7 +1,7 @@
 package io.github.plixo2.box3d.tasks;
 
 import io.github.plixo2.box3d.B3;
-import io.github.plixo2.box3d.internal.Internal;
+import io.github.plixo2.box3d.internal.B3JUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,11 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-
+/// Base class for a custom TaskScheduler.
+///
+/// TODO This class is a mess, should probably refactor
+///
+/// @see ExecutorTaskPool TaskScheduler using a ExecutorService
 public abstract non-sealed class CustomTaskScheduler<T>
         implements
             TaskScheduler,
@@ -105,7 +109,7 @@ public abstract non-sealed class CustomTaskScheduler<T>
                 var index = slot.index + 1;  // 0 means task was handled synchronously, so we offset by 1
                 return MemorySegment.ofAddress(index);
             } catch(Exception e) {
-                Internal.unhandledCallbackException(e);
+                B3JUtil.unhandledCallbackException(e);
                 return MemorySegment.NULL;
             }
         }
@@ -153,7 +157,7 @@ public abstract non-sealed class CustomTaskScheduler<T>
                     slot.markFree(); // mark free regardless
                 }
             } catch(Exception e) {
-                Internal.unhandledCallbackException(e);
+                B3JUtil.unhandledCallbackException(e);
             }
         }
 

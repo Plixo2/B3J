@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'java-library'
 }
 
 group = 'io.github.plixo2'
@@ -17,7 +18,7 @@ repositories {
 
 dependencies {
 
-    implementation files("libs/${bindingPath}/Box3D-0.1.0.jar")
+    api files("libs/${bindingPath}/Box3D-0.1.0.jar")
 
     compileOnly 'org.jetbrains:annotations:23.0.0'
     compileOnly 'org.projectlombok:lombok:1.18.42'

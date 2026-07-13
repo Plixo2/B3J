@@ -1,7 +1,6 @@
 package io.github.plixo2.samples;
 
 import io.github.plixo2.Example;
-import io.github.plixo2.abstraction.Color;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.tasks.BuildInScheduler;
 import io.github.plixo2.framework.MeshFactory;
@@ -49,7 +48,7 @@ public class Determinism extends Example {
 
 
         worldDef.gravity().set(0, -4f, 0);
-        this.worldID = this.b3.createWorld(this.region, worldDef);
+        this.worldID = b3.createWorld(this.region, worldDef);
 
         spawnBox(
                 BodyType.STATIC,
@@ -126,6 +125,7 @@ public class Determinism extends Example {
                 }
             }
         }
+        boxDef.baseMaterial().customColor(0);
 
         var ball = spawnSphere(
                 BodyType.STATIC,
@@ -152,7 +152,7 @@ public class Determinism extends Example {
         jointDef.motorSpeed(7f);
         jointDef.enableMotor(true);
 
-        var _ = this.b3.createRevoluteJoint(this.worldID, jointDef);
+        var _ = b3.createRevoluteJoint(this.worldID, jointDef);
 
     }
     private void spawnColorBox(
@@ -166,18 +166,21 @@ public class Determinism extends Example {
         var dynBodyDef = new BodyDef();
         dynBodyDef.type(bodyType);
         dynBodyDef.position().set(position);
-        BodyID bodyId = this.b3.createBody(this.region, this.worldID, dynBodyDef);
 
-        var dynamicBox = this.b3.makeBoxHull(size.x / 2f, size.y / 2f, size.z / 2f);
-        var shapeID = this.b3.createHullShape(bodyId, boxDef, dynamicBox.base());
+        BodyID bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
+
+        var dynamicBox = b3.makeBoxHull(size.x / 2f, size.y / 2f, size.z / 2f);
+
+        if (!record) {
+            assert stream != null;
+            var color = stream.readInt();
+            boxDef.baseMaterial().customColor(0xFF000000 | color);
+        }
+
+        var shapeID = b3.createHullShape(bodyId, boxDef, dynamicBox.base());
 
         if (record) {
             this.bodies.add(bodyId);
-        } else {
-            assert stream != null;
-            var color = stream.readInt();
-            var c = new Color(0xFF000000 | color);
-            customColor(shapeID, c);
         }
 
 
@@ -199,7 +202,7 @@ public class Determinism extends Example {
 
         try (var out = new DataOutputStream(Files.newOutputStream(Path.of("data.bin")))) {
             for (var body : this.bodies) {
-                var position = this.b3.bodyGetPosition(v, body);
+                var position = b3.bodyGetPosition(v, body);
                 var color = sample(img, position.x, position.z);
                 out.writeInt(color);
             }
@@ -240,12 +243,12 @@ public class Determinism extends Example {
         }
 
         if (this.time > 10 && this.spinner != null) {
-            this.b3.destroyBody(this.spinner);
+            b3.destroyBody(this.spinner);
             this.spinner = null;
         }
 
 
 
-        this.b3.worldStep(this.worldID, timeStep, subStepCount);
+        b3.worldStep(this.worldID, timeStep, subStepCount);
     }
 }

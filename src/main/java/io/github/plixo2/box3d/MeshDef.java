@@ -1,9 +1,8 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.Internal;
+import io.github.plixo2.box3d.internal.B3JUtil;
 import lombok.Getter;
 import lombok.Setter;
-import org.box2d.box3d.b3HeightFieldDef;
 import org.box2d.box3d.b3MeshDef;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,13 +108,6 @@ public class MeshDef {
     public void materialIndices(ByteBuffer materialIndices) {
         materialIndices(MemorySegment.ofBuffer(materialIndices));
     }
-    public void materialIndices(int[] materialIndices) {
-        var bytes = new byte[materialIndices.length];
-        for (int i = 0; i < materialIndices.length; i++) {
-            bytes[i] = Internal.assertU8(materialIndices[i], "materialIndex");
-        }
-        materialIndices(bytes);
-    }
 
 
     private static void ensureCount(int vertexCount, int indexCount) {
@@ -132,8 +124,8 @@ public class MeshDef {
 
         var segment = b3MeshDef.allocate(arena);
 
-        b3MeshDef.vertices(segment, Internal.ensureOffHeap(arena, this.vertices));
-        b3MeshDef.indices(segment, Internal.ensureOffHeap(arena, this.indices));
+        b3MeshDef.vertices(segment, B3JUtil.ensureOffHeap(arena, this.vertices));
+        b3MeshDef.indices(segment, B3JUtil.ensureOffHeap(arena, this.indices));
 
         b3MeshDef.materialIndices(segment, this.materialIndices);
         b3MeshDef.weldTolerance(segment, this.weldTolerance);

@@ -1,12 +1,10 @@
 package io.github.plixo2.framework;
 
-import io.github.plixo2.abstraction.Capabilities;
-import io.github.plixo2.abstraction.Color;
-import io.github.plixo2.abstraction.Shader;
+import io.github.plixo2.framework.abstractions.Capabilities;
+import io.github.plixo2.framework.abstractions.Shader;
 import io.github.plixo2.box3d.UserData;
 import lombok.Getter;
 import org.apache.commons.io.IOUtils;
-import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -59,6 +57,11 @@ public class MeshRenderer {
         }
 
     }
+    void reset() {
+        for (var buffer : this.buffers) {
+            buffer.reset();
+        }
+    }
 
     void free() {
         this.buffers.forEach(MultiMesh::free);
@@ -66,7 +69,7 @@ public class MeshRenderer {
         this.userShapes.clear();
     }
 
-    MultiMesh.MeshRecord place(MeshCreator.MeshArgs mesh, @Nullable Color customColor) {
+    MultiMesh.MeshRecord place(MeshCreator.MeshArgs mesh) {
         if (this.buffers.isEmpty()) {
             this.buffers.add(new MultiMesh(this.legacy, mesh.verticies().length, mesh.indices().length));
         }
@@ -76,14 +79,14 @@ public class MeshRenderer {
             this.buffers.add(last = new MultiMesh(this.legacy, mesh.verticies().length, mesh.indices().length));
         }
 
-        return last.place(mesh, customColor);
+        return last.place(mesh);
     }
 
 
 
     private static ShaderCompileResult compileShader() throws IOException {
-        var vertex = IOUtils.resourceToString("/3D/vertex.glsl", Charset.defaultCharset());
-        var fragment = IOUtils.resourceToString("/3D/fragment.glsl", Charset.defaultCharset());
+        var vertex = IOUtils.resourceToString("/shaders/3D/vertex.glsl", Charset.defaultCharset());
+        var fragment = IOUtils.resourceToString("/shaders/3D/fragment.glsl", Charset.defaultCharset());
 
         var capabilities = Capabilities.get();
 

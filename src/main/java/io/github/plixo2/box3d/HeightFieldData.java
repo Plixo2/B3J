@@ -30,7 +30,7 @@ public non-sealed class HeightFieldData implements ShapeType.Shape {
         return this.segment;
     }
 
-    public @U64 long version() {
+    public @Unsigned long version() {
         return b3HeightFieldData.version(segment());
     }
 
@@ -38,12 +38,12 @@ public non-sealed class HeightFieldData implements ShapeType.Shape {
         return b3HeightFieldData.byteCount(segment());
     }
 
-    public @U32 int hash() {
+    public @Unsigned int hash() {
         return b3HeightFieldData.hash(segment());
     }
 
-    public AABB aabb(AABB in) {
-        return in.set(b3HeightFieldData.aabb(segment()));
+    public AABB aabb(AABB dest) {
+        return dest.set(b3HeightFieldData.aabb(segment()));
     }
 
     public float minHeight() {
@@ -58,8 +58,8 @@ public non-sealed class HeightFieldData implements ShapeType.Shape {
         return b3HeightFieldData.heightScale(segment());
     }
 
-    public Vector3f scale(Vector3f in) {
-        return PrimitiveMemOps.setVec3(in, b3HeightFieldData.scale(segment()));
+    public Vector3f scale(Vector3f dest) {
+        return PrimitiveMemOps.setVec3(dest, b3HeightFieldData.scale(segment()));
     }
 
     public int columnCount() {

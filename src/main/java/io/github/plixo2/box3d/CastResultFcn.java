@@ -1,6 +1,6 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.U64;
+import io.github.plixo2.box3d.internal.Unsigned;
 import org.joml.Vector3f;
 
 public interface CastResultFcn {
@@ -10,7 +10,7 @@ public interface CastResultFcn {
             Vector3f point,
             Vector3f normal,
             float fraction,
-            @U64 long userMaterialId,
+            @Unsigned long userMaterialId,
             int triangleIndex,
             int childIndex
     );

@@ -18,6 +18,12 @@ public class MeshTriangle {
         this.index3 = index3;
     }
 
+    public MeshTriangle() {
+        this.index1 = 0;
+        this.index2 = 0;
+        this.index3 = 0;
+    }
+
     public MeshTriangle(MeshTriangle other) {
         this.index1 = other.index1;
         this.index2 = other.index2;

@@ -1,6 +1,6 @@
 package io.github.plixo2.framework;
 
-import io.github.plixo2.abstraction.*;
+import io.github.plixo2.framework.abstractions.*;
 import lombok.Setter;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
@@ -28,7 +28,7 @@ public abstract sealed class TextRenderer {
     protected TextRenderer(TextAtlas textAtlas) {
         this.textAtlas = textAtlas;
 
-        this.shader = Shader.fromResource("/text");
+        this.shader = Shader.fromResource("/shaders/text");
         this.u_projection = this.shader.uniform("u_projection", Matrix4f.class);
         this.u_right = this.shader.uniform("u_right", Vector3f.class);
         this.u_up = this.shader.uniform("u_up", Vector3f.class);
@@ -36,6 +36,7 @@ public abstract sealed class TextRenderer {
 
         this.mesh = Mesh.shaderCreatedQuad();
         this.buffer = new ShaderBuffer(128, GL_STREAM_DRAW, 0, MemorySide.CPU_AND_GPU_SIDE);
+
     }
 
     void draw(Matrix4f projection) {

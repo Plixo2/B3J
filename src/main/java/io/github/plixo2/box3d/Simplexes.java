@@ -71,7 +71,7 @@ public class Simplexes implements Iterable<Simplexes.Simplex> {
             return new MemoryIterator<>(
                     Simplexes.this.reference,
                     vertices,
-                    count * size,
+                    count,
                     size,
                     SimplexVertex::set
             );

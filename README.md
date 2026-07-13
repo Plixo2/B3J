@@ -6,7 +6,8 @@
 
 
 
-B3J is a handwritten Java binding library for [Box3D](https://github.com/erincatto/box3d).
+B3J is a Java binding library for [Box3D](https://github.com/erincatto/box3d).
+
 
 It is designed to be efficient yet convenient, 
 staying close to the original Box3D API. 
@@ -24,10 +25,10 @@ staying close to the original Box3D API.
 
 - [JOML](https://github.com/JOML-CI/JOML) is used for fast math and vector operations.
   - A `Matrix4f` is used as a rigid transform instead of `b3Transform`.
-  - `Vector3f` and `Quaternionf` are used for `b3Vec3` and `b3Quat`.
+  - `Vector3f` and `Quaternionf` are used for `b3Vec3` and `b3Quat`, `Matrix3f` for `b3Matrix3`.
+  - JOML is already widely used in the Java (game) ecosystem and can offer more than Box3D's math.
 
-
-
+  
 - Similar API to Box3D, but not identical.
   - Constructors are used, instead of `b3Default...` methods and zero-initialized structs.
   - All other methods are found on the [B3](src/main/java/io/github/plixo2/box3d/B3.java) class.
@@ -42,18 +43,21 @@ staying close to the original Box3D API.
       - Provide the same `UserData.OfShape<T>` to [DebugDraw](src/main/java/io/github/plixo2/box3d/DebugDraw.java) so the `drawShapeFcn` can be called with the correct `userShape`.
   - `JointID` has a generic type for the `JointType`. You can use `jointId.reinterpret(JointType)` to freely reinterpret it.
 
+
 - Thread safety
   - B3J allocates a small amount of memory upfront for efficient c calls.
-  - `B3.get()` will give you a thread unique instance. Dont share this across threads.
+  - `B3.get()` will give you a thread unique instance. 
+    - Dont share a instance of `B3` between threads.
+    - You probably operate on a single thread, so can declare a `B3` instance as a global once.
 
 
 - Memory Efficient
   - B3J allocates as few objects as possible and reuses existing objects. 
-  - Some method require a `in` parameter to be filled in. E.g. `Vector3f bodyGetPosition(Vector3f in, BodyID bodyId)`.
+  - Some method require a `dest` parameter to be filled in. E.g. `Vector3f bodyGetPosition(Vector3f dest, BodyID bodyId)`.
     In that case, you can just pass in a new object using the default constructor, or reuse a existing one.
   - Arguments of callbacks or custom Iterators can be mutable. 
-    Make sure to copy the values if you need the data beyond the lifetime of the callback or iterator.
-    Mutable objects have a copy constructor that you can use, although it will be cheaper to just copy the fields you need.
+    Make sure to copy the values, if you need the data beyond the lifetime of the callback or iterator.
+    All mutable objects have a copy constructor that you can use, although it will be cheaper to just copy the fields you need.
   - Some arguments can be `null` when they are not needed.
   - Some methods that require callbacks are implemented in c. All arguments are recorded and replayed in java avoid the overhead of upcalls.
 
@@ -64,6 +68,16 @@ staying close to the original Box3D API.
     - The lifetime of these objects is dictated by the region.
     - See [Region](src/main/java/io/github/plixo2/box3d/region/Region.java) for more details and available regions.
   - You can also destroy all objects manually.
+
+
+- Null Safety
+  - B3J uses `@Nullable` annotations for values that can be null. Otherwise, assume non-null. 
+    Dont break this contract!
+
+    
+- Unsigned values are annotated with `@Unsigned`
+  - Make sure you operate with the correct types. [Read more](src/main/java/io/github/plixo2/box3d/internal/Unsigned.java)
+
 
 
 ## Compatibility
@@ -90,7 +104,6 @@ Please consider giving this repository a star and dont forget to star the [origi
 I used LLMs in the following areas:
 
 - Code reviews
-- Repetitive function implementations
-- Examples
+- Repetitive, simple function implementations
 
 All other code is developed and written by me and i take responsibility for every line of code.
