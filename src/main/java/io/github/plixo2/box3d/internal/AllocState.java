@@ -15,9 +15,7 @@ public final class AllocState {
     }
 
     public synchronized void once() {
-        if (this.destroyed) {
-            throw new IllegalStateException("Already destroyed");
-        }
+        ensureAccess();
         this.destroyed = true;
     }
 
