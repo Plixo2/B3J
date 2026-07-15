@@ -8,6 +8,7 @@ import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.region.Region;
 import io.github.plixo2.framework.abstractions.Mesh;
 import lombok.val;
+import org.box2d.box3d.box3d_h;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.glfw.*;
@@ -72,7 +73,6 @@ public class Entry implements AutoCloseable {
         var ctrlBlue = "\u001B[34m";
         var ctrlRed = "\u001B[31m";
         var ctrlReset = "\u001B[0m";
-
 
         GLFWErrorCallback.createPrint(System.err).set();
         if (!glfwInit()) {

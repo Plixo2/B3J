@@ -1,13 +1,10 @@
 package io.github.plixo2.box3d.internal;
 
 
-import io.github.plixo2.box3d.AssertFcn;
-import org.box2d.box3d.b3AssertFcn;
-import org.box2d.box3d.box3d_h;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.foreign.Arena;
+import java.io.PrintStream;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.util.BitSet;
@@ -15,6 +12,8 @@ import java.util.EnumSet;
 import java.util.Objects;
 
 public final class B3JUtil {
+
+    private static @Nullable PrintStream logStream = null;
 
     private B3JUtil() {}
 
@@ -227,13 +226,36 @@ public final class B3JUtil {
         throw new IllegalArgumentException(exceptionMessage);
     }
 
-
-    public static void unhandledCallbackException(Exception e) {
-        System.err.println("[B3J] Unhandled exception in callback:");
-        e.printStackTrace(System.err);
+    public static void setLogStream(@Nullable PrintStream stream) {
+        logStream = stream;
     }
 
+    public static void unhandledCallbackException(Exception e) {
+        var stream = logStream;
+        if (stream == null) {
+            return;
+        }
 
+        try {
+            stream.println("[B3J]: Unhandled exception in callback:");
+            e.printStackTrace(stream);
+        } catch(Exception _) {
+            // ignore bad stream
+        }
+    }
+
+    public static void log(String message) {
+        var stream = logStream;
+        if (stream == null) {
+            return;
+        }
+
+        try {
+            stream.println("[B3J]: " + message);
+        } catch(Exception _) {
+            // ignore bad stream
+        }
+    }
 
 
 }

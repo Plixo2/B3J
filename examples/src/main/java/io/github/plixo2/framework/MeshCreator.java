@@ -1,6 +1,7 @@
 package io.github.plixo2.framework;
 
 import io.github.plixo2.box3d.*;
+import io.github.plixo2.box3d.internal.B3JUtil;
 import org.joml.Vector3f;
 
 import java.util.ArrayList;
@@ -162,14 +163,14 @@ public class MeshCreator {
         List<Integer> indices = new ArrayList<>();
 
         for (int faceIndex = 0; faceIndex < faces.length(); faceIndex++) {
-            int firstEdge = faces.get(faceIndex).edge;
+            int firstEdge = B3JUtil.toUnsignedInt(faces.get(faceIndex).edge);
             int edgeIndex = firstEdge;
             int guard = 0;
             List<Integer> facePointIndices = new ArrayList<>();
             do {
                 var edge = edges.get(edgeIndex);
-                facePointIndices.add(Byte.toUnsignedInt(edge.origin));
-                edgeIndex = edge.next;
+                facePointIndices.add(B3JUtil.toUnsignedInt(edge.origin));
+                edgeIndex = B3JUtil.toUnsignedInt(edge.next);
                 guard++;
             } while (edgeIndex != firstEdge && guard <= 256);
 

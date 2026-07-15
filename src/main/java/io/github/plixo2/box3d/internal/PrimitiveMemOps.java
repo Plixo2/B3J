@@ -106,17 +106,8 @@ public final class PrimitiveMemOps {
             Matrix4f matrix
     ) {
 
-        // PROPERTY_ORTHONORMAL implies PROPERTY_AFFINE
-        if (
-                   (matrix.properties() & PROPERTY_ORTHONORMAL) != 0
-                || (matrix.determineProperties().properties() & PROPERTY_ORTHONORMAL) != 0
-        ) {
-            tempQuat.setFromNormalized(matrix);
-        } else {
-            throw new IllegalArgumentException(
-                    "Matrix4f transforms must only contain translation and rotation"
-            );
-        }
+        validateRigidMatrix(matrix);
+        tempQuat.setFromNormalized(matrix);
 
 
         segment.set(ValueLayout.JAVA_FLOAT, transform_pos_offset + Float.BYTES * 0, matrix.m30());
@@ -128,6 +119,24 @@ public final class PrimitiveMemOps {
         segment.set(ValueLayout.JAVA_FLOAT, transform_rot_vec_offset + Float.BYTES * 2, tempQuat.z);
         segment.set(ValueLayout.JAVA_FLOAT, transform_rot_w_offset, tempQuat.w);
 
+    }
+
+    public static void validateRigidMatrix(Matrix4f matrix) {
+        // PROPERTY_ORTHONORMAL implies PROPERTY_AFFINE
+        if (
+                   (matrix.properties() & PROPERTY_ORTHONORMAL) == 0
+                && (matrix.determineProperties().properties() & PROPERTY_ORTHONORMAL) == 0
+        ) {
+            throw new IllegalArgumentException(
+                    "Matrix4f transforms must only contain translation and rotation"
+            );
+        }
+    }
+
+    public static boolean isRigidMatrix(Matrix4f matrix) {
+        // PROPERTY_ORTHONORMAL implies PROPERTY_AFFINE
+        return (matrix.properties() & PROPERTY_ORTHONORMAL) != 0
+                || (matrix.determineProperties().properties() & PROPERTY_ORTHONORMAL) != 0;
     }
 
     public static Matrix4f setTransform(

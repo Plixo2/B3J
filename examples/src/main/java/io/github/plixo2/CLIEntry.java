@@ -2,7 +2,9 @@ package io.github.plixo2;
 
 import io.github.plixo2.samples.*;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CLIEntry {
@@ -19,14 +21,11 @@ public class CLIEntry {
 
 
     void main(String[] args) throws IllegalArgumentException {
-        this.examples.get(name(args)).run();
-    }
-
-    String name(String[] args) throws IllegalArgumentException {
-        if (args.length == 0) {
-            return fromIO();
+        if (args.length != 0) {
+            fromArg(args[0]).forEach(Runnable::run);
+        } else {
+            this.examples.get(fromIO()).run();
         }
-        return fromArg(args[0]);
     }
 
     String fromIO() {
@@ -53,11 +52,15 @@ public class CLIEntry {
 
     }
 
-    String fromArg(String arg) throws IllegalArgumentException {
+    Collection<Runnable> fromArg(String arg) throws IllegalArgumentException {
+        if (arg.equalsIgnoreCase("--all") || arg.equalsIgnoreCase("-a")) {
+            return this.examples.values();
+        }
 
-        for (var s : this.examples.keySet()) {
-            if (s.equalsIgnoreCase(arg)) {
-                return s;
+        for (var k_v : this.examples.entrySet()) {
+            var key = k_v.getKey();
+            if (key.equalsIgnoreCase(arg)) {
+                return List.of(k_v.getValue());
             }
         }
 

@@ -6,6 +6,7 @@ import org.box2d.box3d.b3Vec3;
 import org.joml.Vector3f;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 
 public class Plane {
 
@@ -63,6 +64,11 @@ public class Plane {
     void put(MemorySegment segment) {
         PrimitiveMemOps.putVec3(b3Plane.normal(segment), this.normalX, this.normalY, this.normalZ);
         b3Plane.offset(segment, this.offset);
+    }
+    MemorySegment create(SegmentAllocator arena) {
+        var segment = b3Plane.allocate(arena);
+        this.put(segment);
+        return segment;
     }
 
 }

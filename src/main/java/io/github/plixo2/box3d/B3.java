@@ -11,6 +11,7 @@ import org.joml.*;
 import java.lang.Math;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
 import java.nio.FloatBuffer;
 import java.util.Objects;
@@ -21,8 +22,21 @@ import static org.box2d.box3d.box3d_h.*;
 public final class B3 {
 
     static {
-        GlobalAssertionCallback.installDefault();
+        B3JUtil.setLogStream(System.err);
+        StaticCallbacks.installDefault();
     }
+
+    private static final ThreadLocal<B3> tls = ThreadLocal.withInitial(B3::new);
+
+    private B3() {}
+
+    public static B3 get() {
+        return tls.get();
+    }
+
+
+    //<editor-fold desc="Static" default-state="collapsed">
+
 
     /// @api B3_DEFAULT_CATEGORY_BITS
     public static final long DEFAULT_CATEGORY_BITS = U64.MAX;
@@ -84,49 +98,8 @@ public final class B3 {
     /// @api B3_MAX_CHILD_SHAPES
     public static final @Unsigned int MAX_CHILD_SHAPES = B3_MAX_CHILD_SHAPES;
 
-
-
-    private static final ThreadLocal<B3> tls = ThreadLocal.withInitial(B3::new);
-
-    private B3() {}
-
-    public static B3 get() {
-        return tls.get();
-    }
-
-
-    //<editor-fold desc="Static" default-state="collapsed">
-
-    /// @api b3GetVersion
-    public static Version getVersion() {
-        try (var arena = Arena.ofConfined()) {
-            return Version.of(b3GetVersion(arena));
-        }
-    }
-
-    /// @api b3SetAssertFcn
-    public static void setAssertFcn(@Nullable AssertFcn assertFcn) {
-        GlobalAssertionCallback.install(assertFcn);
-    }
-
-    /// @api b3SetStallThreshold
-    public static void setStallThreshold(float seconds) {
-        b3SetStallThreshold(seconds);
-    }
-
-    /// @api b3GetStallThreshold
-    public static float getStallThreshold() {
-        return b3GetStallThreshold();
-    }
-
-    /// @api b3GetLengthUnitsPerMeter
-    public static float getLengthUnitsPerMeter() {
-        return b3GetLengthUnitsPerMeter();
-    }
-    /// @api b3SetLengthUnitsPerMeter
-    public static void setLengthUnitsPerMeter(float lengthUnits) {
-        b3SetLengthUnitsPerMeter(lengthUnits);
-    }
+    /// @api B3_MIN_SCALE
+    public static final float MIN_SCALE = B3_MIN_SCALE;
 
     /// @api B3_HUGE
     public static float HUGE() {
@@ -166,6 +139,430 @@ public final class B3 {
     }
 
 
+    /// @api b3GetVersion
+    public static Version getVersion() {
+        try (var arena = Arena.ofConfined()) {
+            return Version.of(b3GetVersion(arena));
+        }
+    }
+
+    /// @api b3SetAssertFcn
+    public static void setAssertFcn(@Nullable AssertFcn assertFcn) {
+        StaticCallbacks.installAssersionHandler(assertFcn);
+    }
+
+    /// @api b3SetAllocator
+    public static void setAllocator(@Nullable AllocNFreeFcn allocNFreeFcn) {
+        StaticCallbacks.installAllocNFreeHandler(allocNFreeFcn);
+    }
+
+    /// @api b3SetLogFcn
+    public static void setLogFcn(@Nullable LogFcn logFcn) {
+        StaticCallbacks.installLogHandler(logFcn);
+    }
+
+    /// @api b3SetStallThreshold
+    public static void setStallThreshold(float seconds) {
+        b3SetStallThreshold(seconds);
+    }
+
+    /// @api b3GetStallThreshold
+    public static float getStallThreshold() {
+        return b3GetStallThreshold();
+    }
+
+    /// @api b3GetLengthUnitsPerMeter
+    public static float getLengthUnitsPerMeter() {
+        return b3GetLengthUnitsPerMeter();
+    }
+    /// @api b3SetLengthUnitsPerMeter
+    public static void setLengthUnitsPerMeter(float lengthUnits) {
+        b3SetLengthUnitsPerMeter(lengthUnits);
+    }
+
+    /// @api b3GetTicks
+    public static @Unsigned long getTicks() {
+        return b3GetTicks();
+    }
+
+    /// @api b3GetMilliseconds
+    public static float getMilliseconds(long ticks) {
+        return b3GetMilliseconds(ticks);
+    }
+
+    /// @api b3Hash
+    public static @Unsigned int hash(@Unsigned int hash, MemorySegment segment) {
+        return b3Hash(hash, segment, assertU32(segment.byteSize(), "segment.byteSize()"));
+    }
+
+    /// @api b3Hash
+    public static @Unsigned int hash(@Unsigned int hash, MemorySegment segment, int count) {
+        return b3Hash(hash, segment, count);
+    }
+
+    /// @api b3GetByteCount
+    public static int getByteCount() {
+        return b3GetByteCount();
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="Math" default-state="collapsed">
+
+
+    /// @api b3ComputeCosSin
+    public void computeCosSin(CosSin dest, float radians) {
+        var segment = b3ComputeCosSin(this.returnArena, radians);
+        dest.set(segment);
+    }
+
+    /// @api b3IsValidFloat
+    public boolean isValidFloat(float a) {
+        return Float.isFinite(a);
+    }
+
+    /// @api b3Atan2
+    public float atan2(float y, float x) {
+        if (x == 0.0f && y == 0.0f) {
+            return 0.0f;
+        }
+
+        float ax = x < 0.0f ? -x : x;
+        float ay = y < 0.0f ? -y : y;
+        //noinspection ManualMinMaxCalculation
+        float mx = ay > ax ? ay : ax;
+        //noinspection ManualMinMaxCalculation
+        float mn = ay < ax ? ay : ax;
+        float a = mn / mx;
+
+        float s = a * a;
+        float c = s * a;
+        float q = s * s;
+        float r = 0.024840285f * q + 0.18681418f;
+        float t = -0.094097948f * q - 0.33213072f;
+        r = r * s + t;
+        r = r * c + a;
+
+        if (ay > ax) {
+            r = 1.57079637f - r;
+        }
+        if (x < 0) {
+            r = 3.14159274f - r;
+        }
+        if (y < 0) {
+            r = -r;
+        }
+
+        return r;
+    }
+
+    /// @api b3IsValidVec3
+    public boolean isValidVec3(Vector3f a) {
+        return a.isFinite();
+    }
+
+    /// @api b3IsValidQuat
+    public boolean isValidQuat(Quaternionf q) {
+        var qq = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
+        var tolerance = 20.0f * Math.ulp(1.0f);
+        return q.isFinite()
+                && 1.0f - tolerance < qq && qq < 1.0f + tolerance;
+    }
+
+    /// @api b3IsValidTransform
+    public boolean isValidTransform(Matrix4f a) {
+        if (!a.isFinite() || !PrimitiveMemOps.isRigidMatrix(a)) {
+            return false;
+        }
+        return isValidQuat(this.scratchQuat.setFromNormalized(a));
+    }
+
+    /// @api b3IsValidMatrix3
+    public boolean isValidMatrix3(Matrix3f a) {
+        return a.isFinite();
+    }
+
+    /// @api b3IsValidAABB
+    public boolean isValidAABB(AABB a) {
+        return isValidVec3(a.lowerBound) && isValidVec3(a.upperBound)
+                && a.lowerBound.x <= a.upperBound.x
+                && a.lowerBound.y <= a.upperBound.y
+                && a.lowerBound.z <= a.upperBound.z;
+    }
+
+    /// @api b3Clamp
+    public Vector3f clamp(Vector3f dest, Vector3f a, Vector3f lower, Vector3f upper) {
+        return dest.set(a).max(lower).min(upper);
+    }
+
+    /// @api b3IsBoundedAABB
+    public boolean isBoundedAABB(AABB a) {
+        var lower = a.lowerBound;
+        var upper = a.upperBound;
+        var huge = HUGE();
+
+        return
+                lower.x >= -huge && lower.y >= -huge && lower.z >= -huge
+                && upper.x <= huge && upper.y <= huge && upper.z <= huge;
+    }
+
+    /// @api b3IsSaneAABB
+    public boolean isSaneAABB(AABB a) {
+        return isValidAABB(a) && isBoundedAABB(a);
+    }
+
+    /// @api b3IsValidPlane
+    public boolean isValidPlane(Plane a) {
+        var normalLengthSquared = a.normalX * a.normalX + a.normalY * a.normalY + a.normalZ * a.normalZ;
+        return Float.isFinite(a.normalX) && Float.isFinite(a.normalY) && Float.isFinite(a.normalZ)
+                && Math.abs(1.0f - normalLengthSquared) < 100.0f * Math.ulp(1.0f)
+                && isValidFloat(a.offset);
+    }
+
+    /// @api b3IsValidPosition
+    public boolean isValidPosition(Vector3f p) {
+        return isValidVec3(p);
+    }
+
+    /// @api b3IsValidWorldTransform
+    public boolean isValidWorldTransform(Matrix4f t) {
+        return isValidTransform(t);
+    }
+
+    /// @api b3PointToSegmentDistance
+    public Vector3f pointToSegmentDistance(Vector3f dest, Vector3f a, Vector3f b, Vector3f q) {
+        var abx = b.x - a.x;
+        var aby = b.y - a.y;
+        var abz = b.z - a.z;
+        var aqx = q.x - a.x;
+        var aqy = q.y - a.y;
+        var aqz = q.z - a.z;
+        var alpha = abx * aqx + aby * aqy + abz * aqz;
+
+        if (alpha <= 0.0f) {
+            return dest.set(a);
+        }
+
+        var denominator = abx * abx + aby * aby + abz * abz;
+        if (alpha > denominator) {
+            return dest.set(b);
+        }
+
+        alpha /= denominator;
+        return dest.set(a.x + alpha * abx, a.y + alpha * aby, a.z + alpha * abz);
+    }
+
+    /// @api b3LineDistance
+    public SegmentDistanceResult lineDistance(
+            SegmentDistanceResult dest,
+            Vector3f p1,
+            Vector3f d1,
+            Vector3f p2,
+            Vector3f d2
+    ) {
+        try (this.argArena) {
+            var result = b3LineDistance(
+                    this.returnArena,
+                    vec3(this.argArena, p1),
+                    vec3(this.argArena, d1),
+                    vec3(this.argArena, p2),
+                    vec3(this.argArena, d2)
+            );
+            dest.set(result);
+            return dest;
+        }
+    }
+
+    /// @api b3SegmentDistance
+    public SegmentDistanceResult segmentDistance(
+            SegmentDistanceResult dest,
+            Vector3f p1,
+            Vector3f q1,
+            Vector3f p2,
+            Vector3f q2
+    ) {
+        try (this.argArena) {
+            var result = b3SegmentDistance(
+                    this.returnArena,
+                    vec3(this.argArena, p1),
+                    vec3(this.argArena, q1),
+                    vec3(this.argArena, p2),
+                    vec3(this.argArena, q2)
+            );
+            dest.set(result);
+            return dest;
+        }
+    }
+
+    /// @api b3ClosestPointToAABB
+    public Vector3f closestPointToAABB(Vector3f dest, Vector3f point, AABB a) {
+        return clamp(dest, point, a.lowerBound, a.upperBound);
+    }
+
+    /// @api b3AABB_Area
+    public float aabbArea(AABB a) {
+        var dx = a.upperBound.x - a.lowerBound.x;
+        var dy = a.upperBound.y - a.lowerBound.y;
+        var dz = a.upperBound.z - a.lowerBound.z;
+        return 2.0f * (dx * dy + dy * dz + dz * dx);
+    }
+
+    /// @api b3AABB_Center
+    public Vector3f aabbCenter(Vector3f dest, AABB a) {
+        return dest.set(a.lowerBound).add(a.upperBound).mul(0.5f);
+    }
+
+    /// @api b3AABB_Extents
+    public Vector3f aabbExtents(Vector3f dest, AABB a) {
+        return dest.set(a.upperBound).sub(a.lowerBound).mul(0.5f);
+    }
+
+    /// @api b3AABB_Union
+    public AABB aabbUnion(AABB dest, AABB a, AABB b) {
+        dest.lowerBound.set(a.lowerBound).min(b.lowerBound);
+        dest.upperBound.set(a.upperBound).max(b.upperBound);
+        return dest;
+    }
+
+    /// @api b3AABB_Inflate
+    public AABB aabbInflate(AABB dest, AABB a, float extension) {
+        dest.lowerBound.set(a.lowerBound).sub(extension, extension, extension);
+        dest.upperBound.set(a.upperBound).add(extension, extension, extension);
+        return dest;
+    }
+
+    /// @api b3AABB_Contains
+    public boolean aabbContains(AABB a, AABB b) {
+
+        return     a.lowerBound.x <= b.lowerBound.x && b.upperBound.x <= a.upperBound.x
+                && a.lowerBound.y <= b.lowerBound.y && b.upperBound.y <= a.upperBound.y
+                && a.lowerBound.z <= b.lowerBound.z && b.upperBound.z <= a.upperBound.z;
+
+    }
+
+    /// @api b3AABB_Overlaps
+    public boolean aabbOverlaps(AABB a, AABB b) {
+
+        return
+                   a.upperBound.x >= b.lowerBound.x && a.lowerBound.x <= b.upperBound.x
+                && a.upperBound.y >= b.lowerBound.y && a.lowerBound.y <= b.upperBound.y
+                && a.upperBound.z >= b.lowerBound.z && a.lowerBound.z <= b.upperBound.z;
+
+    }
+
+    /// @api b3AABB_Transform
+    public AABB aabbTransform(AABB dest, Matrix4f transformMatrix, AABB a) {
+        PrimitiveMemOps.validateRigidMatrix(transformMatrix);
+        transformMatrix.transformAab(a.lowerBound, a.upperBound, dest.lowerBound, dest.upperBound);
+        return dest;
+    }
+
+    /// @api b3MakeAABB
+    public AABB makeAABB(AABB dest, MemorySegment points, int count, float radius) {
+        if (count <= 0) {
+            throw new IllegalArgumentException("points must not be empty");
+        }
+        if (points.byteSize() % (3L * Float.BYTES) != 0) {
+            throw new IllegalArgumentException("points must be a multiple of 3 floats");
+        }
+        if (points.byteSize() < count * 3L * Float.BYTES) {
+            throw new IllegalArgumentException("points does not contain count vectors");
+        }
+
+        var stride = 3L * Float.BYTES;
+        PrimitiveMemOps.setVec3(dest.lowerBound, points);
+        PrimitiveMemOps.setVec3(dest.upperBound, points);
+        for (var i = 1; i < count; ++i) {
+            var offset = i * stride;
+            var x = points.get(ValueLayout.JAVA_FLOAT, offset);
+            var y = points.get(ValueLayout.JAVA_FLOAT, offset + Float.BYTES);
+            var z = points.get(ValueLayout.JAVA_FLOAT, offset + 2L * Float.BYTES);
+            dest.lowerBound.set(Math.min(dest.lowerBound.x, x), Math.min(dest.lowerBound.y, y), Math.min(dest.lowerBound.z, z));
+            dest.upperBound.set(Math.max(dest.upperBound.x, x), Math.max(dest.upperBound.y, y), Math.max(dest.upperBound.z, z));
+        }
+        dest.lowerBound.sub(radius, radius, radius);
+        dest.upperBound.add(radius, radius, radius);
+        return dest;
+    }
+
+    /// @api b3MakeAABB
+    public AABB makeAABB(AABB dest, FloatBuffer points, float radius) {
+        if (points.remaining() % 3 != 0) {
+            throw new IllegalArgumentException("points must be a multiple of 3 floats");
+        }
+        return makeAABB(dest, MemorySegment.ofBuffer(points), points.remaining() / 3, radius);
+    }
+
+    /// @api b3MakeAABB
+    public AABB makeAABB(AABB dest, float[] points, float radius) {
+        if (points.length % 3 != 0) {
+            throw new IllegalArgumentException("points must be a multiple of 3 floats");
+        }
+        return makeAABB(dest, MemorySegment.ofArray(points), points.length / 3, radius);
+    }
+
+    /// @api b3MakeAABB
+    public AABB makeAABB(AABB dest, Iterable<Vector3f> points, float radius) {
+        var iterator = points.iterator();
+        if (!iterator.hasNext()) {
+            throw new IllegalArgumentException("points must not be empty");
+        }
+
+        var point = iterator.next();
+        dest.lowerBound.set(point);
+        dest.upperBound.set(point);
+        while (iterator.hasNext()) {
+            point = iterator.next();
+            dest.lowerBound.min(point);
+            dest.upperBound.max(point);
+        }
+
+        dest.lowerBound.sub(radius, radius, radius);
+        dest.upperBound.add(radius, radius, radius);
+        return dest;
+    }
+
+    /// @api b3Steiner
+    public Matrix3f steiner(Matrix3f dest, float mass, Vector3f origin) {
+        var matrix = b3Steiner(this.returnArena, mass, vec3(origin));
+        return PrimitiveMemOps.setMat3(dest, matrix);
+    }
+
+    /// @api b3OffsetAABB
+    public AABB offsetAABB(AABB dest, AABB localBox, Vector3f origin) {
+        dest.lowerBound.set(localBox.lowerBound).add(origin);
+        dest.upperBound.set(localBox.upperBound).add(origin);
+        return dest;
+    }
+
+    /// @api b3GetSwingAngle
+    public float getSwingAngle(Quaternionf q) {
+        var x = (float) Math.sqrt(q.z * q.z + q.w * q.w);
+        var y = (float) Math.sqrt(q.x * q.x + q.y * q.y);
+        return 2.0f * atan2(y, x);
+    }
+
+    /// @api b3GetTwistAngle
+    public float getTwistAngle(Quaternionf q) {
+        var twist = q.w < 0.0f ? atan2(-q.z, -q.w) : atan2(q.z, q.w);
+        return 2.0f * twist;
+    }
+
+    /// @api b3Sign
+    public Vector3f sign(Vector3f dest, Vector3f a) {
+        return dest.set(
+                a.x >= 0.0f ? 1.0f : -1.0f,
+                a.y >= 0.0f ? 1.0f : -1.0f,
+                a.z >= 0.0f ? 1.0f : -1.0f
+        );
+    }
+
+    /// @api b3SafeScale
+    public Vector3f safeScale(Vector3f dest, Vector3f a) {
+        var x = Math.max(Math.abs(a.x), MIN_SCALE);
+        var y = Math.max(Math.abs(a.y), MIN_SCALE);
+        var z = Math.max(Math.abs(a.z), MIN_SCALE);
+        return sign(dest, a).mul(x, y, z);
+    }
     //</editor-fold>
 
     //<editor-fold desc="World" default-state="collapsed">
@@ -213,6 +610,20 @@ public final class B3 {
         b3jshimWorld_Draw(worldID(worldID), draw.segment(), maskBits);
         draw.invoke();
     }
+
+    /// @api b3World_Explode
+    public void worldExplode(
+            WorldID worldID,
+            ExplosionDef def
+    ) {
+        try (this.argArena) {
+            b3World_Explode(
+                    worldID(worldID),
+                    def.create(this.argArena)
+            );
+        }
+    }
+
     //</editor-fold>
 
     //<editor-fold desc="Hull" default-state="collapsed">
@@ -2463,7 +2874,7 @@ public final class B3 {
     private final Arena scratchArena = Arena.ofAuto();
 
     /// 1 KB for return values. Should definitely be enough for all return types
-    private final ConstAllocator returnArena = new ConstAllocator(this.scratchArena, 1 * 1024);
+    private final ReturnAllocator returnArena = new ReturnAllocator(this.scratchArena, 1 * 1024);
 
     /// 8 KB for arguments. Will create a confined arena when it runs out of space.
     /// Warning: The allocator can return segments with byte sizes larger than the requested size.
@@ -2585,6 +2996,11 @@ public final class B3 {
     private MemorySegment vec3_2(Vector3f vec) {
         PrimitiveMemOps.putVec3(this.vec3Segment2, vec);
         return this.vec3Segment2;
+    }
+    private static MemorySegment vec3(SegmentAllocator arena, Vector3f vec) {
+        var segment = b3Vec3.allocate(arena);
+        PrimitiveMemOps.putVec3(segment, vec);
+        return segment;
     }
     private MemorySegment mat3(Matrix3f matrix3f) {
         PrimitiveMemOps.putMat3(this.mat3Segment, matrix3f);
