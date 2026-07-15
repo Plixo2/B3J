@@ -82,7 +82,7 @@ so you can just use B3J to provide the shared libraries and direct bindings.
   - Make sure you operate with the correct types. [Read more](src/main/java/io/github/plixo2/box3d/internal/Unsigned.java)
 
 
-> Everything else follows the Box3D API and documentation.
+- Everything else follows the Box3D API & Documentation.
 
 ## Compatibility
 
