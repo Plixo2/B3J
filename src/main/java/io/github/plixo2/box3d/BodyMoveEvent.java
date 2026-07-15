@@ -8,6 +8,7 @@ import org.joml.Matrix4f;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
+import java.util.NoSuchElementException;
 
 
 public class BodyMoveEvent {
@@ -46,9 +47,11 @@ public class BodyMoveEvent {
 
     static class Iterator implements java.util.Iterator<BodyMoveEvent> {
         private static final long SIZE = b3BodyEvents.sizeof();
+
         private final BodyMoveEvent instance = new BodyMoveEvent();
         private final MemorySegment segment;
         private final long count;
+
         private long index = 0;
 
         Iterator(
@@ -67,7 +70,7 @@ public class BodyMoveEvent {
         @Override
         public BodyMoveEvent next() {
             if (this.index >= this.count) {
-                throw new java.util.NoSuchElementException();
+                throw new NoSuchElementException();
             }
 
             var offset = SIZE * this.index++;

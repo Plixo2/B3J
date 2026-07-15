@@ -24,6 +24,13 @@ public class Filter {
         this.groupIndex = other.groupIndex;
     }
 
+    Filter set(MemorySegment segment) {
+        this.categoryBits = b3Filter.categoryBits(segment);
+        this.maskBits = b3Filter.maskBits(segment);
+        this.groupIndex = b3Filter.groupIndex(segment);
+        return this;
+    }
+
     void put(MemorySegment segment) {
         b3Filter.categoryBits(segment, this.categoryBits);
         b3Filter.maskBits(segment, this.maskBits);

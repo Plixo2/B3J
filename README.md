@@ -45,11 +45,12 @@ so you can just use B3J to provide the shared libraries and direct bindings.
       - Provide the same `UserData.OfShape<T>` to [DebugDraw](src/main/java/io/github/plixo2/box3d/DebugDraw.java) so the `drawShapeFcn` can be called with the correct `userShape`.
   - `JointID` has a generic type for the `JointType`. You can use `jointId.reinterpret(JointType)` to freely reinterpret it.
 
+
 - Thread safety
   - B3J allocates a small amount of memory upfront for efficient c calls.
   - `B3.get()` will give you a thread unique instance. 
     - Dont share a instance of `B3` between threads.
-    - You probably operate on a single thread, so can declare a `B3` instance as a global once.
+    - If you operate on a single thread, you can just declare a `B3` instance as a global once.
 
 
 - Memory Efficient
@@ -57,10 +58,11 @@ so you can just use B3J to provide the shared libraries and direct bindings.
   - Some method require a `dest` parameter to be filled in. E.g. `Vector3f bodyGetPosition(Vector3f dest, BodyID bodyId)`.
     In that case, you can just pass in a new object using the default constructor, or reuse a existing one.
   - Arguments of callbacks or custom Iterators can be mutable. 
-    Make sure to copy the values, if you need the data beyond the lifetime of the callback or iterator.
+    Make sure to copy the values if you need the data beyond the lifetime of the callback or iterator.
     All mutable objects have a copy constructor that you can use, although it will be cheaper to just copy the fields you need.
   - Some arguments can be `null` when they are not needed.
-  - Some methods that require callbacks are implemented in c. All arguments are recorded and replayed in java avoid the overhead of upcalls.
+  - Some methods that require callbacks are implemented in c. 
+    All arguments are recorded and replayed in java to avoid the overhead of upcalls.
 
 
 - Fearless Resource Management

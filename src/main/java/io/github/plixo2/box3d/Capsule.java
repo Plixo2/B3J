@@ -43,6 +43,16 @@ public non-sealed class Capsule implements ShapeType.Shape {
         this.z2 = center2.z;
     }
 
+    public Capsule(Capsule other) {
+        this.radius = other.radius;
+        this.x1 = other.x1;
+        this.y1 = other.y1;
+        this.z1 = other.z1;
+        this.x2 = other.x2;
+        this.y2 = other.y2;
+        this.z2 = other.z2;
+    }
+
 
     public MemorySegment create(SegmentAllocator arena) {
         var segment = b3Capsule.allocate(arena);
@@ -52,5 +62,17 @@ public non-sealed class Capsule implements ShapeType.Shape {
         return segment;
     }
 
+    Capsule set(MemorySegment segment) {
+        var center1 = b3Capsule.center1(segment);
+        var center2 = b3Capsule.center2(segment);
+        this.x1 = PrimitiveMemOps.getVec3X(center1);
+        this.y1 = PrimitiveMemOps.getVec3Y(center1);
+        this.z1 = PrimitiveMemOps.getVec3Z(center1);
+        this.x2 = PrimitiveMemOps.getVec3X(center2);
+        this.y2 = PrimitiveMemOps.getVec3Y(center2);
+        this.z2 = PrimitiveMemOps.getVec3Z(center2);
+        this.radius = b3Capsule.radius(segment);
+        return this;
+    }
 
 }

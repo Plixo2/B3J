@@ -24,6 +24,7 @@ public final class WorldID {
         if (region != null) {
             b3 = B3.get();
         }
+
         return new WorldID(
                 b3,
                 region,
@@ -120,12 +121,12 @@ public final class WorldID {
                 + '}';
     }
 
-    // Class to hold on and close objects created my
+    // Class to hold on and close objects created WorldDef
     @AllArgsConstructor(access = AccessLevel.PACKAGE)
     static final class StateValues {
 
-        private @Nullable AllocatedTaskCallbacks taskPool; // keep alive
-        private @Nullable AllocatedShapeCallbacks shapes;  // keep alive
+        private @Nullable AllocatedTaskCallbacks taskPool;
+        private @Nullable AllocatedShapeCallbacks shapes;
 
         static StateValues none() {
             return new StateValues(null, null);

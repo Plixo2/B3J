@@ -60,6 +60,16 @@ public final class PrimitiveMemOps {
         vec3.z = segment.get(ValueLayout.JAVA_FLOAT, offset + Float.BYTES * 2);
         return vec3;
     }
+    public static float getVec3X(MemorySegment segment) {
+        return segment.get(ValueLayout.JAVA_FLOAT, Float.BYTES * 0);
+    }
+    public static float getVec3Y(MemorySegment segment) {
+        return segment.get(ValueLayout.JAVA_FLOAT, Float.BYTES * 1);
+    }
+    public static float getVec3Z(MemorySegment segment) {
+        return segment.get(ValueLayout.JAVA_FLOAT, Float.BYTES * 2);
+    }
+
 
     public static void putMat3(MemorySegment segment, Matrix3f matrix) {
         putMat3(segment, matrix, 0);

@@ -13,7 +13,10 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
+import java.io.IOException;
 import java.nio.FloatBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 import static io.github.plixo2.box3d.internal.B3JUtil.*;
@@ -35,7 +38,7 @@ public final class B3 {
     }
 
 
-    //<editor-fold desc="Static" default-state="collapsed">
+    //<editor-fold desc="Statics" default-state="collapsed">
 
 
     /// @api B3_DEFAULT_CATEGORY_BITS
@@ -105,39 +108,46 @@ public final class B3 {
     public static float HUGE() {
         return 1.0e5f * b3GetLengthUnitsPerMeter();
     }
+
     /// @api B3_LINEAR_SLOP
     public static float LINEAR_SLOP() {
         return 0.005f * b3GetLengthUnitsPerMeter();
     }
+
     /// @api B3_MIN_CAPSULE_LENGTH
     public static float MIN_CAPSULE_LENGTH() {
         return LINEAR_SLOP();
     }
+
     /// @api B3_OVERLAP_SLOP
     public static float OVERLAP_SLOP() {
         return 0.1f * LINEAR_SLOP();
     }
+
     /// @api B3_SPECULATIVE_DISTANCE
     public static float SPECULATIVE_DISTANCE() {
         return 4.0f * LINEAR_SLOP();
     }
+
     /// @api B3_MESH_REST_OFFSET
     public static float B3_MESH_REST_OFFSET() {
         return 1.0f * LINEAR_SLOP();
     }
+
     /// @api B3_CONTACT_RECYCLE_DISTANCE
     public static float B3_CONTACT_RECYCLE_DISTANCE() {
         return 10.0f * LINEAR_SLOP();
     }
+
     /// @api B3_CONTACT_RECYCLE_ANGULAR_DISTANCE
     public static float B3_CONTACT_RECYCLE_ANGULAR_DISTANCE() {
         return 0.99240388f;
     }
+
     /// @api B3_MAX_AABB_MARGIN
     public static float B3_MAX_AABB_MARGIN() {
         return 0.05f * b3GetLengthUnitsPerMeter();
     }
-
 
     /// @api b3GetVersion
     public static Version getVersion() {
@@ -175,6 +185,7 @@ public final class B3 {
     public static float getLengthUnitsPerMeter() {
         return b3GetLengthUnitsPerMeter();
     }
+
     /// @api b3SetLengthUnitsPerMeter
     public static void setLengthUnitsPerMeter(float lengthUnits) {
         b3SetLengthUnitsPerMeter(lengthUnits);
@@ -215,11 +226,6 @@ public final class B3 {
         dest.set(segment);
     }
 
-    /// @api b3IsValidFloat
-    public boolean isValidFloat(float a) {
-        return Float.isFinite(a);
-    }
-
     /// @api b3Atan2
     public float atan2(float y, float x) {
         if (x == 0.0f && y == 0.0f) {
@@ -255,40 +261,6 @@ public final class B3 {
         return r;
     }
 
-    /// @api b3IsValidVec3
-    public boolean isValidVec3(Vector3f a) {
-        return a.isFinite();
-    }
-
-    /// @api b3IsValidQuat
-    public boolean isValidQuat(Quaternionf q) {
-        var qq = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
-        var tolerance = 20.0f * Math.ulp(1.0f);
-        return q.isFinite()
-                && 1.0f - tolerance < qq && qq < 1.0f + tolerance;
-    }
-
-    /// @api b3IsValidTransform
-    public boolean isValidTransform(Matrix4f a) {
-        if (!a.isFinite() || !PrimitiveMemOps.isRigidMatrix(a)) {
-            return false;
-        }
-        return isValidQuat(this.scratchQuat.setFromNormalized(a));
-    }
-
-    /// @api b3IsValidMatrix3
-    public boolean isValidMatrix3(Matrix3f a) {
-        return a.isFinite();
-    }
-
-    /// @api b3IsValidAABB
-    public boolean isValidAABB(AABB a) {
-        return isValidVec3(a.lowerBound) && isValidVec3(a.upperBound)
-                && a.lowerBound.x <= a.upperBound.x
-                && a.lowerBound.y <= a.upperBound.y
-                && a.lowerBound.z <= a.upperBound.z;
-    }
-
     /// @api b3Clamp
     public Vector3f clamp(Vector3f dest, Vector3f a, Vector3f lower, Vector3f upper) {
         return dest.set(a).max(lower).min(upper);
@@ -310,26 +282,13 @@ public final class B3 {
         return isValidAABB(a) && isBoundedAABB(a);
     }
 
-    /// @api b3IsValidPlane
-    public boolean isValidPlane(Plane a) {
-        var normalLengthSquared = a.normalX * a.normalX + a.normalY * a.normalY + a.normalZ * a.normalZ;
-        return Float.isFinite(a.normalX) && Float.isFinite(a.normalY) && Float.isFinite(a.normalZ)
-                && Math.abs(1.0f - normalLengthSquared) < 100.0f * Math.ulp(1.0f)
-                && isValidFloat(a.offset);
-    }
-
-    /// @api b3IsValidPosition
-    public boolean isValidPosition(Vector3f p) {
-        return isValidVec3(p);
-    }
-
-    /// @api b3IsValidWorldTransform
-    public boolean isValidWorldTransform(Matrix4f t) {
-        return isValidTransform(t);
-    }
-
     /// @api b3PointToSegmentDistance
-    public Vector3f pointToSegmentDistance(Vector3f dest, Vector3f a, Vector3f b, Vector3f q) {
+    public Vector3f pointToSegmentDistance(
+            Vector3f dest,
+            Vector3f a,
+            Vector3f b,
+            Vector3f q
+    ) {
         var abx = b.x - a.x;
         var aby = b.y - a.y;
         var abz = b.z - a.z;
@@ -452,7 +411,10 @@ public final class B3 {
     /// @api b3AABB_Transform
     public AABB aabbTransform(AABB dest, Matrix4f transformMatrix, AABB a) {
         PrimitiveMemOps.validateRigidMatrix(transformMatrix);
-        transformMatrix.transformAab(a.lowerBound, a.upperBound, dest.lowerBound, dest.upperBound);
+        transformMatrix.transformAab(
+                a.lowerBound, a.upperBound,
+                dest.lowerBound, dest.upperBound
+        );
         return dest;
     }
 
@@ -476,8 +438,16 @@ public final class B3 {
             var x = points.get(ValueLayout.JAVA_FLOAT, offset);
             var y = points.get(ValueLayout.JAVA_FLOAT, offset + Float.BYTES);
             var z = points.get(ValueLayout.JAVA_FLOAT, offset + 2L * Float.BYTES);
-            dest.lowerBound.set(Math.min(dest.lowerBound.x, x), Math.min(dest.lowerBound.y, y), Math.min(dest.lowerBound.z, z));
-            dest.upperBound.set(Math.max(dest.upperBound.x, x), Math.max(dest.upperBound.y, y), Math.max(dest.upperBound.z, z));
+            dest.lowerBound.set(
+                    Math.min(dest.lowerBound.x, x),
+                    Math.min(dest.lowerBound.y, y),
+                    Math.min(dest.lowerBound.z, z)
+            );
+            dest.upperBound.set(
+                    Math.max(dest.upperBound.x, x),
+                    Math.max(dest.upperBound.y, y),
+                    Math.max(dest.upperBound.z, z)
+            );
         }
         dest.lowerBound.sub(radius, radius, radius);
         dest.upperBound.add(radius, radius, radius);
@@ -591,7 +561,7 @@ public final class B3 {
         var eventSegment = b3World_GetBodyEvents(this.returnArena, this.worldIDSegment);
 
         var moveEvents = b3BodyEvents.moveEvents(eventSegment);
-        var moveCount = b3BodyEvents.moveCount(eventSegment);
+        var moveCount  = b3BodyEvents.moveCount(eventSegment);
 
         return () -> new BodyMoveEvent.Iterator(moveEvents, moveCount);
     }
@@ -624,6 +594,160 @@ public final class B3 {
         }
     }
 
+    /// @api b3World_Dump
+    public void worldDump(WorldID worldID) {
+        b3World_Dump(worldID(worldID));
+    }
+
+    /// @api b3World_DumpAwake
+    public void worldDumpAwake(WorldID worldID) {
+        b3World_DumpAwake(worldID(worldID));
+    }
+
+    /// @api b3World_DumpMemoryStats
+    public void worldDumpMemoryStats(WorldID worldID) {
+        b3World_DumpMemoryStats(worldID(worldID));
+    }
+
+    /// @api b3World_DumpShapeBounds
+    public void worldDumpShapeBounds(WorldID worldID, BodyType type) {
+        b3World_DumpShapeBounds(worldID(worldID), type.code());
+    }
+
+    /// @api b3World_EnableContinuous
+    public void worldEnableContinuous(WorldID worldID, boolean flag) {
+        b3World_EnableContinuous(worldID(worldID), flag);
+    }
+
+    /// @api b3World_EnableSleeping
+    public void worldEnableSleeping(WorldID worldID, boolean flag) {
+        b3World_EnableSleeping(worldID(worldID), flag);
+    }
+
+    /// @api b3World_EnableSpeculative
+    public void worldEnableSpeculative(WorldID worldID, boolean flag) {
+        b3World_EnableSpeculative(worldID(worldID), flag);
+    }
+
+    /// @api b3World_EnableWarmStarting
+    public void worldEnableWarmStarting(WorldID worldID, boolean flag) {
+        b3World_EnableWarmStarting(worldID(worldID), flag);
+    }
+
+    /// @api b3World_GetAwakeBodyCount
+    public int worldGetAwakeBodyCount(WorldID worldID) {
+        return b3World_GetAwakeBodyCount(worldID(worldID));
+    }
+
+    /// @api b3World_GetBounds
+    public AABB worldGetBounds(AABB dest, WorldID worldID) {
+        var bounds = b3World_GetBounds(this.returnArena, worldID(worldID));
+        return dest.set(bounds);
+    }
+
+    /// @api b3World_GetContactRecycleDistance
+    public float worldGetContactRecycleDistance(WorldID worldID) {
+        return b3World_GetContactRecycleDistance(worldID(worldID));
+    }
+
+    /// @api b3World_GetCounters
+    public Counters worldGetCounters(Counters dest, WorldID worldID) {
+        var counters = b3World_GetCounters(this.returnArena, worldID(worldID));
+        return dest.set(counters);
+    }
+
+    /// @api b3World_GetGravity
+    public Vector3f worldGetGravity(Vector3f dest, WorldID worldID) {
+        var gravity = b3World_GetGravity(this.returnArena, worldID(worldID));
+        return PrimitiveMemOps.setVec3(dest, gravity);
+    }
+
+    /// @api b3World_GetHitEventThreshold
+    public float worldGetHitEventThreshold(WorldID worldID) {
+        return b3World_GetHitEventThreshold(worldID(worldID));
+    }
+
+    /// @api b3World_GetMaxCapacity
+    public Capacity worldGetMaxCapacity(Capacity dest, WorldID worldID) {
+        var capacity = b3World_GetMaxCapacity(this.returnArena, worldID(worldID));
+        return dest.set(capacity);
+    }
+
+    /// @api b3World_GetMaximumLinearSpeed
+    public float worldGetMaximumLinearSpeed(WorldID worldID) {
+        return b3World_GetMaximumLinearSpeed(worldID(worldID));
+    }
+
+    /// @api b3World_GetRestitutionThreshold
+    public float worldGetRestitutionThreshold(WorldID worldID) {
+        return b3World_GetRestitutionThreshold(worldID(worldID));
+    }
+
+    /// @api b3World_GetWorkerCount
+    public int worldGetWorkerCount(WorldID worldID) {
+        return b3World_GetWorkerCount(worldID(worldID));
+    }
+
+    /// @api b3World_IsContinuousEnabled
+    public boolean worldIsContinuousEnabled(WorldID worldID) {
+        return b3World_IsContinuousEnabled(worldID(worldID));
+    }
+
+    /// @api b3World_IsSleepingEnabled
+    public boolean worldIsSleepingEnabled(WorldID worldID) {
+        return b3World_IsSleepingEnabled(worldID(worldID));
+    }
+
+    /// @api b3World_IsWarmStartingEnabled
+    public boolean worldIsWarmStartingEnabled(WorldID worldID) {
+        return b3World_IsWarmStartingEnabled(worldID(worldID));
+    }
+
+    /// @api b3World_RebuildStaticTree
+    public void worldRebuildStaticTree(WorldID worldID) {
+        b3World_RebuildStaticTree(worldID(worldID));
+    }
+
+    /// @api b3World_SetContactRecycleDistance
+    public void worldSetContactRecycleDistance(WorldID worldID, float recycleDistance) {
+        b3World_SetContactRecycleDistance(worldID(worldID), recycleDistance);
+    }
+
+    /// @api b3World_SetContactTuning
+    public void worldSetContactTuning(WorldID worldID, float hertz, float dampingRatio, float contactSpeed) {
+        b3World_SetContactTuning(worldID(worldID), hertz, dampingRatio, contactSpeed);
+    }
+
+    /// @api b3World_SetGravity
+    public void worldSetGravity(WorldID worldID, Vector3f gravity) {
+        b3World_SetGravity(worldID(worldID), vec3(gravity));
+    }
+
+    /// @api b3World_SetHitEventThreshold
+    public void worldSetHitEventThreshold(WorldID worldID, float value) {
+        b3World_SetHitEventThreshold(worldID(worldID), value);
+    }
+
+    /// @api b3World_SetMaximumLinearSpeed
+    public void worldSetMaximumLinearSpeed(WorldID worldID, float maximumLinearSpeed) {
+        b3World_SetMaximumLinearSpeed(worldID(worldID), maximumLinearSpeed);
+    }
+
+    /// @api b3World_SetRestitutionThreshold
+    public void worldSetRestitutionThreshold(WorldID worldID, float value) {
+        b3World_SetRestitutionThreshold(worldID(worldID), value);
+    }
+
+    /// @api b3World_SetWorkerCount
+    public void worldSetWorkerCount(WorldID worldID, int count) {
+        b3World_SetWorkerCount(worldID(worldID), count);
+    }
+
+    /// @api b3World_GetProfile
+    public Profile worldGetProfile(Profile dest, WorldID worldID) {
+        var profile = b3World_GetProfile(this.returnArena, worldID(worldID));
+        return dest.set(profile);
+    }
     //</editor-fold>
 
     //<editor-fold desc="Hull" default-state="collapsed">
@@ -723,6 +847,57 @@ public final class B3 {
         );
         return new HullData(hull);
     }
+
+    /// @api b3GetHullEdges
+    public MemorySegment getHullEdges(HullData hull) {
+        return hull.edges();
+    }
+
+    /// @api b3GetHullEdges
+    public MemoryIterator<HullHalfEdge> getHullEdgesIterator(HullData hull) {
+        return hull.edgeIterator();
+    }
+
+    /// @api b3GetHullFaces
+    public MemorySegment getHullFaces(HullData hull) {
+        return hull.faces();
+    }
+
+    /// @api b3GetHullFaces
+    public MemoryIterator<HullFace> getHullFacesIterator(HullData hull) {
+        return hull.faceIterator();
+    }
+
+    /// @api b3GetHullPlanes
+    public MemorySegment getHullPlanes(HullData hull) {
+        return hull.planes();
+    }
+
+    /// @api b3GetHullPlanes
+    public MemoryIterator<Plane> getHullPlanesIterator(HullData hull) {
+        return hull.planeIterator();
+    }
+
+    /// @api b3GetHullPoints
+    public MemorySegment getHullPoints(HullData hull) {
+        return hull.points();
+    }
+
+    /// @api b3GetHullPoints
+    public MemoryIterator<Vector3f> getHullPointsIterator(HullData hull) {
+        return hull.pointIterator();
+    }
+
+    /// @api b3GetHullVertices
+    public MemorySegment getHullVertices(HullData hull) {
+        return hull.vertices();
+    }
+
+    /// @api b3GetHullVertices
+    public MemoryIterator<HullVertex> getHullVerticesIterator(HullData hull) {
+        return hull.vertexIterator();
+    }
+
     //</editor-fold>
 
     //<editor-fold desc="Height Field" default-state="collapsed">
@@ -738,6 +913,78 @@ public final class B3 {
             var heightField = b3CreateHeightField(segment);
             return new HeightFieldData(this, region, heightField);
         }
+    }
+
+    /// @api b3DumpHeightData
+    public void dumpHeightData(HeightFieldDef def, Path path) throws IOException {
+        var absolutePath = path.toAbsolutePath();
+        var parent = absolutePath.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        if (!Files.exists(absolutePath)) {
+            Files.createFile(absolutePath);
+        }
+
+        try (this.argArena) {
+            b3DumpHeightData(
+                    def.create(this.argArena),
+                    this.argArena.allocateFrom(absolutePath.toString())
+            );
+        }
+
+        if (!Files.exists(absolutePath)) {
+            throw new IOException("Failed to save height field data: " + absolutePath);
+        }
+    }
+
+    /// @api b3LoadHeightField
+    public HeightFieldData loadHeightField(Region region, Path path) throws IOException {
+        var absolutePath = path.toAbsolutePath();
+        if (!Files.exists(absolutePath)) {
+            throw new IOException("Height field file does not exist: " + absolutePath);
+        }
+
+        try (this.argArena) {
+            var heightField = b3LoadHeightField(
+                    this.argArena.allocateFrom(absolutePath.toString())
+            );
+            if (heightField.address() == 0) {
+                throw new IOException("Failed to load height field data: " + absolutePath);
+            }
+
+            return new HeightFieldData(this, region, heightField);
+        }
+    }
+
+    /// @api b3GetHeightFieldCompressedHeights
+    public MemorySegment getHeightFieldCompressedHeights(HeightFieldData hf) {
+        return hf.heights();
+    }
+
+    /// @api b3GetHeightFieldCompressedHeights
+    public MemoryIterator.OfU16 getHeightFieldCompressedHeightsIterator(HeightFieldData hf) {
+        return hf.heightIterator();
+    }
+
+    /// @api b3GetHeightFieldFlags
+    public MemorySegment getHeightFieldFlags(HeightFieldData hf) {
+        return hf.flags();
+    }
+
+    /// @api b3GetHeightFieldFlags
+    public MemoryIterator.OfU8 getHeightFieldFlagsIterator(HeightFieldData hf) {
+        return hf.flagIterator();
+    }
+
+    /// @api b3GetHeightFieldMaterialIndices
+    public MemorySegment getHeightFieldMaterialIndices(HeightFieldData hf) {
+        return hf.materials();
+    }
+
+    /// @api b3GetHeightFieldMaterialIndices
+    public MemoryIterator.OfU8 getHeightFieldMaterialIndicesIterator(HeightFieldData hf) {
+        return hf.materialIterator();
     }
     //</editor-fold>
 
@@ -786,6 +1033,61 @@ public final class B3 {
             MeshDef meshDef
     ) {
         return createMesh(region, meshDef, null);
+    }
+
+    /// @api b3GetHeight
+    public int getHeight(MeshData mesh) {
+        return b3GetHeight(mesh.segment());
+    }
+
+    /// @api b3GetMeshFlags
+    public MemorySegment getMeshFlags(MeshData mesh) {
+        return mesh.flags();
+    }
+
+    /// @api b3GetMeshFlags
+    public MemoryIterator.OfU8 getMeshFlagsIterator(MeshData mesh) {
+        return mesh.flagIterator();
+    }
+
+    /// @api b3GetMeshMaterialIndices
+    public MemorySegment getMeshMaterialIndices(MeshData mesh) {
+        return mesh.materials();
+    }
+
+    /// @api b3GetMeshMaterialIndices
+    public MemoryIterator.OfU8 getMeshMaterialIndicesIterator(MeshData mesh) {
+        return mesh.materialIterator();
+    }
+
+    /// @api b3GetMeshNodes
+    public MemorySegment getMeshNodes(MeshData mesh) {
+        return mesh.nodes();
+    }
+
+    /// @api b3GetMeshNodes
+    public MemoryIterator<MeshNode> getMeshNodesIterator(MeshData mesh) {
+        return mesh.nodeIterator();
+    }
+
+    /// @api b3GetMeshTriangles
+    public MemorySegment getMeshTriangles(MeshData mesh) {
+        return mesh.triangles();
+    }
+
+    /// @api b3GetMeshTriangles
+    public MemoryIterator<MeshTriangle> getMeshTrianglesIterator(MeshData mesh) {
+        return mesh.triangleIterator();
+    }
+
+    /// @api b3GetMeshVertices
+    public MemorySegment getMeshVertices(MeshData mesh) {
+        return mesh.vertices();
+    }
+
+    /// @api b3GetMeshVertices
+    public MemoryIterator<Vector3f> getMeshVerticesIterator(MeshData mesh) {
+        return mesh.vertexIterator();
     }
     //</editor-fold>
 
@@ -872,6 +1174,252 @@ public final class B3 {
             );
             return ShapeID.of(shapeID);
         }
+    }
+
+    /// @api b3Shape_SetCapsule
+    public void shapeSetCapsule(ShapeID shapeID, Capsule capsule) {
+        try (this.argArena) {
+            b3Shape_SetCapsule(shapeID(shapeID), capsule.create(this.argArena));
+        }
+    }
+
+    /// @api b3Shape_SetDensity
+    public void shapeSetDensity(ShapeID shapeID, float density, boolean updateBodyMass) {
+        b3Shape_SetDensity(shapeID(shapeID), density, updateBodyMass);
+    }
+
+    /// @api b3Shape_SetFilter
+    public void shapeSetFilter(ShapeID shapeID, Filter filter, boolean invokeContacts) {
+        try (this.argArena) {
+            var segment = b3Filter.allocate(this.argArena);
+            filter.put(segment);
+            b3Shape_SetFilter(shapeID(shapeID), segment, invokeContacts);
+        }
+    }
+
+    /// @api b3Shape_SetFriction
+    public void shapeSetFriction(ShapeID shapeID, float friction) {
+        b3Shape_SetFriction(shapeID(shapeID), friction);
+    }
+
+    /// @api b3Shape_SetHull
+    public void shapeSetHull(ShapeID shapeID, HullData hull) {
+        b3Shape_SetHull(shapeID(shapeID), hull.segment);
+    }
+
+    /// @api b3Shape_SetMesh
+    public void shapeSetMesh(ShapeID shapeID, MeshData meshData, Vector3f scale) {
+        b3Shape_SetMesh(shapeID(shapeID), meshData.segment(), vec3(scale));
+    }
+
+    /// @api b3Shape_SetMeshMaterial
+    public void shapeSetMeshMaterial(
+            ShapeID shapeID,
+            SurfaceMaterial surfaceMaterial,
+            int index
+    ) {
+        try (this.argArena) {
+            var segment = b3SurfaceMaterial.allocate(this.argArena);
+            surfaceMaterial.put(segment);
+            b3Shape_SetMeshMaterial(shapeID(shapeID), segment, index);
+        }
+    }
+
+    /// @api b3Shape_SetRestitution
+    public void shapeSetRestitution(ShapeID shapeID, float restitution) {
+        b3Shape_SetRestitution(shapeID(shapeID), restitution);
+    }
+
+    /// @api b3Shape_SetSphere
+    public void shapeSetSphere(ShapeID shapeID, Sphere sphere) {
+        try (this.argArena) {
+            b3Shape_SetSphere(shapeID(shapeID), sphere.create(this.argArena));
+        }
+    }
+
+    /// @api b3Shape_SetSurfaceMaterial
+    public void shapeSetSurfaceMaterial(ShapeID shapeID, SurfaceMaterial surfaceMaterial) {
+        try (this.argArena) {
+            var segment = b3SurfaceMaterial.allocate(this.argArena);
+            surfaceMaterial.put(segment);
+            b3Shape_SetSurfaceMaterial(shapeID(shapeID), segment);
+        }
+    }
+
+    /// @api b3Shape_GetAABB
+    public AABB shapeGetAABB(AABB dest, ShapeID shape) {
+        var aabb = b3Shape_GetAABB(this.returnArena, shapeID(shape));
+        return dest.set(aabb);
+    }
+
+    /// @api b3Shape_GetCapsule
+    public Capsule shapeGetCapsule(Capsule dest, ShapeID shape) {
+        var capsule = b3Shape_GetCapsule(this.returnArena, shapeID(shape));
+        return dest.set(capsule);
+    }
+
+    /// @api b3Shape_GetClosestPoint
+    public Vector3f shapeGetClosestPoint(Vector3f dest, ShapeID shape, Vector3f target) {
+        var point = b3Shape_GetClosestPoint(this.returnArena, shapeID(shape), vec3(target));
+        return PrimitiveMemOps.setVec3(dest, point);
+    }
+
+    /// @api b3Shape_GetContactCapacity
+    public int shapeGetContactCapacity(ShapeID shape) {
+        return b3Shape_GetContactCapacity(shapeID(shape));
+    }
+
+    /// @api b3Shape_GetDensity
+    public float shapeGetDensity(ShapeID shape) {
+        return b3Shape_GetDensity(shapeID(shape));
+    }
+
+    /// @api b3Shape_GetFilter
+    public Filter shapeGetFilter(Filter dest, ShapeID shape) {
+        var filter = b3Shape_GetFilter(this.returnArena, shapeID(shape));
+        return dest.set(filter);
+    }
+
+    /// @api b3Shape_GetFriction
+    public float shapeGetFriction(ShapeID shape) {
+        return b3Shape_GetFriction(shapeID(shape));
+    }
+
+    /// @api b3Shape_GetHeightField
+    public HeightFieldData shapeGetHeightField(ShapeID shape) {
+        var heightField = b3Shape_GetHeightField(shapeID(shape));
+        return new HeightFieldData(null, null, heightField);
+    }
+
+    /// @api b3Shape_GetHull
+    public HullData shapeGetHull(ShapeID shape) {
+        var hull = b3Shape_GetHull(shapeID(shape));
+        return new HullData(hull);
+    }
+
+    /// @api b3Shape_GetMesh
+    public Mesh shapeGetMesh(ShapeID shape) {
+        var mesh = b3Shape_GetMesh(this.returnArena, shapeID(shape));
+        return Mesh.of(mesh);
+    }
+
+    /// @api b3Shape_GetMeshMaterialCount
+    public int shapeGetMeshMaterialCount(ShapeID shape) {
+        return b3Shape_GetMeshMaterialCount(shapeID(shape));
+    }
+
+    /// @api b3Shape_GetMeshSurfaceMaterial
+    public SurfaceMaterial shapeGetMeshSurfaceMaterial(
+            SurfaceMaterial dest,
+            ShapeID shape,
+            int index
+    ) {
+        var material = b3Shape_GetMeshSurfaceMaterial(this.returnArena, shapeID(shape), index);
+        return dest.set(material);
+    }
+
+    /// @api b3Shape_GetRestitution
+    public float shapeGetRestitution(ShapeID shape) {
+        return b3Shape_GetRestitution(shapeID(shape));
+    }
+
+    /// @api b3Shape_GetSensorCapacity
+    public int shapeGetSensorCapacity(ShapeID shape) {
+        return b3Shape_GetSensorCapacity(shapeID(shape));
+    }
+
+    /// @api b3Shape_GetSphere
+    public Sphere shapeGetSphere(Sphere dest, ShapeID shape) {
+        var sphere = b3Shape_GetSphere(this.returnArena, shapeID(shape));
+        return dest.set(sphere);
+    }
+
+    /// @api b3Shape_GetSurfaceMaterial
+    public SurfaceMaterial shapeGetSurfaceMaterial(SurfaceMaterial dest, ShapeID shape) {
+        var material = b3Shape_GetSurfaceMaterial(this.returnArena, shapeID(shape));
+        return dest.set(material);
+    }
+
+    /// @api b3Shape_GetType
+    public ShapeType shapeGetType(ShapeID shape) {
+        var type = b3Shape_GetType(shapeID(shape));
+        return ShapeType.fromCode(type);
+    }
+
+    /// @api b3Shape_GetWorld
+    public WorldID shapeGetWorld(ShapeID shape) {
+        var worldID = b3Shape_GetWorld(this.returnArena, shapeID(shape));
+        return WorldID.of(worldID);
+    }
+
+    /// @api b3Shape_EnableHitEvents
+    public void shapeEnableHitEvents(ShapeID shape, boolean flag) {
+        b3Shape_EnableHitEvents(shapeID(shape), flag);
+    }
+
+    /// @api b3Shape_EnablePreSolveEvents
+    public void shapeEnablePreSolveEvents(ShapeID shape, boolean flag) {
+        b3Shape_EnablePreSolveEvents(shapeID(shape), flag);
+    }
+
+    /// @api b3Shape_EnableSensorEvents
+    public void shapeEnableSensorEvents(ShapeID shape, boolean flag) {
+        b3Shape_EnableSensorEvents(shapeID(shape), flag);
+    }
+
+    /// @api b3Shape_IsSensor
+    public boolean shapeIsSensor(ShapeID shape) {
+        return b3Shape_IsSensor(shapeID(shape));
+    }
+
+    /// @api b3Shape_ComputeMassData
+    public MassData shapeComputeMassData(MassData dest, ShapeID shape) {
+        var massData = b3Shape_ComputeMassData(this.returnArena, shapeID(shape));
+        return dest.set(massData);
+    }
+
+    /// @api b3Shape_EnableContactEvents
+    public void shapeEnableContactEvents(ShapeID shape, boolean flag) {
+        b3Shape_EnableContactEvents(shapeID(shape), flag);
+    }
+
+    /// @api b3Shape_AreSensorEventsEnabled
+    public boolean shapeAreSensorEventsEnabled(ShapeID shape) {
+        return b3Shape_AreSensorEventsEnabled(shapeID(shape));
+    }
+
+    /// @api b3Shape_ArePreSolveEventsEnabled
+    public boolean shapeArePreSolveEventsEnabled(ShapeID shape) {
+        return b3Shape_ArePreSolveEventsEnabled(shapeID(shape));
+    }
+
+    /// @api b3Shape_AreHitEventsEnabled
+    public boolean shapeAreHitEventsEnabled(ShapeID shape) {
+        return b3Shape_AreHitEventsEnabled(shapeID(shape));
+    }
+
+    /// @api b3Shape_AreContactEventsEnabled
+    public boolean shapeAreContactEventsEnabled(ShapeID shape) {
+        return b3Shape_AreContactEventsEnabled(shapeID(shape));
+    }
+
+    /// @api b3Shape_ApplyWind
+    public void shapeApplyWind(
+            ShapeID shape,
+            Vector3f wind,
+            float drag,
+            float lift,
+            float maxSpeed,
+            boolean wake
+    ) {
+        b3Shape_ApplyWind(
+                shapeID(shape),
+                vec3(wind),
+                drag,
+                lift,
+                maxSpeed,
+                wake
+        );
     }
     //</editor-fold>
 
@@ -1377,7 +1925,11 @@ public final class B3 {
     }
 
     /// @api b3OverlapHeightField
-    public boolean overlapHeightField(HeightFieldData heightFieldData, Matrix4f transform, ShapeProxy proxy) {
+    public boolean overlapHeightField(
+            HeightFieldData heightFieldData,
+            Matrix4f transform,
+            ShapeProxy proxy
+    ) {
         try (this.argArena) {
             return b3OverlapHeightField(
                     heightFieldData.segment(),
@@ -1388,7 +1940,11 @@ public final class B3 {
     }
 
     /// @api b3OverlapCapsule
-    public boolean overlapCapsule(Capsule capsule, Matrix4f transform, ShapeProxy proxy) {
+    public boolean overlapCapsule(
+            Capsule capsule,
+            Matrix4f transform,
+            ShapeProxy proxy
+    ) {
         try (this.argArena) {
             return b3OverlapCapsule(
                     capsule.create(this.argArena),
@@ -1399,7 +1955,11 @@ public final class B3 {
     }
 
     /// @api b3OverlapSphere
-    public boolean overlapSphere(Sphere sphere, Matrix4f transform, ShapeProxy proxy) {
+    public boolean overlapSphere(
+            Sphere sphere,
+            Matrix4f transform,
+            ShapeProxy proxy
+    ) {
         try (this.argArena) {
             return b3OverlapSphere(
                     sphere.create(this.argArena),
@@ -1448,6 +2008,95 @@ public final class B3 {
 
             return dest;
         }
+    }
+
+    /// @api b3ComputeHullAABB
+    public AABB computeHullAABB(AABB dest, HullData hull, Matrix4f transform) {
+        var aabb = b3ComputeHullAABB(this.returnArena, hull.segment, transform(transform));
+        return dest.set(aabb);
+    }
+
+    /// @api b3ComputeHullMass
+    public MassData computeHullMass(MassData dest, HullData hull, float density) {
+        var massData = b3ComputeHullMass(this.returnArena, hull.segment, density);
+        return dest.set(massData);
+    }
+
+    /// @api b3ComputeHeightFieldAABB
+    public AABB computeHeightFieldAABB(
+            AABB dest,
+            HeightFieldData heightField,
+            Matrix4f transform
+    ) {
+        var aabb = b3ComputeHeightFieldAABB(
+                this.returnArena,
+                heightField.segment(),
+                transform(transform)
+        );
+        return dest.set(aabb);
+    }
+
+    /// @api b3ComputeCapsuleMass
+    public MassData computeCapsuleMass(
+            MassData dest,
+            Capsule capsule,
+            float density
+    ) {
+        try (this.argArena) {
+            var massData = b3ComputeCapsuleMass(
+                    this.returnArena,
+                    capsule.create(this.argArena),
+                    density
+            );
+            return dest.set(massData);
+        }
+    }
+
+    /// @api b3ComputeCapsuleAABB
+    public AABB computeCapsuleAABB(AABB dest, Capsule capsule, Matrix4f transform) {
+        try (this.argArena) {
+            var aabb = b3ComputeCapsuleAABB(
+                    this.returnArena,
+                    capsule.create(this.argArena),
+                    transform(transform)
+            );
+            return dest.set(aabb);
+        }
+    }
+
+    /// @api b3ComputeSphereAABB
+    public AABB computeSphereAABB(AABB dest, Sphere sphere, Matrix4f transform) {
+        try (this.argArena) {
+            var aabb = b3ComputeSphereAABB(
+                    this.returnArena,
+                    sphere.create(this.argArena),
+                    transform(transform)
+            );
+            return dest.set(aabb);
+        }
+    }
+
+    /// @api b3ComputeSphereMass
+    public MassData computeSphereMass(MassData dest, Sphere sphere, float density) {
+        try (this.argArena) {
+            var massData = b3ComputeSphereMass(
+                    this.returnArena,
+                    sphere.create(this.argArena),
+                    density
+            );
+            return dest.set(massData);
+        }
+    }
+
+    /// @api b3ComputeMeshAABB
+    public AABB computeMeshAABB(AABB dest, MeshData mesh, Matrix4f transform, Vector3f scale) {
+        var aabb = b3ComputeMeshAABB(
+                this.returnArena,
+                mesh.segment(),
+                transform(transform),
+                vec3(scale)
+        );
+        return dest.set(aabb);
     }
     //</editor-fold>
 
@@ -1521,7 +2170,7 @@ public final class B3 {
                     count
             );
 
-            // write back `push` parameter
+            // write back `push` parameter back
             CollisionPlane.setPlanes(planes, count, planesSegment);
 
             PrimitiveMemOps.setVec3(dest, result, b3PlaneSolverResult.delta$offset());
@@ -1656,6 +2305,20 @@ public final class B3 {
         return PrimitiveMemOps.setVec3(dest, vec);
     }
 
+    /// @api b3Body_ApplyMassFromShapes
+    public void bodyApplyMassFromShapes(BodyID bodyId) {
+        b3Body_ApplyMassFromShapes(bodyID(bodyId));
+    }
+
+    /// @api b3Body_SetMassData
+    public void bodySetMassData(BodyID bodyId, MassData massData) {
+        try (this.argArena) {
+            var segment = b3MassData.allocate(this.argArena);
+            massData.put(segment);
+            b3Body_SetMassData(bodyID(bodyId), segment);
+        }
+    }
+
     /// @api b3Body_ApplyForce
     public void bodyApplyForce(BodyID bodyId, Vector3f force, Vector3f point, boolean wake) {
         b3Body_ApplyForce(bodyID(bodyId), vec3(force), vec3_2(point), wake);
@@ -1667,7 +2330,12 @@ public final class B3 {
     }
 
     /// @api b3Body_ApplyLinearImpulse
-    public void bodyApplyLinearImpulse(BodyID bodyId, Vector3f impulse, Vector3f point, boolean wake) {
+    public void bodyApplyLinearImpulse(
+            BodyID bodyId,
+            Vector3f impulse,
+            Vector3f point,
+            boolean wake
+    ) {
         b3Body_ApplyLinearImpulse(bodyID(bodyId), vec3(impulse), vec3_2(point), wake);
     }
 
@@ -1685,7 +2353,6 @@ public final class B3 {
     public void bodyApplyLinearImpulseToCenter(BodyID bodyId, Vector3f impulse, boolean wake) {
         b3Body_ApplyLinearImpulseToCenter(bodyID(bodyId), vec3(impulse), wake);
     }
-
 
     /// @api b3Body_GetWorldPoint
     public Vector3f bodyGetWorldPoint(Vector3f dest, BodyID bodyId, Vector3f localPoint) {
@@ -1751,10 +2418,263 @@ public final class B3 {
     public void bodyEnableSleep(BodyID bodyId, boolean enable) {
         b3Body_EnableSleep(bodyID(bodyId), enable);
     }
+
+    /// @api b3Body_Disable
+    public void bodyDisable(BodyID bodyId) {
+        b3Body_Disable(bodyID(bodyId));
+    }
+
+    /// @api b3Body_Enable
+    public void bodyEnable(BodyID bodyId) {
+        b3Body_Enable(bodyID(bodyId));
+    }
+
+    /// @api b3Body_IsAwake
+    public boolean bodyIsAwake(BodyID bodyId) {
+        return b3Body_IsAwake(bodyID(bodyId));
+    }
+
+    /// @api b3Body_ComputeAABB
+    public AABB bodyComputeAABB(AABB dest, BodyID bodyId) {
+        var aabb = b3Body_ComputeAABB(this.returnArena, bodyID(bodyId));
+        return dest.set(aabb);
+    }
+
+    /// @api b3Body_EnableContactRecycling
+    public void bodyEnableContactRecycling(BodyID bodyId, boolean flag) {
+        b3Body_EnableContactRecycling(bodyID(bodyId), flag);
+    }
+
+    /// @api b3Body_EnableHitEvents
+    public void bodyEnableHitEvents(BodyID bodyId, boolean enableHitEvents) {
+        b3Body_EnableHitEvents(bodyID(bodyId), enableHitEvents);
+    }
+
+    /// @api b3Body_GetAngularDamping
+    public float bodyGetAngularDamping(BodyID bodyId) {
+        return b3Body_GetAngularDamping(bodyID(bodyId));
+    }
+
+    /// @api b3Body_GetClosestPoint
+    public float bodyGetClosestPoint(Vector3f dest, BodyID bodyId, Vector3f target) {
+        var distance = b3Body_GetClosestPoint(
+                bodyID(bodyId),
+                this.vec3Segment,
+                vec3_2(target)
+        );
+        PrimitiveMemOps.setVec3(dest, this.vec3Segment);
+        return distance;
+    }
+
+    /// @api b3Body_GetContactCapacity
+    public int bodyGetContactCapacity(BodyID bodyId) {
+        return b3Body_GetContactCapacity(bodyID(bodyId));
+    }
+
+    /// @api b3Body_GetGravityScale
+    public float bodyGetGravityScale(BodyID bodyId) {
+        return b3Body_GetGravityScale(bodyID(bodyId));
+    }
+
+    /// @api b3Body_GetJointCount
+    public int bodyGetJointCount(BodyID bodyId) {
+        return b3Body_GetJointCount(bodyID(bodyId));
+    }
+
+    /// @api b3Body_GetLinearDamping
+    public float bodyGetLinearDamping(BodyID bodyId) {
+        return b3Body_GetLinearDamping(bodyID(bodyId));
+    }
+
+    /// @api b3Body_GetLocalPointVelocity
+    public Vector3f bodyGetLocalPointVelocity(
+            Vector3f dest,
+            BodyID bodyId,
+            Vector3f localPoint
+    ) {
+        var vec = b3Body_GetLocalPointVelocity(this.returnArena, bodyID(bodyId), vec3(localPoint));
+        return PrimitiveMemOps.setVec3(dest, vec);
+    }
+
+    /// @api b3Body_GetLocalRotationalInertia
+    public Matrix3f bodyGetLocalRotationalInertia(Matrix3f dest, BodyID bodyId) {
+        var matrix = b3Body_GetLocalRotationalInertia(this.returnArena, bodyID(bodyId));
+        return PrimitiveMemOps.setMat3(dest, matrix);
+    }
+
+    /// @api b3Body_GetMotionLocks
+    public MotionLocks bodyGetMotionLocks(MotionLocks dest, BodyID bodyId) {
+        var locks = b3Body_GetMotionLocks(this.returnArena, bodyID(bodyId));
+        return dest.set(locks);
+    }
+
+    /// @api b3Body_GetShapeCount
+    public int bodyGetShapeCount(BodyID bodyId) {
+        return b3Body_GetShapeCount(bodyID(bodyId));
+    }
+
+    /// @api b3Body_GetSleepThreshold
+    public float bodyGetSleepThreshold(BodyID bodyId) {
+        return b3Body_GetSleepThreshold(bodyID(bodyId));
+    }
+
+    /// @api b3Body_GetWorld
+    public WorldID bodyGetWorld(BodyID bodyId) {
+        var worldID = b3Body_GetWorld(this.returnArena, bodyID(bodyId));
+        return WorldID.of(worldID);
+    }
+
+    /// @api b3Body_GetWorldPointVelocity
+    public Vector3f bodyGetWorldPointVelocity(
+            Vector3f dest,
+            BodyID bodyId,
+            Vector3f worldPoint
+    ) {
+        var vec = b3Body_GetWorldPointVelocity(
+                this.returnArena,
+                bodyID(bodyId),
+                vec3(worldPoint)
+        );
+        return PrimitiveMemOps.setVec3(dest, vec);
+    }
+
+    /// @api b3Body_IsBullet
+    public boolean bodyIsBullet(BodyID bodyId) {
+        return b3Body_IsBullet(bodyID(bodyId));
+    }
+
+    /// @api b3Body_IsContactRecyclingEnabled
+    public boolean bodyIsContactRecyclingEnabled(BodyID bodyId) {
+        return b3Body_IsContactRecyclingEnabled(bodyID(bodyId));
+    }
+
+    /// @api b3Body_IsEnabled
+    public boolean bodyIsEnabled(BodyID bodyId) {
+        return b3Body_IsEnabled(bodyID(bodyId));
+    }
+
+    /// @api b3Body_IsSleepEnabled
+    public boolean bodyIsSleepEnabled(BodyID bodyId) {
+        return b3Body_IsSleepEnabled(bodyID(bodyId));
+    }
+
+    /// @api b3Body_SetAngularDamping
+    public void bodySetAngularDamping(BodyID bodyId, float angularDamping) {
+        b3Body_SetAngularDamping(bodyID(bodyId), angularDamping);
+    }
+
+    /// @api b3Body_SetAwake
+    public void bodySetAwake(BodyID bodyId, boolean awake) {
+        b3Body_SetAwake(bodyID(bodyId), awake);
+    }
+
+    /// @api b3Body_SetBullet
+    public void bodySetBullet(BodyID bodyId, boolean flag) {
+        b3Body_SetBullet(bodyID(bodyId), flag);
+    }
+
+    /// @api b3Body_SetGravityScale
+    public void bodySetGravityScale(BodyID bodyId, float gravityScale) {
+        b3Body_SetGravityScale(bodyID(bodyId), gravityScale);
+    }
+
+    /// @api b3Body_SetLinearDamping
+    public void bodySetLinearDamping(BodyID bodyId, float linearDamping) {
+        b3Body_SetLinearDamping(bodyID(bodyId), linearDamping);
+    }
+
+    /// @api b3Body_SetMotionLocks
+    public void bodySetMotionLocks(BodyID bodyId, MotionLocks locks) {
+        try (this.argArena) {
+            var segment = b3MotionLocks.allocate(this.argArena);
+            locks.put(segment);
+            b3Body_SetMotionLocks(bodyID(bodyId), segment);
+        }
+    }
+
+    /// @api b3Body_SetSleepThreshold
+    public void bodySetSleepThreshold(BodyID bodyId, float sleepThreshold) {
+        b3Body_SetSleepThreshold(bodyID(bodyId), sleepThreshold);
+    }
+
+    /// @api b3Body_SetType
+    public void bodySetType(BodyID bodyId, BodyType type) {
+        b3Body_SetType(bodyID(bodyId), type.code());
+    }
     //</editor-fold>
 
-    //<editor-fold desc="ID Tests" default-state="collapsed">
+    //<editor-fold desc="Tests" default-state="collapsed">
 
+
+    /// @api b3IsValidRay
+    public boolean isValidRay(RayCastInput input) {
+        try (this.argArena) {
+            return b3IsValidRay(input.create(this.argArena));
+        }
+    }
+
+    /// @api b3IsValidVec3
+    public boolean isValidVec3(Vector3f a) {
+        return a.isFinite();
+    }
+
+    /// @api b3IsValidQuat
+    public boolean isValidQuat(Quaternionf q) {
+        var qq = q.x * q.x + q.y * q.y + q.z * q.z + q.w * q.w;
+        var tolerance = 20.0f * Math.ulp(1.0f);
+        return q.isFinite()
+                && 1.0f - tolerance < qq && qq < 1.0f + tolerance;
+    }
+
+    /// @api b3IsValidTransform
+    public boolean isValidTransform(Matrix4f a) {
+        if (!a.isFinite() || !PrimitiveMemOps.isRigidMatrix(a)) {
+            return false;
+        }
+        return isValidQuat(this.scratchQuat.setFromNormalized(a));
+    }
+
+    /// @api b3IsValidMatrix3
+    public boolean isValidMatrix3(Matrix3f a) {
+        return a.isFinite();
+    }
+
+    /// @api b3IsValidAABB
+    public boolean isValidAABB(AABB a) {
+        return isValidVec3(a.lowerBound) && isValidVec3(a.upperBound)
+                && a.lowerBound.x <= a.upperBound.x
+                && a.lowerBound.y <= a.upperBound.y
+                && a.lowerBound.z <= a.upperBound.z;
+    }
+
+    /// @api b3IsValidPlane
+    public boolean isValidPlane(Plane a) {
+        var normalLengthSquared =
+                   a.normalX * a.normalX
+                 + a.normalY * a.normalY
+                 + a.normalZ * a.normalZ;
+        return
+                   Float.isFinite(a.normalX)
+                && Float.isFinite(a.normalY)
+                && Float.isFinite(a.normalZ)
+                && Math.abs(1.0f - normalLengthSquared) < 100.0f * Math.ulp(1.0f)
+                && isValidFloat(a.offset);
+    }
+
+    /// @api b3IsValidPosition
+    public boolean isValidPosition(Vector3f p) {
+        return isValidVec3(p);
+    }
+
+    /// @api b3IsValidWorldTransform
+    public boolean isValidWorldTransform(Matrix4f t) {
+        return isValidTransform(t);
+    }
+
+    /// @api b3IsValidFloat
+    public boolean isValidFloat(float a) {
+        return Float.isFinite(a);
+    }
 
     /// @api b3Shape_IsValid
     public boolean shapeIsValid(ShapeID shapeId) {
@@ -2056,7 +2976,10 @@ public final class B3 {
         b3ParallelJoint_SetSpringHertz(jointID(jointID), hertz);
     }
     /// @api b3ParallelJoint_SetSpringDampingRatio
-    public void parallelJointSetSpringDampingRatio(JointID<JointType.Parallel> jointID, float dampingRatio) {
+    public void parallelJointSetSpringDampingRatio(
+            JointID<JointType.Parallel> jointID,
+            float dampingRatio
+    ) {
         b3ParallelJoint_SetSpringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3ParallelJoint_GetSpringHertz
@@ -2097,12 +3020,19 @@ public final class B3 {
         return b3DistanceJoint_IsSpringEnabled(jointID(jointID));
     }
     /// @api b3DistanceJoint_SetSpringForceRange
-    public void distanceJointSetSpringForceRange(JointID<JointType.Distance> jointID, float lowerForce, float upperForce) {
+    public void distanceJointSetSpringForceRange(
+            JointID<JointType.Distance> jointID,
+            float lowerForce,
+            float upperForce
+    ) {
         b3DistanceJoint_SetSpringForceRange(jointID(jointID), lowerForce, upperForce);
     }
     /// @return x = lowerForce, y = upperForce
     /// @api b3DistanceJoint_GetSpringForceRange
-    public Vector2f distanceJointGetSpringForceRange(Vector2f dest, JointID<JointType.Distance> jointID) {
+    public Vector2f distanceJointGetSpringForceRange(
+            Vector2f dest,
+            JointID<JointType.Distance> jointID
+    ) {
         try (this.argArena) {
             var lowerForce = this.argArena.allocate(ValueLayout.JAVA_FLOAT);
             var upperForce = this.argArena.allocate(ValueLayout.JAVA_FLOAT);
@@ -2113,11 +3043,17 @@ public final class B3 {
         }
     }
     /// @api b3DistanceJoint_SetSpringHertz
-    public void distanceJointSetSpringHertz(JointID<JointType.Distance> jointID, float hertz) {
+    public void distanceJointSetSpringHertz(
+            JointID<JointType.Distance> jointID,
+            float hertz
+    ) {
         b3DistanceJoint_SetSpringHertz(jointID(jointID), hertz);
     }
     /// @api b3DistanceJoint_SetSpringDampingRatio
-    public void distanceJointSetSpringDampingRatio(JointID<JointType.Distance> jointID, float dampingRatio) {
+    public void distanceJointSetSpringDampingRatio(
+            JointID<JointType.Distance> jointID,
+            float dampingRatio
+    ) {
         b3DistanceJoint_SetSpringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3DistanceJoint_GetSpringHertz
@@ -2137,7 +3073,11 @@ public final class B3 {
         return b3DistanceJoint_IsLimitEnabled(jointID(jointID));
     }
     /// @api b3DistanceJoint_SetLengthRange
-    public void distanceJointSetLengthRange(JointID<JointType.Distance> jointID, float minLength, float maxLength) {
+    public void distanceJointSetLengthRange(
+            JointID<JointType.Distance> jointID,
+            float minLength,
+            float maxLength
+    ) {
         b3DistanceJoint_SetLengthRange(jointID(jointID), minLength, maxLength);
     }
     /// @api b3DistanceJoint_GetMinLength
@@ -2153,7 +3093,10 @@ public final class B3 {
         return b3DistanceJoint_GetCurrentLength(jointID(jointID));
     }
     /// @api b3DistanceJoint_EnableMotor
-    public void distanceJointEnableMotor(JointID<JointType.Distance> jointID, boolean enableMotor) {
+    public void distanceJointEnableMotor(
+            JointID<JointType.Distance> jointID,
+            boolean enableMotor
+    ) {
         b3DistanceJoint_EnableMotor(jointID(jointID), enableMotor);
     }
     /// @api b3DistanceJoint_IsMotorEnabled
@@ -2161,7 +3104,10 @@ public final class B3 {
         return b3DistanceJoint_IsMotorEnabled(jointID(jointID));
     }
     /// @api b3DistanceJoint_SetMotorSpeed
-    public void distanceJointSetMotorSpeed(JointID<JointType.Distance> jointID, float motorSpeed) {
+    public void distanceJointSetMotorSpeed(
+            JointID<JointType.Distance> jointID,
+            float motorSpeed
+    ) {
         b3DistanceJoint_SetMotorSpeed(jointID(jointID), motorSpeed);
     }
     /// @api b3DistanceJoint_GetMotorSpeed
@@ -2169,7 +3115,10 @@ public final class B3 {
         return b3DistanceJoint_GetMotorSpeed(jointID(jointID));
     }
     /// @api b3DistanceJoint_SetMaxMotorForce
-    public void distanceJointSetMaxMotorForce(JointID<JointType.Distance> jointID, float force) {
+    public void distanceJointSetMaxMotorForce(
+            JointID<JointType.Distance> jointID,
+            float force
+    ) {
         b3DistanceJoint_SetMaxMotorForce(jointID(jointID), force);
     }
     /// @api b3DistanceJoint_GetMaxMotorForce
@@ -2218,25 +3167,40 @@ public final class B3 {
 
 
     /// @api b3MotorJoint_SetLinearVelocity
-    public void motorJointSetLinearVelocity(JointID<JointType.Motor> jointID, Vector3f velocity) {
+    public void motorJointSetLinearVelocity(
+            JointID<JointType.Motor> jointID,
+            Vector3f velocity
+    ) {
         b3MotorJoint_SetLinearVelocity(jointID(jointID), vec3(velocity));
     }
     /// @api b3MotorJoint_GetLinearVelocity
-    public Vector3f motorJointGetLinearVelocity(Vector3f dest, JointID<JointType.Motor> jointID) {
+    public Vector3f motorJointGetLinearVelocity(
+            Vector3f dest,
+            JointID<JointType.Motor> jointID
+    ) {
         var velocity = b3MotorJoint_GetLinearVelocity(this.returnArena, jointID(jointID));
         return PrimitiveMemOps.setVec3(dest, velocity);
     }
     /// @api b3MotorJoint_SetAngularVelocity
-    public void motorJointSetAngularVelocity(JointID<JointType.Motor> jointID, Vector3f velocity) {
+    public void motorJointSetAngularVelocity(
+            JointID<JointType.Motor> jointID,
+            Vector3f velocity
+    ) {
         b3MotorJoint_SetAngularVelocity(jointID(jointID), vec3(velocity));
     }
     /// @api b3MotorJoint_GetAngularVelocity
-    public Vector3f motorJointGetAngularVelocity(Vector3f dest, JointID<JointType.Motor> jointID) {
+    public Vector3f motorJointGetAngularVelocity(
+            Vector3f dest,
+            JointID<JointType.Motor> jointID
+    ) {
         var velocity = b3MotorJoint_GetAngularVelocity(this.returnArena, jointID(jointID));
         return PrimitiveMemOps.setVec3(dest, velocity);
     }
     /// @api b3MotorJoint_SetMaxVelocityForce
-    public void motorJointSetMaxVelocityForce(JointID<JointType.Motor> jointID, float maxForce) {
+    public void motorJointSetMaxVelocityForce(
+            JointID<JointType.Motor> jointID,
+            float maxForce
+    ) {
         b3MotorJoint_SetMaxVelocityForce(jointID(jointID), maxForce);
     }
     /// @api b3MotorJoint_GetMaxVelocityForce
@@ -2244,7 +3208,10 @@ public final class B3 {
         return b3MotorJoint_GetMaxVelocityForce(jointID(jointID));
     }
     /// @api b3MotorJoint_SetMaxVelocityTorque
-    public void motorJointSetMaxVelocityTorque(JointID<JointType.Motor> jointID, float maxTorque) {
+    public void motorJointSetMaxVelocityTorque(
+            JointID<JointType.Motor> jointID,
+            float maxTorque
+    ) {
         b3MotorJoint_SetMaxVelocityTorque(jointID(jointID), maxTorque);
     }
     /// @api b3MotorJoint_GetMaxVelocityTorque
@@ -2321,7 +3288,10 @@ public final class B3 {
 
 
     /// @api b3PrismaticJoint_EnableSpring
-    public void prismaticJointEnableSpring(JointID<JointType.Prismatic> jointID, boolean enableSpring) {
+    public void prismaticJointEnableSpring(
+            JointID<JointType.Prismatic> jointID,
+            boolean enableSpring
+    ) {
         b3PrismaticJoint_EnableSpring(jointID(jointID), enableSpring);
     }
     /// @api b3PrismaticJoint_IsSpringEnabled
@@ -2337,7 +3307,10 @@ public final class B3 {
         return b3PrismaticJoint_GetSpringHertz(jointID(jointID));
     }
     /// @api b3PrismaticJoint_SetSpringDampingRatio
-    public void prismaticJointSetSpringDampingRatio(JointID<JointType.Prismatic> jointID, float dampingRatio) {
+    public void prismaticJointSetSpringDampingRatio(
+            JointID<JointType.Prismatic> jointID,
+            float dampingRatio
+    ) {
         b3PrismaticJoint_SetSpringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3PrismaticJoint_GetSpringDampingRatio
@@ -2345,7 +3318,10 @@ public final class B3 {
         return b3PrismaticJoint_GetSpringDampingRatio(jointID(jointID));
     }
     /// @api b3PrismaticJoint_SetTargetTranslation
-    public void prismaticJointSetTargetTranslation(JointID<JointType.Prismatic> jointID, float targetTranslation) {
+    public void prismaticJointSetTargetTranslation(
+            JointID<JointType.Prismatic> jointID,
+            float targetTranslation
+    ) {
         b3PrismaticJoint_SetTargetTranslation(jointID(jointID), targetTranslation);
     }
     /// @api b3PrismaticJoint_GetTargetTranslation
@@ -2353,7 +3329,10 @@ public final class B3 {
         return b3PrismaticJoint_GetTargetTranslation(jointID(jointID));
     }
     /// @api b3PrismaticJoint_EnableLimit
-    public void prismaticJointEnableLimit(JointID<JointType.Prismatic> jointID, boolean enableLimit) {
+    public void prismaticJointEnableLimit(
+            JointID<JointType.Prismatic> jointID,
+            boolean enableLimit
+    ) {
         b3PrismaticJoint_EnableLimit(jointID(jointID), enableLimit);
     }
     /// @api b3PrismaticJoint_IsLimitEnabled
@@ -2369,11 +3348,18 @@ public final class B3 {
         return b3PrismaticJoint_GetUpperLimit(jointID(jointID));
     }
     /// @api b3PrismaticJoint_SetLimits
-    public void prismaticJointSetLimits(JointID<JointType.Prismatic> jointID, float lower, float upper) {
+    public void prismaticJointSetLimits(
+            JointID<JointType.Prismatic> jointID,
+            float lower,
+            float upper
+    ) {
         b3PrismaticJoint_SetLimits(jointID(jointID), lower, upper);
     }
     /// @api b3PrismaticJoint_EnableMotor
-    public void prismaticJointEnableMotor(JointID<JointType.Prismatic> jointID, boolean enableMotor) {
+    public void prismaticJointEnableMotor(
+            JointID<JointType.Prismatic> jointID,
+            boolean enableMotor
+    ) {
         b3PrismaticJoint_EnableMotor(jointID(jointID), enableMotor);
     }
     /// @api b3PrismaticJoint_IsMotorEnabled
@@ -2381,7 +3367,10 @@ public final class B3 {
         return b3PrismaticJoint_IsMotorEnabled(jointID(jointID));
     }
     /// @api b3PrismaticJoint_SetMotorSpeed
-    public void prismaticJointSetMotorSpeed(JointID<JointType.Prismatic> jointID, float motorSpeed) {
+    public void prismaticJointSetMotorSpeed(
+            JointID<JointType.Prismatic> jointID,
+            float motorSpeed
+    ) {
         b3PrismaticJoint_SetMotorSpeed(jointID(jointID), motorSpeed);
     }
     /// @api b3PrismaticJoint_GetMotorSpeed
@@ -2389,7 +3378,10 @@ public final class B3 {
         return b3PrismaticJoint_GetMotorSpeed(jointID(jointID));
     }
     /// @api b3PrismaticJoint_SetMaxMotorForce
-    public void prismaticJointSetMaxMotorForce(JointID<JointType.Prismatic> jointID, float force) {
+    public void prismaticJointSetMaxMotorForce(
+            JointID<JointType.Prismatic> jointID,
+            float force
+    ) {
         b3PrismaticJoint_SetMaxMotorForce(jointID(jointID), force);
     }
     /// @api b3PrismaticJoint_GetMaxMotorForce
@@ -2430,7 +3422,10 @@ public final class B3 {
 
 
     /// @api b3RevoluteJoint_EnableSpring
-    public void revoluteJointEnableSpring(JointID<JointType.Revolute> jointID, boolean enableSpring) {
+    public void revoluteJointEnableSpring(
+            JointID<JointType.Revolute> jointID,
+            boolean enableSpring
+    ) {
         b3RevoluteJoint_EnableSpring(jointID(jointID), enableSpring);
     }
     /// @api b3RevoluteJoint_IsSpringEnabled
@@ -2446,7 +3441,10 @@ public final class B3 {
         return b3RevoluteJoint_GetSpringHertz(jointID(jointID));
     }
     /// @api b3RevoluteJoint_SetSpringDampingRatio
-    public void revoluteJointSetSpringDampingRatio(JointID<JointType.Revolute> jointID, float dampingRatio) {
+    public void revoluteJointSetSpringDampingRatio(
+            JointID<JointType.Revolute> jointID,
+            float dampingRatio
+    ) {
         b3RevoluteJoint_SetSpringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3RevoluteJoint_GetSpringDampingRatio
@@ -2454,7 +3452,10 @@ public final class B3 {
         return b3RevoluteJoint_GetSpringDampingRatio(jointID(jointID));
     }
     /// @api b3RevoluteJoint_SetTargetAngle
-    public void revoluteJointSetTargetAngle(JointID<JointType.Revolute> jointID, float targetRadians) {
+    public void revoluteJointSetTargetAngle(
+            JointID<JointType.Revolute> jointID,
+            float targetRadians
+    ) {
         b3RevoluteJoint_SetTargetAngle(jointID(jointID), targetRadians);
     }
     /// @api b3RevoluteJoint_GetTargetAngle
@@ -2466,7 +3467,10 @@ public final class B3 {
         return b3RevoluteJoint_GetAngle(jointID(jointID));
     }
     /// @api b3RevoluteJoint_EnableLimit
-    public void revoluteJointEnableLimit(JointID<JointType.Revolute> jointID, boolean enableLimit) {
+    public void revoluteJointEnableLimit(
+            JointID<JointType.Revolute> jointID,
+            boolean enableLimit
+    ) {
         b3RevoluteJoint_EnableLimit(jointID(jointID), enableLimit);
     }
     /// @api b3RevoluteJoint_IsLimitEnabled
@@ -2482,11 +3486,18 @@ public final class B3 {
         return b3RevoluteJoint_GetUpperLimit(jointID(jointID));
     }
     /// @api b3RevoluteJoint_SetLimits
-    public void revoluteJointSetLimits(JointID<JointType.Revolute> jointID, float lowerLimitRadians, float upperLimitRadians) {
+    public void revoluteJointSetLimits(
+            JointID<JointType.Revolute> jointID,
+            float lowerLimitRadians,
+            float upperLimitRadians
+    ) {
         b3RevoluteJoint_SetLimits(jointID(jointID), lowerLimitRadians, upperLimitRadians);
     }
     /// @api b3RevoluteJoint_EnableMotor
-    public void revoluteJointEnableMotor(JointID<JointType.Revolute> jointID, boolean enableMotor) {
+    public void revoluteJointEnableMotor(
+            JointID<JointType.Revolute> jointID,
+            boolean enableMotor
+    ) {
         b3RevoluteJoint_EnableMotor(jointID(jointID), enableMotor);
     }
     /// @api b3RevoluteJoint_IsMotorEnabled
@@ -2494,7 +3505,10 @@ public final class B3 {
         return b3RevoluteJoint_IsMotorEnabled(jointID(jointID));
     }
     /// @api b3RevoluteJoint_SetMotorSpeed
-    public void revoluteJointSetMotorSpeed(JointID<JointType.Revolute> jointID, float motorSpeed) {
+    public void revoluteJointSetMotorSpeed(
+            JointID<JointType.Revolute> jointID,
+            float motorSpeed
+    ) {
         b3RevoluteJoint_SetMotorSpeed(jointID(jointID), motorSpeed);
     }
     /// @api b3RevoluteJoint_GetMotorSpeed
@@ -2506,7 +3520,10 @@ public final class B3 {
         return b3RevoluteJoint_GetMotorTorque(jointID(jointID));
     }
     /// @api b3RevoluteJoint_SetMaxMotorTorque
-    public void revoluteJointSetMaxMotorTorque(JointID<JointType.Revolute> jointID, float torque) {
+    public void revoluteJointSetMaxMotorTorque(
+            JointID<JointType.Revolute> jointID,
+            float torque
+    ) {
         b3RevoluteJoint_SetMaxMotorTorque(jointID(jointID), torque);
     }
     /// @api b3RevoluteJoint_GetMaxMotorTorque
@@ -2535,7 +3552,10 @@ public final class B3 {
 
 
     /// @api b3SphericalJoint_EnableConeLimit
-    public void sphericalJoint_EnableConeLimit(JointID<JointType.Spherical> jointID, boolean enableLimit) {
+    public void sphericalJoint_EnableConeLimit(
+            JointID<JointType.Spherical> jointID,
+            boolean enableLimit
+    ) {
         b3SphericalJoint_EnableConeLimit(jointID(jointID), enableLimit);
     }
     /// @api b3SphericalJoint_IsConeLimitEnabled
@@ -2547,7 +3567,10 @@ public final class B3 {
         return b3SphericalJoint_GetConeLimit(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetConeLimit
-    public void sphericalJoint_SetConeLimit(JointID<JointType.Spherical> jointID, float angleRadians) {
+    public void sphericalJoint_SetConeLimit(
+            JointID<JointType.Spherical> jointID,
+            float angleRadians
+    ) {
         b3SphericalJoint_SetConeLimit(jointID(jointID), angleRadians);
     }
     /// @api b3SphericalJoint_GetConeAngle
@@ -2555,7 +3578,10 @@ public final class B3 {
         return b3SphericalJoint_GetConeAngle(jointID(jointID));
     }
     /// @api b3SphericalJoint_EnableTwistLimit
-    public void sphericalJoint_EnableTwistLimit(JointID<JointType.Spherical> jointID, boolean enableLimit) {
+    public void sphericalJoint_EnableTwistLimit(
+            JointID<JointType.Spherical> jointID,
+            boolean enableLimit
+    ) {
         b3SphericalJoint_EnableTwistLimit(jointID(jointID), enableLimit);
     }
     /// @api b3SphericalJoint_IsTwistLimitEnabled
@@ -2571,7 +3597,11 @@ public final class B3 {
         return b3SphericalJoint_GetUpperTwistLimit(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetTwistLimits
-    public void sphericalJoint_SetTwistLimits(JointID<JointType.Spherical> jointID, float lowerLimitRadians, float upperLimitRadians) {
+    public void sphericalJoint_SetTwistLimits(
+            JointID<JointType.Spherical> jointID,
+            float lowerLimitRadians,
+            float upperLimitRadians
+    ) {
         b3SphericalJoint_SetTwistLimits(jointID(jointID), lowerLimitRadians, upperLimitRadians);
     }
     /// @api b3SphericalJoint_GetTwistAngle
@@ -2579,7 +3609,10 @@ public final class B3 {
         return b3SphericalJoint_GetTwistAngle(jointID(jointID));
     }
     /// @api b3SphericalJoint_EnableSpring
-    public void sphericalJoint_EnableSpring(JointID<JointType.Spherical> jointID, boolean enableSpring) {
+    public void sphericalJoint_EnableSpring(
+            JointID<JointType.Spherical> jointID,
+            boolean enableSpring
+    ) {
         b3SphericalJoint_EnableSpring(jointID(jointID), enableSpring);
     }
     /// @api b3SphericalJoint_IsSpringEnabled
@@ -2587,7 +3620,10 @@ public final class B3 {
         return b3SphericalJoint_IsSpringEnabled(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetSpringHertz
-    public void sphericalJoint_SetSpringHertz(JointID<JointType.Spherical> jointID, float hertz) {
+    public void sphericalJoint_SetSpringHertz(
+            JointID<JointType.Spherical> jointID,
+            float hertz
+    ) {
         b3SphericalJoint_SetSpringHertz(jointID(jointID), hertz);
     }
     /// @api b3SphericalJoint_GetSpringHertz
@@ -2595,7 +3631,10 @@ public final class B3 {
         return b3SphericalJoint_GetSpringHertz(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetSpringDampingRatio
-    public void sphericalJoint_SetSpringDampingRatio(JointID<JointType.Spherical> jointID, float dampingRatio) {
+    public void sphericalJoint_SetSpringDampingRatio(
+            JointID<JointType.Spherical> jointID,
+            float dampingRatio
+    ) {
         b3SphericalJoint_SetSpringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3SphericalJoint_GetSpringDampingRatio
@@ -2603,16 +3642,25 @@ public final class B3 {
         return b3SphericalJoint_GetSpringDampingRatio(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetTargetRotation
-    public void sphericalJoint_SetTargetRotation(JointID<JointType.Spherical> jointID, Quaternionf targetRotation) {
+    public void sphericalJoint_SetTargetRotation(
+            JointID<JointType.Spherical> jointID,
+            Quaternionf targetRotation
+    ) {
         b3SphericalJoint_SetTargetRotation(jointID(jointID), quat(targetRotation));
     }
     /// @api b3SphericalJoint_GetTargetRotation
-    public Quaternionf sphericalJoint_GetTargetRotation(Quaternionf dest, JointID<JointType.Spherical> jointID) {
+    public Quaternionf sphericalJoint_GetTargetRotation(
+            Quaternionf dest,
+            JointID<JointType.Spherical> jointID
+    ) {
         var rotation = b3SphericalJoint_GetTargetRotation(this.returnArena, jointID(jointID));
         return PrimitiveMemOps.setQuat(dest, rotation);
     }
     /// @api b3SphericalJoint_EnableMotor
-    public void sphericalJoint_EnableMotor(JointID<JointType.Spherical> jointID, boolean enableMotor) {
+    public void sphericalJoint_EnableMotor(
+            JointID<JointType.Spherical> jointID,
+            boolean enableMotor
+    ) {
         b3SphericalJoint_EnableMotor(jointID(jointID), enableMotor);
     }
     /// @api b3SphericalJoint_IsMotorEnabled
@@ -2620,21 +3668,33 @@ public final class B3 {
         return b3SphericalJoint_IsMotorEnabled(jointID(jointID));
     }
     /// @api b3SphericalJoint_SetMotorVelocity
-    public void sphericalJoint_SetMotorVelocity(JointID<JointType.Spherical> jointID, Vector3f motorVelocity) {
+    public void sphericalJoint_SetMotorVelocity(
+            JointID<JointType.Spherical> jointID,
+            Vector3f motorVelocity
+    ) {
         b3SphericalJoint_SetMotorVelocity(jointID(jointID), vec3(motorVelocity));
     }
     /// @api b3SphericalJoint_GetMotorVelocity
-    public Vector3f sphericalJoint_GetMotorVelocity(Vector3f dest, JointID<JointType.Spherical> jointID) {
+    public Vector3f sphericalJoint_GetMotorVelocity(
+            Vector3f dest,
+            JointID<JointType.Spherical> jointID
+    ) {
         var velocity = b3SphericalJoint_GetMotorVelocity(this.returnArena, jointID(jointID));
         return PrimitiveMemOps.setVec3(dest, velocity);
     }
     /// @api b3SphericalJoint_GetMotorTorque
-    public Vector3f sphericalJoint_GetMotorTorque(Vector3f dest, JointID<JointType.Spherical> jointID) {
+    public Vector3f sphericalJoint_GetMotorTorque(
+            Vector3f dest,
+            JointID<JointType.Spherical> jointID
+    ) {
         var torque = b3SphericalJoint_GetMotorTorque(this.returnArena, jointID(jointID));
         return PrimitiveMemOps.setVec3(dest, torque);
     }
     /// @api b3SphericalJoint_SetMaxMotorTorque
-    public void sphericalJoint_SetMaxMotorTorque(JointID<JointType.Spherical> jointID, float torque) {
+    public void sphericalJoint_SetMaxMotorTorque(
+            JointID<JointType.Spherical> jointID,
+            float torque
+    ) {
         b3SphericalJoint_SetMaxMotorTorque(jointID(jointID), torque);
     }
     /// @api b3SphericalJoint_GetMaxMotorTorque
@@ -2671,7 +3731,10 @@ public final class B3 {
         return b3WeldJoint_GetLinearHertz(jointID(jointID));
     }
     /// @api b3WeldJoint_SetLinearDampingRatio
-    public void weldJointSetLinearDampingRatio(JointID<JointType.Weld> jointID, float dampingRatio) {
+    public void weldJointSetLinearDampingRatio(
+            JointID<JointType.Weld> jointID,
+            float dampingRatio
+    ) {
         b3WeldJoint_SetLinearDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3WeldJoint_GetLinearDampingRatio
@@ -2687,7 +3750,10 @@ public final class B3 {
         return b3WeldJoint_GetAngularHertz(jointID(jointID));
     }
     /// @api b3WeldJoint_SetAngularDampingRatio
-    public void weldJointSetAngularDampingRatio(JointID<JointType.Weld> jointID, float dampingRatio) {
+    public void weldJointSetAngularDampingRatio(
+            JointID<JointType.Weld> jointID,
+            float dampingRatio
+    ) {
         b3WeldJoint_SetAngularDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3WeldJoint_GetAngularDampingRatio
@@ -2716,7 +3782,10 @@ public final class B3 {
 
 
     /// @api b3WheelJoint_EnableSuspension
-    public void wheelJointEnableSuspension(JointID<JointType.Wheel> jointID, boolean flag) {
+    public void wheelJointEnableSuspension(
+            JointID<JointType.Wheel> jointID,
+            boolean flag
+    ) {
         b3WheelJoint_EnableSuspension(jointID(jointID), flag);
     }
     /// @api b3WheelJoint_IsSuspensionEnabled
@@ -2732,7 +3801,10 @@ public final class B3 {
         return b3WheelJoint_GetSuspensionHertz(jointID(jointID));
     }
     /// @api b3WheelJoint_SetSuspensionDampingRatio
-    public void wheelJointSetSuspensionDampingRatio(JointID<JointType.Wheel> jointID, float dampingRatio) {
+    public void wheelJointSetSuspensionDampingRatio(
+            JointID<JointType.Wheel> jointID,
+            float dampingRatio
+    ) {
         b3WheelJoint_SetSuspensionDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3WheelJoint_GetSuspensionDampingRatio
@@ -2740,7 +3812,10 @@ public final class B3 {
         return b3WheelJoint_GetSuspensionDampingRatio(jointID(jointID));
     }
     /// @api b3WheelJoint_EnableSuspensionLimit
-    public void wheelJointEnableSuspensionLimit(JointID<JointType.Wheel> jointID, boolean flag) {
+    public void wheelJointEnableSuspensionLimit(
+            JointID<JointType.Wheel> jointID,
+            boolean flag
+    ) {
         b3WheelJoint_EnableSuspensionLimit(jointID(jointID), flag);
     }
     /// @api b3WheelJoint_IsSuspensionLimitEnabled
@@ -2756,11 +3831,18 @@ public final class B3 {
         return b3WheelJoint_GetUpperSuspensionLimit(jointID(jointID));
     }
     /// @api b3WheelJoint_SetSuspensionLimits
-    public void wheelJointSetSuspensionLimits(JointID<JointType.Wheel> jointID, float lower, float upper) {
+    public void wheelJointSetSuspensionLimits(
+            JointID<JointType.Wheel> jointID,
+            float lower,
+            float upper
+    ) {
         b3WheelJoint_SetSuspensionLimits(jointID(jointID), lower, upper);
     }
     /// @api b3WheelJoint_EnableSpinMotor
-    public void wheelJointEnableSpinMotor(JointID<JointType.Wheel> jointID, boolean flag) {
+    public void wheelJointEnableSpinMotor(
+            JointID<JointType.Wheel> jointID,
+            boolean flag
+    ) {
         b3WheelJoint_EnableSpinMotor(jointID(jointID), flag);
     }
     /// @api b3WheelJoint_IsSpinMotorEnabled
@@ -2808,7 +3890,10 @@ public final class B3 {
         return b3WheelJoint_GetSteeringHertz(jointID(jointID));
     }
     /// @api b3WheelJoint_SetSteeringDampingRatio
-    public void wheelJointSetSteeringDampingRatio(JointID<JointType.Wheel> jointID, float dampingRatio) {
+    public void wheelJointSetSteeringDampingRatio(
+            JointID<JointType.Wheel> jointID,
+            float dampingRatio
+    ) {
         b3WheelJoint_SetSteeringDampingRatio(jointID(jointID), dampingRatio);
     }
     /// @api b3WheelJoint_GetSteeringDampingRatio
@@ -2840,11 +3925,18 @@ public final class B3 {
         return b3WheelJoint_GetUpperSteeringLimit(jointID(jointID));
     }
     /// @api b3WheelJoint_SetSteeringLimits
-    public void wheelJointSetSteeringLimits(JointID<JointType.Wheel> jointID, float lowerRadians, float upperRadians) {
+    public void wheelJointSetSteeringLimits(
+            JointID<JointType.Wheel> jointID,
+            float lowerRadians,
+            float upperRadians
+    ) {
         b3WheelJoint_SetSteeringLimits(jointID(jointID), lowerRadians, upperRadians);
     }
     /// @api b3WheelJoint_SetTargetSteeringAngle
-    public void wheelJointSetTargetSteeringAngle(JointID<JointType.Wheel> jointID, float radians) {
+    public void wheelJointSetTargetSteeringAngle(
+            JointID<JointType.Wheel> jointID,
+            float radians
+    ) {
         b3WheelJoint_SetTargetSteeringAngle(jointID(jointID), radians);
     }
     /// @api b3WheelJoint_GetTargetSteeringAngle
@@ -2869,16 +3961,17 @@ public final class B3 {
     //<editor-fold desc="Internal" default-state="collapsed">
 
 
-    static final int SECRET_COOKIE = 1152023; // sorry, i had to take it
+    static final int SECRET_COOKIE = 1152023; // please, take a cookie.
 
     private final Arena scratchArena = Arena.ofAuto();
 
-    /// 1 KB for return values. Should definitely be enough for all return types
+    /// 1 KB for return values. Should definitely be enough for all return types.
+    /// The allocator will return the whole segment it has allocated for any allocation.
     private final ReturnAllocator returnArena = new ReturnAllocator(this.scratchArena, 1 * 1024);
 
     /// 8 KB for arguments. Will create a confined arena when it runs out of space.
-    /// Warning: The allocator can return segments with byte sizes larger than the requested size.
-    private final StackAllocator argArena    = new StackAllocator(this.scratchArena, 8 * 1024);
+    /// The allocator can return segments with byte sizes larger than the requested size.
+    private final StackAllocator argArena = new StackAllocator(this.scratchArena, 8 * 1024);
 
     private final MemorySegment worldIDSegment    = b3WorldId    .allocate(this.scratchArena);
     private final MemorySegment bodyIDSegment     = b3BodyId     .allocate(this.scratchArena);
@@ -2914,14 +4007,17 @@ public final class B3 {
         b3DestroyWorld(segment);
     }
 
+    /// @api b3DestroyHull
     void destroyHull(MemorySegment segment) {
         b3DestroyHull(segment);
     }
 
+    /// @api b3DestroyMesh
     void destroyMesh(MemorySegment segment) {
         b3DestroyMesh(segment);
     }
 
+    /// @api b3DestroyHeightField
     void destroyHeightField(MemorySegment segment) {
         b3DestroyHeightField(segment);
     }

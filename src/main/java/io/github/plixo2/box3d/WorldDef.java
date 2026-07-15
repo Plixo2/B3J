@@ -30,9 +30,11 @@ public class WorldDef {
     private @Nullable Object restitutionCallback;
     private boolean enableSleep;
     private boolean enableContinuous;
+
+    // replaces `enqueueTask`, `finishTask`, `userTaskContext` and `workerCount`.
     private @Nullable TaskScheduler taskPool;
 
-    /// both `createDebugShape` and `destroyDebugShape`
+    /// replaces `createDebugShape` and `destroyDebugShape`
     private @Nullable DebugShapeCallbacks<?> debugShapes;
 
     private @Nullable Object userDebugShapeContext;
@@ -52,7 +54,6 @@ public class WorldDef {
         this.contactHertz = 30.0f;
         this.contactDampingRatio = 10.0f;
 
-        // 400 meters per second, faster than the speed of sound
         this.maximumLinearSpeed = 400.0f * lengthUnits;
 
         this.enableSleep = true;
@@ -68,6 +69,10 @@ public class WorldDef {
         var enqueueTask = MemorySegment.NULL;
         var finishTask = MemorySegment.NULL;
 
+        AllocatedShapeCallbacks shapes = null;
+        var createDebugShape = MemorySegment.NULL;
+        var destroyDebugShape = MemorySegment.NULL;
+
         var workerCount = switch (this.taskPool) {
             case BuildInScheduler(var wc) -> wc;
             case CustomTaskScheduler<?> scheduler -> {
@@ -78,10 +83,6 @@ public class WorldDef {
             }
             case null -> 0;
         };
-
-        AllocatedShapeCallbacks shapes = null;
-        var createDebugShape = MemorySegment.NULL;
-        var destroyDebugShape = MemorySegment.NULL;
 
         if (this.debugShapes != null) {
             shapes = this.debugShapes.createCallbacks();

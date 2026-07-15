@@ -23,9 +23,7 @@ public non-sealed class Mesh implements ShapeType.Shape {
     public Mesh(MeshData data, Vector3f scale) {
         this(data, scale.x, scale.y, scale.z);
     }
-    public Mesh(MeshData data) {
-        this(data, 1.0f, 1.0f, 1.0f);
-    }
+
     public Mesh(Mesh other) {
         this.data = other.data;
         this.scaleX = other.scaleX;
@@ -38,6 +36,15 @@ public non-sealed class Mesh implements ShapeType.Shape {
         b3Mesh.data(segment, this.data.segment());
         PrimitiveMemOps.putVec3(b3Mesh.scale(segment), this.scaleX, this.scaleY, this.scaleZ);
         return segment;
+    }
+
+    static Mesh of(MemorySegment segment) {
+        var data = new MeshData(null, null, b3Mesh.data(segment));
+        var scale = b3Mesh.scale(segment);
+        var scaleX = PrimitiveMemOps.getVec3X(scale);
+        var scaleY = PrimitiveMemOps.getVec3Y(scale);
+        var scaleZ = PrimitiveMemOps.getVec3Z(scale);
+        return new Mesh(data, scaleX, scaleY, scaleZ);
     }
 
 }

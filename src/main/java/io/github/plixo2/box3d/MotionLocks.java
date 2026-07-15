@@ -34,6 +34,16 @@ public class MotionLocks {
         this.angularZ = other.angularZ;
     }
 
+    MotionLocks set(MemorySegment segment) {
+        this.linearX = b3MotionLocks.linearX(segment);
+        this.linearY = b3MotionLocks.linearY(segment);
+        this.linearZ = b3MotionLocks.linearZ(segment);
+        this.angularX = b3MotionLocks.angularX(segment);
+        this.angularY = b3MotionLocks.angularY(segment);
+        this.angularZ = b3MotionLocks.angularZ(segment);
+        return this;
+    }
+
     void put(MemorySegment segment) {
         b3MotionLocks.linearX(segment, this.linearX);
         b3MotionLocks.linearY(segment, this.linearY);

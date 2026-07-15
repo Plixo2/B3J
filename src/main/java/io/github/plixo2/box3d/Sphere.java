@@ -44,4 +44,13 @@ public non-sealed class Sphere implements ShapeType.Shape {
         b3Sphere.radius(segment, this.radius);
         return segment;
     }
+
+    Sphere set(MemorySegment segment) {
+        var center = b3Sphere.center(segment);
+        this.x = PrimitiveMemOps.getVec3X(center);
+        this.y = PrimitiveMemOps.getVec3Y(center);
+        this.z = PrimitiveMemOps.getVec3Z(center);
+        this.radius = b3Sphere.radius(segment);
+        return this;
+    }
 }

@@ -35,6 +35,16 @@ public class SurfaceMaterial {
         this.customColor = other.customColor;
     }
 
+    SurfaceMaterial set(MemorySegment segment) {
+        this.friction = b3SurfaceMaterial.friction(segment);
+        this.restitution = b3SurfaceMaterial.restitution(segment);
+        this.rollingResistance = b3SurfaceMaterial.rollingResistance(segment);
+        PrimitiveMemOps.setVec3(this.tangentVelocity, b3SurfaceMaterial.tangentVelocity(segment));
+        this.userMaterialId = b3SurfaceMaterial.userMaterialId(segment);
+        this.customColor = b3SurfaceMaterial.customColor(segment);
+        return this;
+    }
+
     void put(MemorySegment segment) {
         b3SurfaceMaterial.friction(segment, this.friction);
         b3SurfaceMaterial.restitution(segment, this.restitution);
