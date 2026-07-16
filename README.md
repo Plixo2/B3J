@@ -90,10 +90,9 @@ Make sure to read it to understand how Box3D works.
 
 ## Compatibility
 
-B3J currently supports Windows and Linux. 
-I plan to support MacOS and other platforms/architectures in the future, if there is enough interest.
+B3J currently supports Windows and Linux, with support for MacOS planned.
 
-B3J currently builds with Java 25. May switch to Java 21 for compatibility in the future.   
+B3J currently builds with Java 25.
 
 ## License
 
