@@ -1,20 +1,18 @@
-package io.github.plixo2.box3d.internal;
+package io.github.plixo2.box3d.region;
 
-public final class AllocState {
+public final class Lifetime {
 
     private boolean destroyed = false;
 
-    private AllocState() {
+    private Lifetime() {
 
     }
 
-    public synchronized boolean guard() {
-        var wasDestroyed = this.destroyed;
-        this.destroyed = true;
-        return !wasDestroyed;
+    public boolean isAlive() {
+        return !this.destroyed;
     }
 
-    public synchronized void once() {
+    public synchronized void markAsDestroyed() {
         ensureAccess();
         this.destroyed = true;
     }
@@ -25,7 +23,7 @@ public final class AllocState {
         }
     }
 
-    public Runnable guard(Runnable runnable) {
+    Runnable createGuard(Runnable runnable) {
         return () -> {
             if (!this.destroyed) {
                 runnable.run();
@@ -34,8 +32,8 @@ public final class AllocState {
         };
     }
 
-    public static AllocState create() {
-        return new AllocState();
+    public static Lifetime create() {
+        return new Lifetime();
     }
 
 

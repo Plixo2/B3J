@@ -16,7 +16,7 @@ public class BoxHull {
             MemorySegment segment
     ) {
         this.segment = segment;
-        this.base = new HullData(b3BoxHull.base(segment));
+        this.base = new HullData(null, null, b3BoxHull.base(segment));
     }
 
 

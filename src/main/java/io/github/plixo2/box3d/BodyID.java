@@ -1,12 +1,12 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.AllocState;
+import io.github.plixo2.box3d.region.Lifetime;
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.region.Region;
+import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.MemorySegment;
-import java.util.Objects;
 
 public final class BodyID {
 
@@ -31,25 +31,27 @@ public final class BodyID {
 
     private final long packedID;
 
-    final AllocState state = AllocState.create();
+    @Getter
+    private final Lifetime lifetime = Lifetime.create();
 
     private BodyID(
             @Nullable B3 instance,
             @Nullable Region region,
             long packedID
     ) {
+
         this.packedID = packedID;
 
         if (instance != null && region != null) {
-            region.register(this.state, () -> {
-                instance.destroyBody(packedID);
+            region.register(this.lifetime, () -> {
+                instance.destroyBody(this);
             });
         }
 
     }
 
     public long packedID() {
-        this.state.ensureAccess();
+        this.lifetime.ensureAccess();
         return this.packedID;
     }
 

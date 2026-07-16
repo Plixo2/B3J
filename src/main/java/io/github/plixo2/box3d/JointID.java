@@ -98,7 +98,14 @@ public final class JointID<T extends JointType> {
     static <T extends JointType> JointID<T> of(
             MemorySegment segment
     ) {
-        var identifier = PrimitiveMemOps.packID(segment);
+        return of(segment, 0);
+    }
+
+    static <T extends JointType> JointID<T> of(
+            MemorySegment segment,
+            long offset
+    ) {
+        var identifier = PrimitiveMemOps.packID(segment, offset);
         return new JointID<>(identifier);
     }
 

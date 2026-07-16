@@ -60,7 +60,7 @@ public abstract class DebugShapeCallbacks<T> {
             }
             case HULL -> {
                 var hull = b3DebugShape.hull(debugShape);
-                yield new HullData(hull);
+                yield new HullData(null, null, hull);
             }
             case MESH -> {
                 var mesh = b3DebugShape.mesh(debugShape);

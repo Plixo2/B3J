@@ -1,9 +1,13 @@
 package io.github.plixo2.box3d;
 
+import io.github.plixo2.box3d.region.Lifetime;
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.internal.MemoryIterator;
 import io.github.plixo2.box3d.internal.Unsigned;
+import io.github.plixo2.box3d.region.Region;
+import lombok.Getter;
 import org.box2d.box3d.*;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3f;
 import org.joml.Vector3f;
 
@@ -12,12 +16,29 @@ import java.lang.foreign.MemorySegment;
 
 public non-sealed class HullData implements ShapeType.Shape {
 
-    final MemorySegment segment;
+    private final MemorySegment segment;
+
+    @Getter
+    private final Lifetime lifetime = Lifetime.create();
 
     HullData(
+            @Nullable B3 instance,
+            @Nullable Region region,
             MemorySegment segment
     ) {
         this.segment = segment;
+
+        if (instance != null && region != null) {
+            region.register(this.lifetime, () -> {
+                instance.destroyHullData(this);
+            });
+        }
+
+    }
+
+    MemorySegment segment() {
+        this.lifetime.ensureAccess();
+        return this.segment;
     }
 
     public @Unsigned long version() {
@@ -158,7 +179,7 @@ public non-sealed class HullData implements ShapeType.Shape {
                 new Vector3f(),
                 segment,
                 b3Vec3.sizeof(),
-                PrimitiveMemOps::setVec3
+                (MemoryIterator.OffsetConsumer<Vector3f>) PrimitiveMemOps::setVec3
         );
     }
 

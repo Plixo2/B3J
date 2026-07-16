@@ -1,19 +1,28 @@
 package io.github.plixo2.box3d.internal;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.*;
 
 /// Be careful what conversions you pick for primitives
+///
+/// This iterator will always return the same object, but with different values.
+/// See [#get(int)] to get the object with the values at the given index.
+/// See [#get(Function, int)] to get a unique object with the values at the given index.
+/// See [#collect] to create a list of unique objects.
 public final class MemoryIterator<T> extends MemoryIteratorBase<T> {
 
     private final T element;
-    private final BiConsumer<T, MemorySegment> set;
+
+    private @Nullable final BiConsumer<T, MemorySegment> set;   // pass a slice
+    private @Nullable final OffsetConsumer<T> setWithOffset;    // pass segment and offset
 
     public MemoryIterator(
             T element,
@@ -23,7 +32,8 @@ public final class MemoryIterator<T> extends MemoryIteratorBase<T> {
     ) {
         super(segment, bytesPerElement);
         this.element = element;
-        this.set = set;
+        this.set = Objects.requireNonNull(set);
+        this.setWithOffset = null;
     }
 
     public MemoryIterator(
@@ -35,9 +45,36 @@ public final class MemoryIterator<T> extends MemoryIteratorBase<T> {
     ) {
         super(segment, count, bytesPerElement);
         this.element = element;
-        this.set = set;
+        this.set = Objects.requireNonNull(set);
+        this.setWithOffset = null;
     }
 
+    public MemoryIterator(
+            T element,
+            MemorySegment segment,
+            long bytesPerElement,
+            OffsetConsumer<T> set
+    ) {
+        super(segment, bytesPerElement);
+        this.element = element;
+        this.set = null;
+        this.setWithOffset = Objects.requireNonNull(set);
+    }
+
+    public MemoryIterator(
+            T element,
+            MemorySegment segment,
+            long count,
+            long bytesPerElement,
+            OffsetConsumer<T> set
+    ) {
+        super(segment, count, bytesPerElement);
+        this.element = element;
+        this.set = null;
+        this.setWithOffset = Objects.requireNonNull(set);
+    }
+
+    /// Creates a list of unique objects
     public List<T> collect(Function<T, T> clone) {
         var list = new ArrayList<T>(this.length);
 
@@ -53,9 +90,21 @@ public final class MemoryIterator<T> extends MemoryIteratorBase<T> {
         return getUnchecked(index);
     }
 
+    public T get(Function<T, T> clone, int index) {
+        checkIndex(index);
+        return clone.apply(getUnchecked(index));
+    }
+
     private T getUnchecked(int index) {
-        var seg = this.segment.asSlice(index * this.bytesPerElement, this.bytesPerElement);
-        this.set.accept(this.element, seg);
+        if (this.set != null) {
+            var seg = this.segment.asSlice(index * this.bytesPerElement, this.bytesPerElement);
+            this.set.accept(this.element, seg);
+        } else {
+            assert this.setWithOffset != null;
+
+            var offset = index * this.bytesPerElement;
+            this.setWithOffset.accept(this.element, this.segment, offset);
+        }
         return this.element;
     }
 
@@ -407,15 +456,24 @@ public final class MemoryIterator<T> extends MemoryIteratorBase<T> {
     }
 
 
+    @FunctionalInterface
     public interface ShortConsumer {
 
         void accept(short value);
 
     }
 
+    @FunctionalInterface
     public interface ByteConsumer {
 
         void accept(byte value);
+
+    }
+
+    @FunctionalInterface
+    public interface OffsetConsumer<T> {
+
+        void accept(T t, MemorySegment segment, long offset);
 
     }
 }

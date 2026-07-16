@@ -46,7 +46,11 @@ public final class ShapeID {
 
 
     static ShapeID of(MemorySegment segment) {
-        var identifier = PrimitiveMemOps.packID(segment);
+        return of(segment, 0);
+    }
+
+    static ShapeID of(MemorySegment segment, long offset) {
+        var identifier = PrimitiveMemOps.packID(segment, offset);
         return new ShapeID(identifier);
     }
 

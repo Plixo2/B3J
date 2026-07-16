@@ -1,7 +1,9 @@
 package io.github.plixo2.box3d;
 
 import io.github.plixo2.box3d.internal.*;
+import io.github.plixo2.box3d.region.Lifetime;
 import io.github.plixo2.box3d.region.Region;
+import lombok.Getter;
 import org.box2d.box3d.b3HeightFieldData;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -12,7 +14,9 @@ public non-sealed class HeightFieldData implements ShapeType.Shape {
 
     private final MemorySegment segment;
 
-    final AllocState state =  AllocState.create();
+
+    @Getter
+    private final Lifetime lifetime =  Lifetime.create();
 
     HeightFieldData(
             @Nullable B3 instance,
@@ -21,12 +25,14 @@ public non-sealed class HeightFieldData implements ShapeType.Shape {
     ) {
         this.segment = segment;
         if (instance != null && region != null) {
-            region.register(this.state, segment, instance::destroyHeightField);
+            region.register(this.lifetime, () -> {
+                instance.destroyHeightField(this);
+            });
         }
     }
 
     MemorySegment segment() {
-        this.state.ensureAccess();
+        this.lifetime.ensureAccess();
         return this.segment;
     }
 

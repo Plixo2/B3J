@@ -1,37 +1,46 @@
 package io.github.plixo2.box3d.region;
 
 
-import io.github.plixo2.box3d.internal.AllocState;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
-final class ConfinedRegion implements Region {
+public final class ConfinedRegion implements Region {
 
-    private List<Runnable> resources;
+    private @Nullable ArrayList<Runnable> resources = null;
 
-    private final AllocState state = AllocState.create();
+    private final Lifetime lifetime = Lifetime.create();
 
     ConfinedRegion() {
-        this.resources = new ArrayList<>();
+
     }
 
     ConfinedRegion(Region parent) {
-        var list = this.resources = new ArrayList<>();
-        parent.register(this.state, () -> releaseList(list));
+        parent.register(this.lifetime, this::close);
     }
 
+    @Override
+    public void register(Lifetime owner, Runnable cleanup) {
+        this.lifetime.ensureAccess();
+        if (this.resources == null) {
+            this.resources = new ArrayList<>(4);
+        }
+        this.resources.add(owner.createGuard(cleanup));
+    }
 
     @Override
-    public void register(AllocState owner, Runnable cleanup) {
-        this.state.ensureAccess();
-        this.resources.add(owner.guard(cleanup));
+    public boolean isClosed() {
+        return !this.lifetime.isAlive();
     }
 
     @Override
     public void close() {
-        if (this.state.guard()) {
+        this.lifetime.markAsDestroyed();
+        if (this.resources != null) {
             releaseList(this.resources);
+            this.resources.clear();
+            this.resources.trimToSize();
             this.resources = null;
         }
     }
@@ -42,6 +51,5 @@ final class ConfinedRegion implements Region {
             var resource = resources.get(i);
             resource.run();
         }
-        resources.clear();
     }
 }

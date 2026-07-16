@@ -1,10 +1,11 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.AllocState;
+import io.github.plixo2.box3d.region.Lifetime;
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.internal.MemoryIterator;
 import io.github.plixo2.box3d.internal.Unsigned;
 import io.github.plixo2.box3d.region.Region;
+import lombok.Getter;
 import org.box2d.box3d.*;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
@@ -15,7 +16,8 @@ import java.lang.foreign.MemorySegment;
 public class MeshData {
     private final MemorySegment segment;
 
-    final AllocState state =  AllocState.create();
+    @Getter
+    private final Lifetime lifetime =  Lifetime.create();
 
     MeshData(
             @Nullable B3 instance,
@@ -25,12 +27,14 @@ public class MeshData {
         this.segment = segment;
 
         if (instance != null && region != null) {
-            region.register(this.state, segment, instance::destroyMesh);
+            region.register(this.lifetime, () -> {
+                instance.destroyMesh(this);
+            });
         }
     }
 
     MemorySegment segment() {
-        this.state.ensureAccess();
+        this.lifetime.ensureAccess();
         return this.segment;
     }
 
@@ -167,7 +171,7 @@ public class MeshData {
                 new Vector3f(),
                 segment,
                 b3Vec3.sizeof(),
-                PrimitiveMemOps::setVec3
+                (MemoryIterator.OffsetConsumer<Vector3f>) PrimitiveMemOps::setVec3
         );
     }
 

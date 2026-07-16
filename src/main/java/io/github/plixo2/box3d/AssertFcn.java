@@ -1,6 +1,7 @@
 package io.github.plixo2.box3d;
 
 
+@FunctionalInterface
 public interface AssertFcn {
 
     /// A [AssertionError] with the parameters will be thrown after this method,

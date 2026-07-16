@@ -3,6 +3,7 @@ package io.github.plixo2.box3d;
 import io.github.plixo2.box3d.internal.Unsigned;
 import org.joml.Vector3f;
 
+@FunctionalInterface
 public interface CastResultFcn {
 
     float onHit(

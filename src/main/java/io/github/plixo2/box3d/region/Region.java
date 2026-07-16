@@ -1,10 +1,5 @@
 package io.github.plixo2.box3d.region;
 
-import io.github.plixo2.box3d.internal.AllocState;
-
-import java.lang.foreign.MemorySegment;
-import java.util.function.Consumer;
-
 import io.github.plixo2.box3d.BodyID;
 import io.github.plixo2.box3d.WorldID;
 import io.github.plixo2.box3d.MeshData;
@@ -24,6 +19,9 @@ import java.lang.foreign.Arena;
 ///
 /// Resources registered to confined regions will be released when the region is closed.
 /// They are released in the reverse order of registration.
+///
+/// If you need to share a confined region between
+/// threads, you need to take care of synchronization yourself.
 ///
 /// ### [#ofConfined()]
 ///
@@ -59,59 +57,12 @@ import java.lang.foreign.Arena;
 /// A call to [#global()] returns a singleton.
 /// This is a cheap operation so you dont have to store the region.
 ///
-/// ## [#ofAuto(FreeList)]
-/// Returns a region, tied to a [FreeList].
-///
-/// Resources registered to this region will be managed by the garbage collector.
-/// These resources may be released in any order.
-///
-/// This can effectively synchronize your Java side with Box3D,
-/// but it is not guaranteed to be immediate.
-///
-/// Make sure to follow the Box3D documentation for lifetimes.
-/// For example, [MeshData] and [HeightFieldData] must be destroyed after
-/// the attached shape is destroyed. This region cannot guarantee this!
-///
-/// Unlike [Arena#ofAuto()], it takes a [FreeList] to be drained in your thread.
-/// This is to avoid any race conditions that may occur,
-/// since the [java.lang.ref.Cleaner] runs on a separate thread.
-///
-/// [#ofAuto(FreeList)] is a simple getter that returns the region of a [FreeList],
-/// so this does not allocate a new region every time.
-/// The region itself can stay reachable as the objects
-/// are independently registered to a [java.lang.ref.Cleaner].
-///
-/// [FreeList#drain()] is a relatively cheap operation, so feel free to
-/// call it in your game loop every frame:
-///
-/// ```
-/// private static final FreeList freeList = new FreeList();
-/// public static final Region GC_REGION = Region.ofAuto(freeList);
-///
-/// void update() {
-///     freeList.drain();
-///     b3.worldStep(...)
-/// }
-/// ```
-///
-///
-/// ## Thread safety
-///
-/// - A [#ofAuto(FreeList)] region can be shared between threads,
-/// but be careful when [FreeList#drain()] is called.
-///
-/// - [#global()] is thread safe.
-///
-/// - If you need to share a confined region between
-/// threads, you need to take care of synchronization yourself.
-///
+/// The Global region is thread safe.
 ///
 public sealed interface Region
         extends
             AutoCloseable
-        permits
-            AutoRegion,
-            ConfinedRegion,
+        permits ConfinedRegion,
             GlobalRegion
 {
 
@@ -122,10 +73,6 @@ public sealed interface Region
         return Holder.INSTANCE;
     }
 
-    static Region ofAuto(FreeList freeList) {
-        return freeList.region;
-    }
-
     static Region ofConfined() {
         return new ConfinedRegion();
     }
@@ -134,12 +81,9 @@ public sealed interface Region
         return new ConfinedRegion(parent);
     }
 
-    void register(AllocState owner, Runnable cleanup);
+    void register(Lifetime owner, Runnable cleanup);
 
-    /// Like [MemorySegment#reinterpret(Arena, Consumer)]
-    default void register(AllocState owner, MemorySegment segment, Consumer<MemorySegment> cleanup) {
-        register(owner, () -> cleanup.accept(segment));
-    }
+    boolean isClosed();
 
     /// @throws UnsupportedOperationException if the region cannot be closed manually
     @Override

@@ -1,14 +1,17 @@
 package io.github.plixo2.box3d.region;
 
 
-import io.github.plixo2.box3d.internal.AllocState;
-
-
 final class GlobalRegion implements Region {
+    GlobalRegion() {}
 
     @Override
-    public void register(AllocState owner, Runnable cleanup) {
+    public void register(Lifetime owner, Runnable cleanup) {
         // nothing
+    }
+
+    @Override
+    public boolean isClosed() {
+        return false;
     }
 
     @Override

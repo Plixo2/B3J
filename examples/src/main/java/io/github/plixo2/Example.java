@@ -165,8 +165,10 @@ public abstract class Example {
         dynBodyDef.position().set(position);
         BodyID bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
 
-        var hull = b3.createCone(height, radius1, radius2, slices);
-        var _ = b3.createHullShape(bodyId, coneDef, hull);
+        try (var region = Region.ofConfined()){
+            var hull = b3.createCone(region, height, radius1, radius2, slices);
+            var _ = b3.createHullShape(bodyId, coneDef, hull);
+        }
         return bodyId;
     }
 
@@ -176,8 +178,10 @@ public abstract class Example {
         dynBodyDef.position().set(position);
         BodyID bodyId = b3.createBody(this.region, this.worldID, dynBodyDef);
 
-        var hull = b3.createCylinder(height, radius, 0, slices);
-        var _ = b3.createHullShape(bodyId, cylinderDef, hull);
+        try (var region = Region.ofConfined()) {
+            var hull = b3.createCylinder(region, height, radius, 0, slices);
+            var _ = b3.createHullShape(bodyId, cylinderDef, hull);
+        }
         return bodyId;
     }
 

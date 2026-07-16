@@ -13,9 +13,13 @@ public record ContactID(int index1, @Unsigned short world0, @Unsigned int genera
     }
 
     static ContactID of(MemorySegment segment) {
-        var index1 = b3ContactId.index1(segment);
-        var world0 = b3ContactId.world0(segment);
-        var generation = b3ContactId.generation(segment);
+        return of(segment, 0);
+    }
+
+    static ContactID of(MemorySegment segment, long offset) {
+        var index1 = segment.get(b3ContactId.index1$layout(), offset + b3ContactId.index1$offset());
+        var world0 = segment.get(b3ContactId.world0$layout(), offset + b3ContactId.world0$offset());
+        var generation = segment.get(b3ContactId.generation$layout(), offset + b3ContactId.generation$offset());
         return new ContactID(index1, world0, generation);
     }
 

@@ -2,6 +2,7 @@ package io.github.plixo2.box3d;
 
 
 import io.github.plixo2.box3d.internal.*;
+import io.github.plixo2.box3d.region.Lifetime;
 import io.github.plixo2.box3d.region.Region;
 import org.box2d.box3d.*;
 import org.jetbrains.annotations.Contract;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Objects;
 
 import static io.github.plixo2.box3d.internal.B3JUtil.*;
@@ -39,7 +41,6 @@ public final class B3 {
 
 
     //<editor-fold desc="Statics" default-state="collapsed">
-
 
     /// @api B3_DEFAULT_CATEGORY_BITS
     public static final long DEFAULT_CATEGORY_BITS = U64.MAX;
@@ -215,10 +216,10 @@ public final class B3 {
     public static int getByteCount() {
         return b3GetByteCount();
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Math" default-state="collapsed">
-
 
     /// @api b3ComputeCosSin
     public void computeCosSin(CosSin dest, float radians) {
@@ -427,7 +428,7 @@ public final class B3 {
             throw new IllegalArgumentException("points must be a multiple of 3 floats");
         }
         if (points.byteSize() < count * 3L * Float.BYTES) {
-            throw new IllegalArgumentException("points does not contain count vectors");
+            throw new IllegalArgumentException("points must have at least " + count + " points");
         }
 
         var stride = 3L * Float.BYTES;
@@ -533,10 +534,10 @@ public final class B3 {
         var z = Math.max(Math.abs(a.z), MIN_SCALE);
         return sign(dest, a).mul(x, y, z);
     }
+
     //</editor-fold>
 
     //<editor-fold desc="World" default-state="collapsed">
-
 
     /// @api b3CreateWorld
     public WorldID createWorld(
@@ -557,14 +558,82 @@ public final class B3 {
     }
 
     /// @api b3World_GetBodyEvents
-    public Iterable<BodyMoveEvent> worldGetBodyEvents() {
-        var eventSegment = b3World_GetBodyEvents(this.returnArena, this.worldIDSegment);
+    public MemoryIterator<BodyMoveEvent> worldGetBodyEvents(WorldID worldID) {
+        var eventSegment = b3World_GetBodyEvents(this.returnArena, worldID(worldID));
 
-        var moveEvents = b3BodyEvents.moveEvents(eventSegment);
-        var moveCount  = b3BodyEvents.moveCount(eventSegment);
-
-        return () -> new BodyMoveEvent.Iterator(moveEvents, moveCount);
+        return new MemoryIterator<>(
+                new BodyMoveEvent(),
+                b3BodyEvents.moveEvents(eventSegment),
+                b3BodyEvents.moveCount(eventSegment),
+                b3BodyEvents.sizeof(),
+                BodyMoveEvent::set
+        );
     }
+
+    /// @api b3World_GetContactEvents
+    public ContactEvents worldGetContactEvents(WorldID worldID) {
+        var eventSegment = b3World_GetContactEvents(this.returnArena, worldID(worldID));
+
+        return new ContactEvents(
+                new MemoryIterator<>(
+                        new ContactBeginTouchEvent(),
+                        b3ContactEvents.beginEvents(eventSegment),
+                        b3ContactEvents.beginCount(eventSegment),
+                        b3ContactBeginTouchEvent.sizeof(),
+                        ContactBeginTouchEvent::set
+                ),
+                new MemoryIterator<>(
+                        new ContactEndTouchEvent(),
+                        b3ContactEvents.endEvents(eventSegment),
+                        b3ContactEvents.endCount(eventSegment),
+                        b3ContactEndTouchEvent.sizeof(),
+                        ContactEndTouchEvent::set
+                ),
+                new MemoryIterator<>(
+                        new ContactHitEvent(),
+                        b3ContactEvents.hitEvents(eventSegment),
+                        b3ContactEvents.hitCount(eventSegment),
+                        b3ContactHitEvent.sizeof(),
+                        ContactHitEvent::set
+                )
+        );
+    }
+
+    /// @api b3World_GetJointEvents
+    public MemoryIterator<JointEvent> worldGetJointEvents(WorldID worldID) {
+        var eventSegment = b3World_GetJointEvents(this.returnArena, worldID(worldID));
+
+        return new MemoryIterator<>(
+                new JointEvent(),
+                b3JointEvents.jointEvents(eventSegment),
+                b3JointEvents.count(eventSegment),
+                b3JointEvent.sizeof(),
+                JointEvent::set
+        );
+    }
+
+    /// @api b3World_GetSensorEvents
+    public SensorEvents worldGetSensorEvents(WorldID worldID) {
+        var eventSegment = b3World_GetSensorEvents(this.returnArena, worldID(worldID));
+
+        return new SensorEvents(
+                new MemoryIterator<>(
+                        new SensorBeginTouchEvent(),
+                        b3SensorEvents.beginEvents(eventSegment),
+                        b3SensorEvents.beginCount(eventSegment),
+                        b3SensorBeginTouchEvent.sizeof(),
+                        SensorBeginTouchEvent::set
+                ),
+                new MemoryIterator<>(
+                        new SensorEndTouchEvent(),
+                        b3SensorEvents.endEvents(eventSegment),
+                        b3SensorEvents.endCount(eventSegment),
+                        b3SensorEndTouchEvent.sizeof(),
+                        SensorEndTouchEvent::set
+                )
+        );
+    }
+
 
     /// @api b3World_Step
     public void worldStep(WorldID worldID, float timeStep, int subStepCount) {
@@ -748,10 +817,10 @@ public final class B3 {
         var profile = b3World_GetProfile(this.returnArena, worldID(worldID));
         return dest.set(profile);
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Hull" default-state="collapsed">
-
 
     /// @api b3MakeBoxHull
     public BoxHull makeBoxHull(float hx, float hy, float hz) {
@@ -773,6 +842,7 @@ public final class B3 {
 
     /// @api b3CreateHull
     public @Nullable HullData createHull(
+            Region region,
             MemorySegment points,
             int maxVertexCount
     ) {
@@ -795,57 +865,49 @@ public final class B3 {
         if (hull.address() == 0) {
             return null;
         }
-        hull = hull.reinterpret(
-                Arena.ofAuto(),
-                this::destroyHull
-        );
-        return new HullData(hull);
+        return new HullData(this, region, hull);
     }
 
     /// @api b3CreateHull
     public @Nullable HullData createHull(
+            Region region,
             FloatBuffer points,
             int maxVertexCount
     ) {
-        return createHull(MemorySegment.ofBuffer(points), maxVertexCount);
+        return createHull(region, MemorySegment.ofBuffer(points), maxVertexCount);
     }
 
     /// @api b3CreateHull
     public @Nullable HullData createHull(
+            Region region,
             float[] points,
             int maxVertexCount
     ) {
-        return createHull(MemorySegment.ofArray(points), maxVertexCount);
+        return createHull(region, MemorySegment.ofArray(points), maxVertexCount);
     }
 
     /// @api b3CreateCylinder
     public HullData createCylinder(
+            Region region,
             float height,
             float radius,
             float yOffset,
             int sides
     ) {
         var hull = b3CreateCylinder(height, radius, yOffset, sides);
-        hull = hull.reinterpret(
-                Arena.ofAuto(),
-                this::destroyHull
-        );
-        return new HullData(hull);
+        return new HullData(this, region, hull);
     }
 
     /// @api b3CreateCone
     public HullData createCone(
+            Region region,
             float height,
             float radius1,
             float radius2,
             int slices
     ) {
         var hull = b3CreateCone(height, radius1, radius2, slices);
-        hull = hull.reinterpret(
-                Arena.ofAuto(),
-                this::destroyHull
-        );
-        return new HullData(hull);
+        return new HullData(this, region, hull);
     }
 
     /// @api b3GetHullEdges
@@ -901,7 +963,6 @@ public final class B3 {
     //</editor-fold>
 
     //<editor-fold desc="Height Field" default-state="collapsed">
-
 
     /// @api b3CreateHeightField
     public HeightFieldData createHeightField(
@@ -986,10 +1047,10 @@ public final class B3 {
     public MemoryIterator.OfU8 getHeightFieldMaterialIndicesIterator(HeightFieldData hf) {
         return hf.materialIterator();
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Mesh" default-state="collapsed">
-
 
     /// @api b3CreateMesh
     public @Nullable MeshData createMesh(
@@ -1006,6 +1067,7 @@ public final class B3 {
                 mesh = b3CreateMesh(def, MemorySegment.NULL, 0);
             } else {
                 var cap = degenerateTriangleIndices.length;
+                Arrays.fill(degenerateTriangleIndices, -1);
 
                 // cannot use MemorySegment.ofArray, has to be off-heap
                 var data = this.argArena.allocate(ValueLayout.JAVA_INT.byteSize() * cap);
@@ -1089,10 +1151,10 @@ public final class B3 {
     public MemoryIterator<Vector3f> getMeshVerticesIterator(MeshData mesh) {
         return mesh.vertexIterator();
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Shape" default-state="collapsed">
-
 
     /// @api b3Shape_GetBody
     public BodyID shapeGetBody(ShapeID shapeId) {
@@ -1107,7 +1169,7 @@ public final class B3 {
                     this.returnArena,
                     bodyID(bodyID),
                     def.create(this.argArena),
-                    hull.segment
+                    hull.segment()
             );
             return ShapeID.of(shapeID);
         }
@@ -1204,7 +1266,7 @@ public final class B3 {
 
     /// @api b3Shape_SetHull
     public void shapeSetHull(ShapeID shapeID, HullData hull) {
-        b3Shape_SetHull(shapeID(shapeID), hull.segment);
+        b3Shape_SetHull(shapeID(shapeID), hull.segment());
     }
 
     /// @api b3Shape_SetMesh
@@ -1294,7 +1356,7 @@ public final class B3 {
     /// @api b3Shape_GetHull
     public HullData shapeGetHull(ShapeID shape) {
         var hull = b3Shape_GetHull(shapeID(shape));
-        return new HullData(hull);
+        return new HullData(null, null, hull);
     }
 
     /// @api b3Shape_GetMesh
@@ -1421,10 +1483,10 @@ public final class B3 {
                 wake
         );
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Spatial Queries" default-state="collapsed">
-
 
     /// @api b3World_OverlapAABB
     @Contract("null, _, _, _, _ -> null; !null, _, _, _, _ -> !null")
@@ -1689,7 +1751,7 @@ public final class B3 {
         try (this.argArena) {
             var result = b3RayCastHull(
                     this.returnArena,
-                    hull.segment,
+                    hull.segment(),
                     input.create(this.argArena)
             );
 
@@ -1829,7 +1891,7 @@ public final class B3 {
         try (this.argArena) {
             var result = b3ShapeCastHull(
                     this.returnArena,
-                    hull.segment,
+                    hull.segment(),
                     input.create(this.argArena)
             );
 
@@ -1906,7 +1968,7 @@ public final class B3 {
     public boolean overlapHull(HullData hullData, Matrix4f transform, ShapeProxy proxy) {
         try (this.argArena) {
             return b3OverlapHull(
-                    hullData.segment,
+                    hullData.segment(),
                     transform(transform),
                     proxy.create(this.argArena)
             );
@@ -2012,13 +2074,13 @@ public final class B3 {
 
     /// @api b3ComputeHullAABB
     public AABB computeHullAABB(AABB dest, HullData hull, Matrix4f transform) {
-        var aabb = b3ComputeHullAABB(this.returnArena, hull.segment, transform(transform));
+        var aabb = b3ComputeHullAABB(this.returnArena, hull.segment(), transform(transform));
         return dest.set(aabb);
     }
 
     /// @api b3ComputeHullMass
     public MassData computeHullMass(MassData dest, HullData hull, float density) {
-        var massData = b3ComputeHullMass(this.returnArena, hull.segment, density);
+        var massData = b3ComputeHullMass(this.returnArena, hull.segment(), density);
         return dest.set(massData);
     }
 
@@ -2098,10 +2160,124 @@ public final class B3 {
         );
         return dest.set(aabb);
     }
+
+    //</editor-fold>
+
+    //<editor-fold desc="Dynamic Tree" default-state="collapsed">
+
+    /// @api b3DynamicTree_Create
+    public DynamicTree dynamicTreeCreate(Region region, int proxyCapacity) {
+        var arena = Arena.ofConfined();
+        var segment = b3DynamicTree_Create(arena, proxyCapacity);
+        return new DynamicTree(this, region, arena, segment);
+    }
+
+    /// @api b3DynamicTree_CreateProxy
+    public int dynamicTreeCreateProxy(
+            DynamicTree tree,
+            AABB aabb,
+            @Unsigned long categoryBits,
+            @Unsigned long userData
+    ) {
+        return b3DynamicTree_CreateProxy(
+                tree.segment(),
+                aabb(aabb),
+                categoryBits,
+                userData
+        );
+    }
+
+    /// @api b3DynamicTree_GetUserData
+    public @Unsigned long dynamicTreeGetUserData(DynamicTree tree, int proxyId) {
+        return tree.getUserData(proxyId);
+    }
+
+    /// @api b3DynamicTree_GetAABB
+    public AABB dynamicTreeGetAABB(AABB dest, DynamicTree tree, int proxyId) {
+        return tree.getAABB(dest, proxyId);
+    }
+
+    /// @api b3DynamicTree_MoveProxy
+    public void DynamicTreeMoveProxy(DynamicTree tree, int proxyId, AABB aabb) {
+        b3DynamicTree_MoveProxy(
+                tree.segment(),
+                proxyId,
+                aabb(aabb)
+        );
+    }
+
+    /// @api b3DynamicTree_EnlargeProxy
+    public void dynamicTreeEnlargeProxy(DynamicTree tree, int proxyId, AABB aabb) {
+        b3DynamicTree_EnlargeProxy(
+                tree.segment(),
+                proxyId,
+                aabb(aabb)
+        );
+    }
+
+    /// @api b3DynamicTree_DestroyProxy
+    public void dynamicTreeDestroyProxy(DynamicTree tree, int proxyId) {
+        b3DynamicTree_DestroyProxy(tree.segment(), proxyId);
+    }
+
+    /// @api b3DynamicTree_SetCategoryBits
+    public void dynamicTreeSetCategoryBits(
+            DynamicTree tree,
+            int proxyId,
+            @Unsigned long categoryBits
+    ) {
+        b3DynamicTree_SetCategoryBits(tree.segment(), proxyId, categoryBits);
+    }
+
+    /// @api b3DynamicTree_GetCategoryBits
+    public @Unsigned long dynamicTreeGetCategoryBits(DynamicTree tree, int proxyId) {
+        return b3DynamicTree_GetCategoryBits(tree.segment(), proxyId);
+    }
+
+    /// @api b3DynamicTree_Validate
+    public void dynamicTreeValidate(DynamicTree tree) {
+        b3DynamicTree_Validate(tree.segment());
+    }
+
+    /// @api b3DynamicTree_ValidateNoEnlarged
+    public void dynamicTreeValidateNoEnlarged(DynamicTree tree) {
+        b3DynamicTree_ValidateNoEnlarged(tree.segment());
+    }
+
+    /// @api b3DynamicTree_GetHeight
+    public int dynamicTreeGetHeight(DynamicTree tree) {
+        return b3DynamicTree_GetHeight(tree.segment());
+    }
+
+    /// @api b3DynamicTree_GetAreaRatio
+    public float dynamicTreeGetAreaRatio(DynamicTree tree) {
+        return b3DynamicTree_GetAreaRatio(tree.segment());
+    }
+
+    /// @api b3DynamicTree_GetRootBounds
+    public AABB dynamicTreeGetRootBounds(AABB dest, DynamicTree tree) {
+        var aabb = b3DynamicTree_GetRootBounds(this.returnArena, tree.segment());
+        return dest.set(aabb);
+    }
+
+    /// @api b3DynamicTree_GetProxyCount
+    public int dynamicTreeGetProxyCount(DynamicTree tree) {
+        return b3DynamicTree_GetProxyCount(tree.segment());
+    }
+
+    /// @api b3DynamicTree_Rebuild
+    public int dynamicTreeRebuild(DynamicTree tree, boolean fullBuild) {
+        return b3DynamicTree_Rebuild(tree.segment(), fullBuild);
+    }
+
+    /// @api b3DynamicTree_GetByteCount
+    public int dynamicTreeGetByteCount(DynamicTree tree) {
+        return b3DynamicTree_GetByteCount(tree.segment());
+    }
+
     //</editor-fold>
 
     //<editor-fold desc="Character Mover" default-state="collapsed">
-
 
     /// @api b3World_CastMover
     public float worldCastMover(
@@ -2208,10 +2384,10 @@ public final class B3 {
         return dest;
 
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Body" default-state="collapsed">
-
 
     /// @api b3CreateBody
     public BodyID createBody(
@@ -2601,10 +2777,10 @@ public final class B3 {
     public void bodySetType(BodyID bodyId, BodyType type) {
         b3Body_SetType(bodyID(bodyId), type.code());
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Tests" default-state="collapsed">
-
 
     /// @api b3IsValidRay
     public boolean isValidRay(RayCastInput input) {
@@ -2683,12 +2859,12 @@ public final class B3 {
 
     /// @api b3World_IsValid
     public boolean worldIsValid(WorldID worldId) {
-        return b3World_IsValid(worldID(worldId));
+        return worldId.lifetime().isAlive() && b3World_IsValid(worldID(worldId));
     }
 
     /// @api b3Body_IsValid
     public boolean bodyIsValid(BodyID bodyId) {
-        return b3Body_IsValid(bodyID(bodyId));
+        return bodyId.lifetime().isAlive() && b3Body_IsValid(bodyID(bodyId));
     }
 
     /// @api b3Joint_IsValid
@@ -2696,59 +2872,72 @@ public final class B3 {
         return b3Joint_IsValid(jointID(jointId));
     }
 
+    /// @api B3_IS_NULL
     public boolean isNull(BodyID bodyID) {
         return PrimitiveMemOps.isPackedIDNull(bodyID.packedID());
     }
+    /// @api B3_IS_NULL
     public boolean isNull(ShapeID shapeID) {
         return PrimitiveMemOps.isPackedIDNull(shapeID.packedID());
     }
+    /// @api B3_IS_NULL
     public boolean isNull(JointID<?> jointID) {
         return PrimitiveMemOps.isPackedIDNull(jointID.packedID());
     }
+    /// @api B3_IS_NULL
     public boolean isNull(ContactID constraintID) {
         return PrimitiveMemOps.isPackedIDNull(constraintID.packedID());
     }
+    /// @api B3_IS_NULL
     public boolean isNull(WorldID worldID) {
         return PrimitiveMemOps.isPackedWorldIDNull(worldID.packedID());
     }
 
+    /// @api B3_IS_NON_NULL
     public boolean isNotNull(BodyID bodyID) {
         return !isNull(bodyID);
     }
+    /// @api B3_IS_NON_NULL
     public boolean isNotNull(ShapeID shapeID) {
         return !isNull(shapeID);
     }
+    /// @api B3_IS_NON_NULL
     public boolean isNotNull(JointID<?> jointID) {
         return !isNull(jointID);
     }
+    /// @api B3_IS_NON_NULL
     public boolean isNotNull(ContactID constraintID) {
         return !isNull(constraintID);
     }
+    /// @api B3_IS_NON_NULL
     public boolean isNotNull(WorldID worldID) {
         return !isNull(worldID);
     }
 
+    /// @api B3_ID_EQUALS
     public boolean equals(BodyID id1, BodyID id2) {
         return Objects.equals(id1, id2);
     }
+    /// @api B3_ID_EQUALS
     public boolean equals(ShapeID id1, ShapeID id2) {
         return Objects.equals(id1, id2);
     }
+    /// @api B3_ID_EQUALS
     public boolean equals(JointID<?> id1, JointID<?> id2) {
         return Objects.equals(id1, id2);
     }
+    /// @api B3_ID_EQUALS
     public boolean equals(ContactID id1, ContactID id2) {
         return Objects.equals(id1, id2);
     }
+    /// @api B3_ID_EQUALS
     public boolean equals(WorldID id1, WorldID id2) {
         return Objects.equals(id1, id2);
     }
 
-
     //</editor-fold>
 
     //<editor-fold desc="Destructors" default-state="collapsed">
-
 
     /// @api b3DestroyBody
     public void destroyBody(BodyID bodyId) {
@@ -2756,10 +2945,9 @@ public final class B3 {
             throw new IllegalStateException("Body " + bodyId + " is not valid anymore");
         }
         var segment = bodyID(bodyId);
-        bodyId.state.once();
+        bodyId.lifetime().markAsDestroyed();
         b3DestroyBody(segment);
     }
-
 
     /// @api b3DestroyJoint
     public void destroyJoint(JointID<?> jointID, boolean wakeAttached) {
@@ -2768,7 +2956,6 @@ public final class B3 {
         }
         b3DestroyJoint(jointID(jointID), wakeAttached);
     }
-
 
     /// @api b3DestroyShape
     public void destroyShape(ShapeID shapeID, boolean updateBodyMass) {
@@ -2786,7 +2973,7 @@ public final class B3 {
             }
 
             var segment = worldID(worldID);
-            worldID.state.once();
+            worldID.lifetime().markAsDestroyed();
             b3DestroyWorld(segment);
 
         } finally {
@@ -2797,20 +2984,35 @@ public final class B3 {
     /// @api b3DestroyMesh
     public void destroyMesh(MeshData meshData) {
         var segment = meshData.segment();
-        meshData.state.once();
+        meshData.lifetime().markAsDestroyed();
         b3DestroyMesh(segment);
     }
 
     /// @api b3DestroyHeightField
     public void destroyHeightField(HeightFieldData data) {
         var segment = data.segment();
-        data.state.once();
+        data.lifetime().markAsDestroyed();
         b3DestroyHeightField(segment);
     }
+
+    /// @api b3DynamicTree_Destroy
+    public void dynamicTreeDestroy(DynamicTree tree) {
+        var segment = tree.segment();
+        tree.lifetime().markAsDestroyed();
+        b3DynamicTree_Destroy(segment);
+        tree.confinedRegion.close();
+    }
+
+    /// @api b3DestroyHull
+    public void destroyHullData(HullData hullData) {
+        var segment = hullData.segment();
+        hullData.lifetime().markAsDestroyed();
+        b3DestroyHull(segment);
+    }
+
     //</editor-fold>
 
     //<editor-fold desc="Joints" default-state="collapsed">
-
 
     /// Convenience method
     public <T extends JointType> JointID<T> createJoint(
@@ -2932,9 +3134,7 @@ public final class B3 {
     }
 
 
-
     //<editor-fold desc="Filter Joints" default-state="collapsed">
-
 
     /// @api b3CreateFilterJoint
     public JointID<JointType.Filter> createFilterJoint(
@@ -2950,10 +3150,10 @@ public final class B3 {
             return JointID.of(jointID);
         }
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Parallel Joints" default-state="collapsed">
-
 
     /// @api b3CreateParallelJoint
     public JointID<JointType.Parallel> createParallelJoint(
@@ -2998,10 +3198,10 @@ public final class B3 {
     public float parallelJointGetMaxTorque(JointID<JointType.Parallel> jointID) {
         return b3ParallelJoint_GetMaxTorque(jointID(jointID));
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Distance Joints" default-state="collapsed">
-
 
     /// @api b3DistanceJoint_SetLength
     public void distanceJointSetLength(JointID<JointType.Distance> jointID, float length) {
@@ -3129,10 +3329,10 @@ public final class B3 {
     public float distanceJointGetMotorForce(JointID<JointType.Distance> jointID) {
         return b3DistanceJoint_GetMotorForce(jointID(jointID));
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Motor Joints" default-state="collapsed">
-
 
     /// @api b3CreateDistanceJoint
     public JointID<JointType.Distance> createDistanceJoint(
@@ -3266,10 +3466,10 @@ public final class B3 {
     public float motorJointGetMaxSpringTorque(JointID<JointType.Motor> jointID) {
         return b3MotorJoint_GetMaxSpringTorque(jointID(jointID));
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Prismatic Joints" default-state="collapsed">
-
 
     /// @api b3CreatePrismaticJoint
     public JointID<JointType.Prismatic> createPrismaticJoint(
@@ -3400,10 +3600,10 @@ public final class B3 {
     public float prismaticJointGetSpeed(JointID<JointType.Prismatic> jointID) {
         return b3PrismaticJoint_GetSpeed(jointID(jointID));
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Revolute Joints" default-state="collapsed">
-
 
     /// @api b3CreateRevoluteJoint
     public JointID<JointType.Revolute> createRevoluteJoint(
@@ -3530,10 +3730,10 @@ public final class B3 {
     public float revoluteJointGetMaxMotorTorque(JointID<JointType.Revolute> jointID) {
         return b3RevoluteJoint_GetMaxMotorTorque(jointID(jointID));
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Spherical Joints" default-state="collapsed">
-
 
     /// @api b3CreateSphericalJoint
     public JointID<JointType.Spherical> createSphericalJoint(
@@ -3701,10 +3901,10 @@ public final class B3 {
     public float sphericalJoint_GetMaxMotorTorque(JointID<JointType.Spherical> jointID) {
         return b3SphericalJoint_GetMaxMotorTorque(jointID(jointID));
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Weld Joints" default-state="collapsed">
-
 
     /// @api b3CreateWeldJoint
     public JointID<JointType.Weld> createWeldJoint(
@@ -3760,10 +3960,10 @@ public final class B3 {
     public float weldJointGetAngularDampingRatio(JointID<JointType.Weld> jointID) {
         return b3WeldJoint_GetAngularDampingRatio(jointID(jointID));
     }
+
     //</editor-fold>
 
     //<editor-fold desc="Wheel Joints" default-state="collapsed">
-
 
     /// @api b3CreateWheelJoint
     public JointID<JointType.Wheel> createWheelJoint(
@@ -3951,6 +4151,7 @@ public final class B3 {
     public float wheelJointGetSteeringTorque(JointID<JointType.Wheel> jointID) {
         return b3WheelJoint_GetSteeringTorque(jointID(jointID));
     }
+
     //</editor-fold>
 
     //</editor-fold>
@@ -3959,7 +4160,6 @@ public final class B3 {
 
 
     //<editor-fold desc="Internal" default-state="collapsed">
-
 
     static final int SECRET_COOKIE = 1152023; // please, take a cookie.
 
@@ -3993,47 +4193,7 @@ public final class B3 {
     private final ScratchPlaneResultFcn scratchPlaneResult = new ScratchPlaneResultFcn(this.scratchArena);
 
 
-    //<editor-fold desc="Destructors without reference" default-state="collapsed">
-
-
-    void destroyWorld(long packedID) {
-        var segment = worldID(packedID);
-        if (!b3World_IsValid(segment)) {
-            throw new IllegalStateException(
-                    "World " +  WorldID.toString(packedID) + " is not valid anymore"
-            );
-        }
-
-        b3DestroyWorld(segment);
-    }
-
-    /// @api b3DestroyHull
-    void destroyHull(MemorySegment segment) {
-        b3DestroyHull(segment);
-    }
-
-    /// @api b3DestroyMesh
-    void destroyMesh(MemorySegment segment) {
-        b3DestroyMesh(segment);
-    }
-
-    /// @api b3DestroyHeightField
-    void destroyHeightField(MemorySegment segment) {
-        b3DestroyHeightField(segment);
-    }
-
-    void destroyBody(long packedID) {
-        var segment = bodyID(packedID);
-        if (!b3Body_IsValid(segment)) {
-            throw new IllegalStateException(
-                    "Body " + BodyID.toString(packedID) + " is not valid anymore"
-            );
-        }
-        b3DestroyBody(segment);
-    }
-    //</editor-fold>
-
-    //<editor-fold desc="Scratch Writes" default-state="collapsed">
+    //<editor-fold desc="Scratch read/write" default-state="collapsed">
 
 
     private MemorySegment worldID(WorldID worldID) {
@@ -4110,6 +4270,7 @@ public final class B3 {
         aabb.put(this.aabbSegment);
         return this.aabbSegment;
     }
+
     //</editor-fold>
 
     //</editor-fold>

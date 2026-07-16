@@ -1,12 +1,13 @@
 package io.github.plixo2.box3d;
 
-import io.github.plixo2.box3d.internal.AllocState;
+import io.github.plixo2.box3d.region.Lifetime;
 import io.github.plixo2.box3d.internal.AllocatedShapeCallbacks;
 import io.github.plixo2.box3d.internal.PrimitiveMemOps;
 import io.github.plixo2.box3d.region.Region;
 import io.github.plixo2.box3d.internal.AllocatedTaskCallbacks;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.foreign.MemorySegment;
@@ -37,7 +38,8 @@ public final class WorldID {
 
     private final long packedID;
 
-    final AllocState state = AllocState.create();
+    @Getter
+    private final Lifetime lifetime = Lifetime.create();
 
     // hold variables from the WorldDef to keep them alive
     final StateValues stateValues;
@@ -54,16 +56,15 @@ public final class WorldID {
         this.stateValues = values;
 
         if (instance != null && region != null) {
-            region.register(this.state, () -> {
-                values.closeReferences();
-                instance.destroyWorld(packedID);
+            region.register(this.lifetime, () -> {
+                instance.destroyWorld(this);
             });
         }
 
     }
 
     public long packedID() {
-        this.state.ensureAccess();
+        this.lifetime.ensureAccess();
         return this.packedID;
     }
 

@@ -14,7 +14,7 @@ import java.util.NoSuchElementException;
 public class BodyMoveEvent {
 
     @Getter
-    private BodyID bodyID;
+    private BodyID bodyID = BodyID.NULL_ID;
 
     @Getter
     private boolean fellAsleep;
@@ -23,7 +23,7 @@ public class BodyMoveEvent {
     private final Matrix4f transform = new Matrix4f();
 
 
-    private BodyMoveEvent() {}
+    BodyMoveEvent() {}
 
     public BodyMoveEvent(BodyMoveEvent other) {
         this.bodyID = other.bodyID;
@@ -32,7 +32,7 @@ public class BodyMoveEvent {
     }
 
 
-    private BodyMoveEvent set(MemorySegment segment, long offset) {
+    BodyMoveEvent set(MemorySegment segment, long offset) {
 
         var transformOffset  = offset + b3BodyMoveEvent.transform$offset();
         var bodyIDOffset     = offset + b3BodyMoveEvent.bodyId$offset();
@@ -44,39 +44,5 @@ public class BodyMoveEvent {
         return this;
     }
 
-
-    static class Iterator implements java.util.Iterator<BodyMoveEvent> {
-        private static final long SIZE = b3BodyEvents.sizeof();
-
-        private final BodyMoveEvent instance = new BodyMoveEvent();
-        private final MemorySegment segment;
-        private final long count;
-
-        private long index = 0;
-
-        Iterator(
-                MemorySegment moveEvents,
-                long moveCount
-        ) {
-            this.segment =  moveEvents.asSlice(SIZE * moveCount);
-            this.count = moveCount;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return this.index < this.count;
-        }
-
-        @Override
-        public BodyMoveEvent next() {
-            if (this.index >= this.count) {
-                throw new NoSuchElementException();
-            }
-
-            var offset = SIZE * this.index++;
-
-            return this.instance.set(this.segment, offset);
-        }
-    }
 
 }

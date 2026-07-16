@@ -14,7 +14,7 @@ Jextract bindings are shipped with B3J and can be used directly,
 so you can just use B3J to provide the shared libraries and direct bindings. 
 
 > [!WARNING]  
-> Still in development. 593 of 685 functions implemented
+> Still in development. 577 out of 685 functions implemented
 
 
 ### [Examples](examples/src/main/java/io/github/plixo2/samples)
@@ -42,8 +42,8 @@ so you can just use B3J to provide the shared libraries and direct bindings.
     - [DebugShapeCallbacks](src/main/java/io/github/plixo2/box3d/DebugShapeCallbacks.java) replaces `createDebugShape` and `destroyDebugShape`.
       - It requires a `UserData.OfShape<T>` to be passed to store the `userShape` for each shape.
       - Provide the same `UserData.OfShape<T>` to [DebugDraw](src/main/java/io/github/plixo2/box3d/DebugDraw.java) so the `drawShapeFcn` can be called with the correct `userShape`.
-  - `JointID` has a generic type for the `JointType`. You can use `jointId.reinterpret(JointType)` to freely reinterpret it.
-
+  - `JointID` has a generic type for the `JointType`. This is only a hint, so you can use `jointId.reinterpret(JointType)` to freely reinterpret it.
+  
 
 - Thread safety
   - B3J allocates a small amount of memory upfront for efficient c calls.
@@ -66,9 +66,10 @@ so you can just use B3J to provide the shared libraries and direct bindings.
 
 - Fearless Resource Management
   - A [Region](src/main/java/io/github/plixo2/box3d/region/Region.java) can be used to manage resources. 
-  - `BodyID`, `WorldID`, `MeshData` and `HeightFieldData` are managed by regions. 
-    - The lifetime of these objects is dictated by the region.
-  - Joints will be destroyed when any attached body is destroyed by Box3D. 
+  - `BodyID`, `WorldID`, `HullData`, `MeshData`, `HeightFieldData` and `DynamicTree` are managed by regions.
+    - Objects registered to a region will be destroyed when the region is closed.
+    - Joints will be destroyed when any attached body is destroyed (default Box3D behavior). 
+    - Shapes will be destroyed when the owning body is destroyed (default Box3D behavior).
   - So unless a `Region` parameter is required to construct an object, you don't have to worry about lifetimes.   
   - You can destroy all objects manually and fully opt out of region management.
   - See [Region](src/main/java/io/github/plixo2/box3d/region/Region.java) for more details and available regions.

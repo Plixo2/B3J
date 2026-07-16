@@ -1,6 +1,7 @@
 package io.github.plixo2.samples;
 
 import io.github.plixo2.Example;
+import io.github.plixo2.box3d.region.Region;
 import io.github.plixo2.framework.abstractions.Color;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.internal.U64;
@@ -51,29 +52,30 @@ public class Joints extends Example {
         groundShapeDef.enableCustomFiltering(true);
         var _ = b3.createHullShape(groundID, groundShapeDef, groundBox.base());
 
-
-        revolute(2 + -20);
-        distance(2 + -15);
-        prismatic(2 + -10);
-        weld(2 + -5);
-        motor(2 + 0);
-        spherical(2 + 5);
-        parallel(2 + 10);
-        filter(2 + 15);
-        wheel(2 + 20);
+        var offset = 2;
+        revolute  (offset + -20);
+        distance  (offset + -15);
+        prismatic (offset + -10);
+        weld      (offset + -5);
+        motor     (offset + 0);
+        spherical (offset + 5);
+        parallel  (offset + 10);
+        filter    (offset + 15);
+        wheel     (offset + 20);
     }
 
     @Override
     public void drawText3D(TextRenderer.World text) {
-        text.putString("Revolute joint" , 0, 0, 2 + -20, Color.WHITE);
-        text.putString("Distance joint" , 0, 0, 2 + -15, Color.WHITE);
-        text.putString("Prismatic joint", 0, 0, 2 + -10, Color.WHITE);
-        text.putString("Weld joint"     , 0, 0, 2 + -5 , Color.WHITE);
-        text.putString("Motor joint"    , 0, 0, 2 + 0  , Color.WHITE);
-        text.putString("Spherical joint", 0, 0, 2 + 5  , Color.WHITE);
-        text.putString("Parallel joint" , 0, 0, 2 + 10 , Color.WHITE);
-        text.putString("Filter joint"   , 0, 0, 2 + 15 , Color.WHITE);
-        text.putString("Wheel joint"    , 0, 0, 2 + 20 , Color.WHITE);
+        var offset = 2;
+        text.putString("Revolute joint" , 0, 0, offset + -20, Color.WHITE);
+        text.putString("Distance joint" , 0, 0, offset + -15, Color.WHITE);
+        text.putString("Prismatic joint", 0, 0, offset + -10, Color.WHITE);
+        text.putString("Weld joint"     , 0, 0, offset + -5 , Color.WHITE);
+        text.putString("Motor joint"    , 0, 0, offset + 0  , Color.WHITE);
+        text.putString("Spherical joint", 0, 0, offset + 5  , Color.WHITE);
+        text.putString("Parallel joint" , 0, 0, offset + 10 , Color.WHITE);
+        text.putString("Filter joint"   , 0, 0, offset + 15 , Color.WHITE);
+        text.putString("Wheel joint"    , 0, 0, offset + 20 , Color.WHITE);
     }
 
     //<editor-fold defaultstate="collapsed" desc="Filter Joint">
@@ -258,8 +260,11 @@ public class Joints extends Example {
         wheelDef.baseMaterial().friction(friction);
         wheelDef.filter().groupIndex = carGroup;
         wheelDef.enableCustomFiltering(true);
-        var cylinder = b3.createCylinder(0.35f, 0.45f, -0.35f / 2f, 24);
-        var _ = b3.createHullShape(wheel, wheelDef, cylinder);
+
+        try (var region = Region.ofConfined()) {
+            var cylinder = b3.createCylinder(region, 0.35f, 0.45f, -0.35f / 2f, 24);
+            var _ = b3.createHullShape(wheel, wheelDef, cylinder);
+        }
         b3.bodyEnableSleep(wheel, false);
         b3.bodySetName(wheel, "wheel");
 
