@@ -86,12 +86,9 @@ public class Entry implements AutoCloseable {
         var os = System.getProperty("os.name").toLowerCase();
         var onMac = os.contains("mac");
         var onLinux = os.contains("linux");
+
         if (onMac) {
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
-        }
-
-        if (onLinux) {
-            glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GLFW_FALSE);
         }
 
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
@@ -112,7 +109,7 @@ public class Entry implements AutoCloseable {
         var version = GL11.glGetString(GL11.GL_VERSION);
         var glslVersion = GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION);
 
-        if (renderer != null && renderer.toLowerCase().contains("llvmpipe")) {
+        if (renderer != null && onLinux && renderer.toLowerCase().contains("llvmpipe")) {
             glfwDestroyWindow(windowID);
             glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GLFW_FALSE);
             System.out.println(ctrlRed + "Detected llvmpipe renderer, disabling framebuffer scaling" + ctrlReset);

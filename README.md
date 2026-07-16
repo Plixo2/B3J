@@ -1,26 +1,26 @@
-# B3J
+# B3J: Box3D for Java
 
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ![Box3D Logo](https://box2d.org/images/logo.svg)
 
-B3J is a Java binding library for [Box3D](https://github.com/erincatto/box3d)
+B3J brings [Box3D](https://github.com/erincatto/box3d) to Java with a thin, high-level API.
 
 It is designed to be efficient yet convenient, 
 staying close to the original Box3D API.
 
-Jextract bindings are shipped with B3J and can be used directly, 
-so you can just use B3J to provide the shared libraries and direct bindings. 
+[jextract](https://github.com/openjdk/jextract) bindings are shipped with B3J and can be used directly.
+You can just use B3J to provide and load the shared libraries and jextract bindings. 
 
-> [!WARNING]  
-> Still in development. 590 out of 685 functions implemented
+> [!WARNING]
+> Still in development. 590 out of 685 functions are implemented.
 
 
 ### [Examples](examples/src/main/java/io/github/plixo2/samples)
 
 - `lwjgl` is used for rendering with OpenGL > 4.3
-- Start them via `.\gradlew :examples:run` or the [instance main methods](https://openjdk.org/jeps/445)
+- Start them via `./gradlew :examples:run` or the [instance main methods](https://openjdk.org/jeps/445)
 
 ## B3J vs Box3D
 
