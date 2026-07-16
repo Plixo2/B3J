@@ -13,9 +13,51 @@ staying close to the original Box3D API.
 [jextract](https://github.com/openjdk/jextract) bindings are shipped with B3J and can be used directly.
 You can just use B3J to provide and load the shared libraries and jextract bindings. 
 
-> [!WARNING]
-> Still in development. 590 out of 685 functions are implemented.
+<details>
+<summary>Quick start</summary>
 
+```java
+B3 b3 = B3.get();
+try (var region = Region.ofConfined()) {
+    var worldDef = new WorldDef();
+    worldDef.gravity().set(0, -10f, 0);
+    var worldID = b3.createWorld(region, worldDef);
+
+    {
+        var boxDef = new BodyDef();
+        boxDef.position().set(0, -1f, 0);
+        var ground = b3.createBody(region, worldID, boxDef);
+
+        var hull = b3.makeBoxHull(50.0f, 1.0f, 50.0f);
+
+        b3.createHullShape(ground, new ShapeDef(), hull.base());
+    }
+
+    {
+        var boxDef = new BodyDef();
+        boxDef.type(BodyType.DYNAMIC);
+        boxDef.position().set(0, 4f, 0);
+        var box = b3.createBody(region, worldID, boxDef);
+
+        var shapeDef = new ShapeDef();
+        shapeDef.density(1.0f);
+        shapeDef.baseMaterial().friction(0.3f);
+
+        var hull = b3.makeCubeHull(1f);
+
+        b3.createHullShape(box, shapeDef, hull.base());
+    }
+
+    for (int i = 0; i < 90; ++i) {
+        var timeStep = 1.0f / 60.0f;
+        var subStepCount = 4;
+        b3.worldStep(worldID, timeStep, subStepCount);
+    }
+
+} // calls b3.destroyBody & b3.destroyWorld
+```
+
+</details>
 
 ### [Examples](examples/src/main/java/io/github/plixo2/samples)
 
