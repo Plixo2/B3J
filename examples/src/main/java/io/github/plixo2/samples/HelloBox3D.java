@@ -7,12 +7,13 @@ import org.joml.Vector3f;
 import static io.github.plixo2.box3d.region.Region.global;
 import static io.github.plixo2.box3d.region.Region.ofConfined;
 
+// 'Hello' example from the Box3D documentation
 public class HelloBox3D {
 
     void main() {
 
+        B3 b3 = B3.get();
         try (var region = ofConfined()) {
-            B3 b3 = B3.get();
 
             var worldDef = new WorldDef();
             worldDef.gravity().y = -10f;
@@ -66,7 +67,7 @@ public class HelloBox3D {
             }
 
 
-        } // calls b3.destroyBody
+        } // calls b3.destroyWorld
 
     }
 

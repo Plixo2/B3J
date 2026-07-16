@@ -163,7 +163,6 @@ public class Entry implements AutoCloseable {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
 
-
         System.out.println(ctrlBlue);
         System.out.println("Graphics Card Vendor: " + vendor);
         System.out.println("Graphics Card Renderer: " + renderer);
@@ -340,13 +339,14 @@ public class Entry implements AutoCloseable {
         var y = this.height - 38;
 
         var right = this.width - 10;
-        text.putStringLeft("WASD to move", right, y - 25 * 0, Color.WHITE);
-        text.putStringLeft("Space to move up, Shift to move down", right, y - 25 * 1, Color.WHITE);
-        text.putStringLeft("Ctrl to speed up, Alt to slow down", right, y - 25 * 2, Color.WHITE);
-        text.putStringLeft("Hold right mouse button to look around", right, y - 25 * 3, Color.WHITE);
-        text.putStringLeft("T to speed up physics simulation", right, y - 25 * 4, Color.WHITE);
-        text.putStringLeft("M to toggle multithreading", right, y - 25 * 5, Color.WHITE);
-        text.putStringLeft("R to restart", right, y - 25 * 6, Color.WHITE);
+        var spacing = 26;
+        text.putStringLeft("WASD to move", right, y, Color.WHITE);
+        text.putStringLeft("Space to move up, Shift to move down", right, y - spacing * 1, Color.WHITE);
+        text.putStringLeft("Ctrl to speed up, Alt to slow down", right, y - spacing * 2, Color.WHITE);
+        text.putStringLeft("Hold right mouse button to look around", right, y - spacing * 3, Color.WHITE);
+        text.putStringLeft("T to speed up physics simulation", right, y - spacing * 4, Color.WHITE);
+        text.putStringLeft("M to toggle multithreading", right, y - spacing * 5, Color.WHITE);
+        text.putStringLeft("R to restart", right, y - spacing * 6, Color.WHITE);
     }
     private void putStats(
             TextRenderer.UI text,

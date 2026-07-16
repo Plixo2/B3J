@@ -12,11 +12,10 @@ public class CLIEntry {
     Map<String, Runnable> examples = samples(
             sample("Hello Floor",    new HelloFloor()::main),
             sample("Joints",        new Joints()::main),
+            sample("Controller",    new Controller()::main),
             sample("Determinism",   new Determinism()::main),
             sample("Heightfield",   new HeightField()::main),
-            sample("Triangle mesh",  new TriangleMesh()::main),
-            sample("Queries",       new Queries()::main),
-            sample("Controller",    new Controller()::main)
+            sample("Triangle mesh",  new TriangleMesh()::main)
     );
 
 

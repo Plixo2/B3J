@@ -9,7 +9,6 @@ version = '0.1.0-SNAPSHOT'
 project.ext.jomlVersion = "1.10.8"
 
 def os = org.gradle.internal.os.OperatingSystem.current()
-
 def bindingPath = os.isWindows() ? "windows" : "linux"
 
 repositories {
@@ -18,26 +17,23 @@ repositories {
 
 dependencies {
 
+    // jextract bindings
     api files("libs/${bindingPath}/Box3D-0.1.0.jar")
 
-    compileOnly 'org.jetbrains:annotations:23.0.0'
-    compileOnly 'org.projectlombok:lombok:1.18.42'
-    annotationProcessor 'org.projectlombok:lombok:1.18.42'
+    // joml for math
+    implementation "org.joml:joml:${jomlVersion}"
 
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.42'
-    testCompileOnly 'org.projectlombok:lombok:1.18.42'
-    testImplementation platform('org.junit:junit-bom:6.0.0')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
+    // efficient long-object map for 'userData'
     implementation 'org.eclipse.collections:eclipse-collections-api:13.0.0'
     implementation 'org.eclipse.collections:eclipse-collections:13.0.0'
 
-    implementation "org.joml:joml:${jomlVersion}"
-}
+    // @Nullable annotations
+    compileOnly 'org.jetbrains:annotations:23.0.0'
 
-test {
-    useJUnitPlatform()
+    // lombok for getter/setters (using lombok.accessors.fluent=true)
+    compileOnly 'org.projectlombok:lombok:1.18.42'
+    annotationProcessor 'org.projectlombok:lombok:1.18.42'
+
 }
 
 

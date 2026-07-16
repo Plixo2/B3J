@@ -84,7 +84,9 @@ You can just use B3J to provide and load the shared libraries and jextract bindi
   - Make sure you operate with the correct types. [Read more](src/main/java/io/github/plixo2/box3d/internal/Unsigned.java)
 
 
-- Everything else follows the Box3D API & Documentation.
+
+Everything else follows the [Box3D API & Documentation](https://box2d.org/documentation/).  
+Make sure to read it to understand how Box3D works. 
 
 ## Compatibility
 

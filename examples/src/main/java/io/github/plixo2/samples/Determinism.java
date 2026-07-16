@@ -4,6 +4,8 @@ import io.github.plixo2.Example;
 import io.github.plixo2.box3d.*;
 import io.github.plixo2.box3d.tasks.BuildInScheduler;
 import io.github.plixo2.framework.MeshFactory;
+import io.github.plixo2.framework.TextRenderer;
+import io.github.plixo2.framework.abstractions.Color;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Math;
 import org.joml.Quaternionf;
@@ -50,31 +52,12 @@ public class Determinism extends Example {
         worldDef.gravity().set(0, -4f, 0);
         this.worldID = b3.createWorld(this.region, worldDef);
 
-        spawnBox(
-                BodyType.STATIC,
-                new Vector3f(30.0f, 1, 30),
-                new Vector3f(0, -1, 0)
-        );
-        spawnBox(
-                BodyType.STATIC,
-                new Vector3f(1f, 30, 30),
-                new Vector3f(-15.5f, 10, 0)
-        );
-        spawnBox(
-                BodyType.STATIC,
-                new Vector3f(1f, 30, 30),
-                new Vector3f(15.5f, 10, 0)
-        );
-        spawnBox(
-                BodyType.STATIC,
-                new Vector3f(30, 30, 1),
-                new Vector3f(0, 10, -15.5f)
-        );
-        spawnBox(
-                BodyType.STATIC,
-                new Vector3f(30, 30, 1),
-                new Vector3f(0, 10, 15.5f)
-        );
+        // walls
+        spawnBox(BodyType.STATIC, new Vector3f(30.0f, 1, 30), new Vector3f(0, -1, 0));
+        spawnBox(BodyType.STATIC, new Vector3f(1f, 30, 30), new Vector3f(-15.5f, 10, 0));
+        spawnBox(BodyType.STATIC, new Vector3f(1f, 30, 30), new Vector3f(15.5f, 10, 0));
+        spawnBox(BodyType.STATIC, new Vector3f(30, 30, 1), new Vector3f(0, 10, -15.5f));
+        spawnBox(BodyType.STATIC, new Vector3f(30, 30, 1), new Vector3f(0, 10, 15.5f));
 
         var size = SIZE;
         var count = 8000;
@@ -86,6 +69,7 @@ public class Determinism extends Example {
         boxDef.density(1.0f);
         boxDef.baseMaterial().friction(0.05f);
 
+        // color data
         DataInputStream input = null;
         if (!record) {
             var inputStream = this.getClass().getResourceAsStream("/determinism/data.bin");
@@ -95,7 +79,7 @@ public class Determinism extends Example {
             input = new DataInputStream(inputStream);
         }
 
-        try {
+        try (var stream = input) {
             for (var i = 0; i < count; i++) {
                 var x = r.nextFloat() * size - size * 0.5f;
                 var z = r.nextFloat() * size - size * 0.5f;
@@ -110,21 +94,14 @@ public class Determinism extends Example {
                                 y,
                                 z
                         ),
-                        input
+                        stream
                 );
 
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } finally {
-            if (input != null) {
-                try {
-                    input.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
         }
+
         boxDef.baseMaterial().customColor(0);
 
         var ball = spawnSphere(
@@ -177,7 +154,7 @@ public class Determinism extends Example {
             boxDef.baseMaterial().customColor(0xFF000000 | color);
         }
 
-        var shapeID = b3.createHullShape(bodyId, boxDef, dynamicBox.base());
+        var _ = b3.createHullShape(bodyId, boxDef, dynamicBox.base());
 
         if (record) {
             this.bodies.add(bodyId);
@@ -225,7 +202,10 @@ public class Determinism extends Example {
         );
     }
 
-
+    @Override
+    public void drawText2D(TextRenderer.UI text) {
+        text.putString("Wait 30 seconds", 10, 10, Color.WHITE);
+    }
 
     @Override
     public void update(float dt) {

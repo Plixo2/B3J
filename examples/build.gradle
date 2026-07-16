@@ -7,16 +7,14 @@ group = 'io.github.plixo2'
 version = '0.0.1'
 
 project.ext.jomlVersion = "1.10.8"
-
 project.ext.lwjglVersion = "3.4.1"
 
 def os = org.gradle.internal.os.OperatingSystem.current()
-
 project.ext.lwjglNatives =
         os.isWindows() ? "natives-windows":
         os.isLinux()   ? "natives-linux":
         os.isMacOsX()  ? "natives-macos":
-                        null
+                         null
 
 repositories {
     mavenCentral()
@@ -26,24 +24,27 @@ application {
     mainClass = 'io.github.plixo2.CLIEntry'
 }
 
-
 dependencies {
-    implementation project(':')
-
-    implementation 'commons-io:commons-io:2.14.0'
+    implementation project(':') // api from the main project
 
 
-    //annotations
+    // annotations
     compileOnly 'org.jetbrains:annotations:23.0.0'
 
-    //lombok
+    // lombok
     compileOnly 'org.projectlombok:lombok:1.18.42'
     annotationProcessor 'org.projectlombok:lombok:1.18.42'
 
-    //obj loading
+    // .obj loading
     implementation "de.javagl:obj:0.3.0"
 
+    // utils
+    implementation 'commons-io:commons-io:2.14.0'
 
+    // joml (not exported from the main project)
+    implementation "org.joml:joml:${jomlVersion}"
+
+    // lwjgl
     implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
     implementation "org.lwjgl:lwjgl"
     implementation "org.lwjgl:lwjgl-assimp"
@@ -58,24 +59,15 @@ dependencies {
     runtimeOnly "org.lwjgl:lwjgl-par::$lwjglNatives"
     runtimeOnly "org.lwjgl:lwjgl-stb::$lwjglNatives"
 
-
-    implementation "org.joml:joml:${jomlVersion}"
-
 }
 
 
 
 tasks.withType(JavaExec).configureEach {
     standardInput = System.in
-    jvmArgs += [
-            "--enable-native-access=ALL-UNNAMED",
-            "-XX:+UseZGC"
-    ]
+    jvmArgs += "--enable-native-access=ALL-UNNAMED"
 }
 
 tasks.withType(Test).configureEach {
-    jvmArgs += [
-            "--enable-native-access=ALL-UNNAMED",
-            "-XX:+UseZGC"
-    ]
+    jvmArgs += "--enable-native-access=ALL-UNNAMED"
 }
