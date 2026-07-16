@@ -2,7 +2,6 @@ package io.github.plixo2.box3d;
 
 
 import io.github.plixo2.box3d.internal.*;
-import io.github.plixo2.box3d.region.Lifetime;
 import io.github.plixo2.box3d.region.Region;
 import org.box2d.box3d.*;
 import org.jetbrains.annotations.Contract;
@@ -1331,6 +1330,29 @@ public final class B3 {
         return b3Shape_GetContactCapacity(shapeID(shape));
     }
 
+    /// @api b3Shape_GetContactData
+    public int shapeGetContactData(ShapeID shape, @Nullable ContactData[] contactData) {
+        try (this.argArena) {
+            var capacity = Math.min(contactData.length, shapeGetContactCapacity(shape));
+            if (capacity == 0) {
+                return 0;
+            }
+
+            var segment = b3ContactData.allocateArray(capacity, this.argArena);
+            var count = b3Shape_GetContactData(shapeID(shape), segment, capacity);
+            var contactDataSize = b3ContactData.sizeof();
+            for (var i = 0; i < count; i++) {
+                var data = contactData[i];
+                if (data == null) {
+                    data = new ContactData();
+                    contactData[i] = data;
+                }
+                data.set(segment, i * contactDataSize);
+            }
+            return count;
+        }
+    }
+
     /// @api b3Shape_GetDensity
     public float shapeGetDensity(ShapeID shape) {
         return b3Shape_GetDensity(shapeID(shape));
@@ -1388,6 +1410,24 @@ public final class B3 {
     /// @api b3Shape_GetSensorCapacity
     public int shapeGetSensorCapacity(ShapeID shape) {
         return b3Shape_GetSensorCapacity(shapeID(shape));
+    }
+
+    /// @api b3Shape_GetSensorData
+    public int shapeGetSensorData(ShapeID shape, @Nullable ShapeID[] visitorIds) {
+        try (this.argArena) {
+            var capacity = Math.min(visitorIds.length, shapeGetSensorCapacity(shape));
+            if (capacity == 0) {
+                return 0;
+            }
+
+            var segment = b3ShapeId.allocateArray(capacity, this.argArena);
+            var count = b3Shape_GetSensorData(shapeID(shape), segment, capacity);
+            var shapeIDSize = b3ShapeId.sizeof();
+            for (var i = 0; i < count; i++) {
+                visitorIds[i] = ShapeID.of(segment, i * shapeIDSize);
+            }
+            return count;
+        }
     }
 
     /// @api b3Shape_GetSphere
@@ -1528,10 +1568,70 @@ public final class B3 {
     ) {
         try (this.argArena) {
 
-            var stats = this.scratchCastFn.invoke(
+            var stats = this.scratchCastFn.invokeWorld(
                     this.returnArena,
                     worldID(worldID),
                     vec3(origin),
+                    vec3_2(translation),
+                    filter.create(this.argArena),
+                    fcn
+            );
+
+            if (dest != null) {
+                dest.set(stats);
+            }
+
+            return dest;
+
+        }
+    }
+
+    /// @api b3World_OverlapShape
+    @Contract("null, _, _, _, _, _ -> null; !null, _, _, _, _, _ -> !null")
+    public @Nullable TreeStats worldOverlapShape(
+            @Nullable TreeStats dest,
+            WorldID worldID,
+            Vector3f origin,
+            ShapeProxy proxy,
+            QueryFilter filter,
+            OverlapResultFcn fcn
+    ) {
+        try (this.argArena) {
+            var stats = this.scratchOverlapResult.invokeShape(
+                    this.returnArena,
+                    worldID(worldID),
+                    vec3(origin),
+                    proxy.create(this.argArena),
+                    filter.create(this.argArena),
+                    fcn
+            );
+
+            if (dest != null) {
+                dest.set(stats);
+            }
+
+            return dest;
+        }
+    }
+
+    /// @api b3World_CastShape
+    @Contract("null, _, _, _, _, _, _ -> null; !null, _, _, _, _, _, _ -> !null")
+    public @Nullable TreeStats worldCastShape(
+            @Nullable TreeStats dest,
+            WorldID worldID,
+            Vector3f origin,
+            ShapeProxy proxy,
+            Vector3f translation,
+            QueryFilter filter,
+            CastResultFcn fcn
+    ) {
+        try (this.argArena) {
+
+            var stats = this.scratchCastFn.invokeShape(
+                    this.returnArena,
+                    worldID(worldID),
+                    vec3(origin),
+                    proxy.create(this.argArena),
                     vec3_2(translation),
                     filter.create(this.argArena),
                     fcn
@@ -1613,6 +1713,33 @@ public final class B3 {
             return hit;
 
         }
+    }
+
+    /// @return true if `hit`, false otherwise
+    /// @api b3Shape_RayCast
+    public boolean shapeRayCast(
+            @Nullable CastOutput dest,
+            ShapeID shape,
+            Vector3f origin,
+            Vector3f translation
+    ) {
+        var result = b3Shape_RayCast(
+                this.returnArena,
+                shapeID(shape),
+                vec3(origin),
+                vec3_2(translation)
+        );
+
+        var hit = CastOutput.hit(result);
+        if (dest != null) {
+            if (hit) {
+                dest.setOnHit(result);
+            } else {
+                dest.setMiss();
+            }
+        }
+
+        return hit;
     }
 
     /// @return true if `hit`, false otherwise
@@ -2645,6 +2772,29 @@ public final class B3 {
     /// @api b3Body_GetContactCapacity
     public int bodyGetContactCapacity(BodyID bodyId) {
         return b3Body_GetContactCapacity(bodyID(bodyId));
+    }
+
+    /// @api b3Body_GetContactData
+    public int bodyGetContactData(BodyID bodyId, @Nullable ContactData[] contactData) {
+        try (this.argArena) {
+            var capacity = Math.min(contactData.length, bodyGetContactCapacity(bodyId));
+            if (capacity == 0) {
+                return 0;
+            }
+
+            var segment = b3ContactData.allocateArray(capacity, this.argArena);
+            var count = b3Body_GetContactData(bodyID(bodyId), segment, capacity);
+            var contactDataSize = b3ContactData.sizeof();
+            for (var i = 0; i < count; i++) {
+                var data = contactData[i];
+                if (data == null) {
+                    data = new ContactData();
+                    contactData[i] = data;
+                }
+                data.set(segment, i * contactDataSize);
+            }
+            return count;
+        }
     }
 
     /// @api b3Body_GetGravityScale
@@ -4185,12 +4335,13 @@ public final class B3 {
     private final MemorySegment transformSegment  = b3Transform  .allocate(this.scratchArena);
     private final MemorySegment aabbSegment       = b3AABB       .allocate(this.scratchArena);
 
-    private final Quaternionf           scratchQuat        = new Quaternionf();
-    private final SimplexCache          emptyDistanceCache = new SimplexCache();
-    private final ScratchCastResultFcn  scratchCastFn      = new ScratchCastResultFcn(this.scratchArena);
-    private final ScratchMoverFilterFcn scratchMoverFilter = new ScratchMoverFilterFcn(this.scratchArena);
-    private final ScratchOverlapAABB    scratchOverlapAABB = new ScratchOverlapAABB(this.scratchArena);
-    private final ScratchPlaneResultFcn scratchPlaneResult = new ScratchPlaneResultFcn(this.scratchArena);
+    private final Quaternionf             scratchQuat          = new Quaternionf();
+    private final SimplexCache            emptyDistanceCache   = new SimplexCache();
+    private final ScratchCastResultFcn    scratchCastFn        = new ScratchCastResultFcn(this.scratchArena);
+    private final ScratchMoverFilterFcn   scratchMoverFilter   = new ScratchMoverFilterFcn(this.scratchArena);
+    private final ScratchOverlapAABB      scratchOverlapAABB   = new ScratchOverlapAABB(this.scratchArena);
+    private final ScratchOverlapResultFcn scratchOverlapResult = new ScratchOverlapResultFcn(this.scratchArena);
+    private final ScratchPlaneResultFcn   scratchPlaneResult   = new ScratchPlaneResultFcn(this.scratchArena);
 
 
     //<editor-fold desc="Scratch read/write" default-state="collapsed">

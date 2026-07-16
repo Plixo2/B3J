@@ -11,6 +11,7 @@ import java.lang.foreign.SegmentAllocator;
 import java.util.Objects;
 
 import static org.box2d.box3d.box3d_h.b3World_CastRay;
+import static org.box2d.box3d.box3d_h.b3World_CastShape;
 
 public final class ScratchCastResultFcn implements b3CastResultFcn.Function {
 
@@ -25,7 +26,7 @@ public final class ScratchCastResultFcn implements b3CastResultFcn.Function {
         this.segment = b3CastResultFcn.allocate(this, parent);
     }
 
-    public MemorySegment invoke(
+    public MemorySegment invokeWorld(
             SegmentAllocator returnArena,
             MemorySegment worldId,
             MemorySegment origin,
@@ -40,6 +41,34 @@ public final class ScratchCastResultFcn implements b3CastResultFcn.Function {
                     returnArena,
                     worldId,
                     origin,
+                    translation,
+                    filter,
+                    this.segment,
+                    MemorySegment.NULL
+            );
+        } finally {
+            this.function = null;
+        }
+
+    }
+
+    public MemorySegment invokeShape(
+            SegmentAllocator returnArena,
+            MemorySegment worldId,
+            MemorySegment origin,
+            MemorySegment proxy,
+            MemorySegment translation,
+            MemorySegment filter,
+            CastResultFcn fcn
+    ) {
+        this.function = fcn;
+
+        try {
+            return b3World_CastShape(
+                    returnArena,
+                    worldId,
+                    origin,
+                    proxy,
                     translation,
                     filter,
                     this.segment,

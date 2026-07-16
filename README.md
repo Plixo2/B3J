@@ -77,7 +77,7 @@ so you can just use B3J to provide the shared libraries and direct bindings.
 
 - Null Safety
   - B3J uses `@Nullable` annotations for values that can be null. Otherwise, assume non-null. 
-    Dont break this contract!
+    Dont break this contract! Be aware that `@Nullable ShapeID[]` means that the elements can be null, not the array itself.
 
     
 - Unsigned values are annotated with `@Unsigned`
