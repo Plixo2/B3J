@@ -14,7 +14,7 @@ Jextract bindings are shipped with B3J and can be used directly,
 so you can just use B3J to provide the shared libraries and direct bindings. 
 
 > [!WARNING]  
-> Still in development. 577 out of 685 functions implemented
+> Still in development. 590 out of 685 functions implemented
 
 
 ### [Examples](examples/src/main/java/io/github/plixo2/samples)

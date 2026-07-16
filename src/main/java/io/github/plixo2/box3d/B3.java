@@ -104,6 +104,12 @@ public final class B3 {
     /// @api B3_MIN_SCALE
     public static final float MIN_SCALE = B3_MIN_SCALE;
 
+    /// @api B3_DYNAMIC_TREE_VERSION
+    public static final float DYNAMIC_TREE_VERSION = B3_DYNAMIC_TREE_VERSION;
+
+    /// @api B3_HEIGHT_FIELD_VERSION
+    public static final float HEIGHT_FIELD_VERSION = B3_HEIGHT_FIELD_VERSION;
+
     /// @api B3_HUGE
     public static float HUGE() {
         return 1.0e5f * b3GetLengthUnitsPerMeter();
@@ -1011,6 +1017,14 @@ public final class B3 {
             );
             if (heightField.address() == 0) {
                 throw new IOException("Failed to load height field data: " + absolutePath);
+            }
+            if (b3HeightFieldData.version(heightField) != HEIGHT_FIELD_VERSION) {
+                throw new IOException(
+                        "Invalid height field version: "
+                                + b3HeightFieldData.version(heightField)
+                                + ", expected: "
+                                + HEIGHT_FIELD_VERSION
+                );
             }
 
             return new HeightFieldData(this, region, heightField);
@@ -2297,6 +2311,61 @@ public final class B3 {
         var arena = Arena.ofConfined();
         var segment = b3DynamicTree_Create(arena, proxyCapacity);
         return new DynamicTree(this, region, arena, segment);
+    }
+
+    /// @api b3DynamicTree_Save
+    public void dynamicTreeSave(DynamicTree tree, Path path) throws IOException {
+        var absolutePath = path.toAbsolutePath();
+        var parent = absolutePath.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        if (!Files.exists(absolutePath)) {
+            Files.createFile(absolutePath);
+        }
+
+        try (this.argArena) {
+            b3DynamicTree_Save(
+                    tree.segment(),
+                    this.argArena.allocateFrom(absolutePath.toString())
+            );
+        }
+
+        if (!Files.exists(absolutePath)) {
+            throw new IOException("Failed to save dynamic tree: " + absolutePath);
+        }
+    }
+
+    /// @api b3DynamicTree_Load
+    public DynamicTree dynamicTreeLoad(Region region, Path path, float scale) throws IOException {
+        var absolutePath = path.toAbsolutePath();
+        if (!Files.exists(absolutePath)) {
+            throw new IOException("Dynamic tree file does not exist: " + absolutePath);
+        }
+
+        try (this.argArena) {
+            var arena = Arena.ofConfined();
+            var tree = b3DynamicTree_Load(
+                    arena,
+                    this.argArena.allocateFrom(absolutePath.toString()),
+                    scale
+            );
+            if (tree.address() == 0) {
+                arena.close();
+                throw new IOException("Failed to load dynamic tree: " + absolutePath);
+            }
+            if (b3DynamicTree.version(tree) != DYNAMIC_TREE_VERSION) {
+                arena.close();
+                throw new IOException(
+                        "Invalid dynamic tree version: "
+                                + b3DynamicTree.version(tree)
+                                + ", expected: "
+                                + DYNAMIC_TREE_VERSION
+                );
+            }
+
+            return new DynamicTree(this, region, arena, tree);
+        }
     }
 
     /// @api b3DynamicTree_CreateProxy
